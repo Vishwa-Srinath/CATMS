@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CATMS — Team Delivery Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F7;
+    --surface:#FFFFFF;
+    --surface-2:#EFF3F3;
+    --ink:#12232B;
+    --ink-soft:#4B5D66;
+    --ink-faint:#7C8B92;
+    --line:#DCE4E4;
+    --line-soft:#EAEFEF;
+    --teal:#0E5E5E;
+    --teal-deep:#0A4747;
+
+    --a:#3B6EA5; --a-soft:#EAF0F8;
+    --b:#1E8A72; --b-soft:#E7F5F1;
+    --c:#6C4AB6; --c-soft:#F1ECFA;
+    --d:#C0721F; --d-soft:#FBF0E2;
+    --e:#B4425A; --e-soft:#FBEAEE;
+
+    --radius:14px;
+    --shadow: 0 1px 2px rgba(18,35,43,0.04), 0 8px 24px rgba(18,35,43,0.06);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    color:var(--ink);
+    margin:0 0 0.5em 0;
+    letter-spacing:-0.01em;
+  }
+  p{margin:0 0 1em 0; color:var(--ink-soft);}
+  a{color:var(--teal);}
+  .mono{
+    font-family:'IBM Plex Mono', monospace;
+    text-transform:uppercase;
+    letter-spacing:0.09em;
+    font-size:12.5px;
+  }
+  ul,ol{margin:0 0 1em 0; padding-left:1.25em; color:var(--ink-soft);}
+  li{margin-bottom:0.45em;}
+  li:last-child{margin-bottom:0;}
+  strong{color:var(--ink); font-weight:600;}
+
+  /* ---------- Layout shell ---------- */
+  .shell{
+    display:grid;
+    grid-template-columns:272px 1fr;
+    max-width:1360px;
+    margin:0 auto;
+  }
+  nav.sidebar{
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+    padding:36px 20px 40px 32px;
+    border-right:1px solid var(--line);
+  }
+  nav.sidebar .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  nav.sidebar .brand-mark{
+    width:30px;height:30px;border-radius:8px;
+    background:linear-gradient(135deg, var(--teal), var(--c));
+    flex-shrink:0;
+  }
+  nav.sidebar .brand-text{font-family:'Fraunces',serif; font-weight:600; font-size:17px;}
+  nav.sidebar .brand-sub{font-size:12px; color:var(--ink-faint); margin-bottom:28px;}
+  nav.sidebar ol{list-style:none; margin:0; padding:0; counter-reset:navcount;}
+  nav.sidebar li{margin-bottom:2px;}
+  nav.sidebar a{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    text-decoration:none;
+    color:var(--ink-soft);
+    font-size:13.5px;
+    padding:7px 10px;
+    border-radius:8px;
+    transition:background 0.15s ease, color 0.15s ease;
+  }
+  nav.sidebar a:hover{background:var(--surface-2); color:var(--ink);}
+  nav.sidebar a .n{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+    min-width:16px;
+  }
+  nav.sidebar .navfoot{
+    margin-top:28px;
+    padding-top:18px;
+    border-top:1px solid var(--line-soft);
+    font-size:12px;
+    color:var(--ink-faint);
+  }
+
+  main{padding:0;}
+  .wrap{max-width:920px; margin:0 auto; padding:0 56px 40px;}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    padding:80px 56px 56px;
+    max-width:920px;
+    margin:0 auto;
+  }
+  .hero .eyebrow{color:var(--teal); margin-bottom:18px; display:block;}
+  .hero h1{
+    font-size:clamp(34px, 4.4vw, 54px);
+    line-height:1.06;
+    max-width:14ch;
+  }
+  .hero .lede{
+    font-size:18px;
+    max-width:60ch;
+    margin-top:18px;
+    color:var(--ink-soft);
+  }
+  .hero-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:30px;
+  }
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    padding:8px 14px;
+    border-radius:100px;
+    font-size:13px;
+    color:var(--ink-soft);
+    box-shadow:var(--shadow);
+  }
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);}
+
+  /* ---------- Sections ---------- */
+  section{
+    padding:52px 0;
+    border-top:1px solid var(--line);
+  }
+  section:first-of-type{border-top:none;}
+  .section-head{margin-bottom:32px;}
+  .section-head .eyebrow{color:var(--ink-faint); margin-bottom:10px; display:block;}
+  .section-head h2{font-size:clamp(24px,3vw,32px);}
+  .section-head .desc{max-width:68ch; font-size:15.5px;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:24px 26px;
+    box-shadow:var(--shadow);
+  }
+  .grid{display:grid; gap:18px;}
+  .grid-2{grid-template-columns:1fr 1fr;}
+  .grid-3{grid-template-columns:repeat(3,1fr);}
+  @media (max-width:820px){ .grid-2, .grid-3{grid-template-columns:1fr;} }
+
+  .card h3{font-size:17px; margin-bottom:10px;}
+  .card .tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    padding:4px 9px;
+    border-radius:6px;
+    margin-bottom:12px;
+  }
+
+  /* module color utilities */
+  .tag-a{background:var(--a-soft); color:var(--a);}
+  .tag-b{background:var(--b-soft); color:var(--b);}
+  .tag-c{background:var(--c-soft); color:var(--c);}
+  .tag-d{background:var(--d-soft); color:var(--d);}
+  .tag-e{background:var(--e-soft); color:var(--e);}
+  .bar-a{background:var(--a);} .bar-b{background:var(--b);} .bar-c{background:var(--c);}
+  .bar-d{background:var(--d);} .bar-e{background:var(--e);}
+  .dot-a{background:var(--a);} .dot-b{background:var(--b);} .dot-c{background:var(--c);}
+  .dot-d{background:var(--d);} .dot-e{background:var(--e);}
+
+  /* ---------- Production path callout ---------- */
+  .callout{
+    display:flex;
+    gap:16px;
+    background:var(--surface-2);
+    border:1px dashed var(--line);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    margin-top:20px;
+  }
+  .callout .mark{
+    font-family:'Fraunces',serif; font-weight:600; font-size:20px;
+    color:var(--teal);
+    flex-shrink:0;
+  }
+  .callout p{margin:0; font-size:14.5px;}
+  .callout strong{color:var(--ink);}
+
+  /* ---------- Tech stack ---------- */
+  .stack-card ul{padding-left:1.1em; font-size:14.5px;}
+  .stack-card li strong{display:block; color:var(--ink); font-weight:600; font-size:14.5px;}
+  .stack-card li span{color:var(--ink-soft);}
+
+  /* ---------- Architecture tiers ---------- */
+  .tiers{display:flex; flex-direction:column; gap:0; margin-top:8px;}
+  .tier{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 22px;
+    box-shadow:var(--shadow);
+    position:relative;
+  }
+  .tier + .tier{margin-top:28px;}
+  .tier-arrow{
+    text-align:center;
+    color:var(--ink-faint);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    margin:8px 0;
+  }
+  .tier h4{font-size:15px; margin-bottom:4px;}
+  .tier .sub{font-size:13.5px; color:var(--ink-soft); margin:0;}
+
+  .module-map{margin-top:36px;}
+  .module-row{
+    display:grid;
+    grid-template-columns:150px 1fr;
+    gap:16px;
+    align-items:start;
+    padding:14px 0;
+    border-top:1px solid var(--line-soft);
+  }
+  .module-row:first-child{border-top:none;}
+  .module-label{
+    display:flex; align-items:center; gap:9px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    padding-top:2px;
+  }
+  .module-label .sw{width:11px; height:11px; border-radius:3px; flex-shrink:0;}
+  .module-entities{font-size:14px; color:var(--ink-soft);}
+
+  /* ---------- Timeline / phases ---------- */
+  .timeline{position:relative; margin-top:12px;}
+  .timeline::before{
+    content:"";
+    position:absolute;
+    left:23px; top:8px; bottom:8px;
+    width:2px;
+    background:var(--line);
+  }
+  .phase{
+    position:relative;
+    padding-left:64px;
+    padding-bottom:34px;
+  }
+  .phase:last-child{padding-bottom:0;}
+  .phase-num{
+    position:absolute;
+    left:0; top:0;
+    width:48px; height:48px;
+    border-radius:50%;
+    background:var(--surface);
+    border:2px solid var(--teal);
+    color:var(--teal-deep);
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:17px;
+    display:flex; align-items:center; justify-content:center;
+    z-index:1;
+  }
+  .phase-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px 24px;
+    box-shadow:var(--shadow);
+  }
+  .phase-card .ph-meta{
+    display:flex; gap:10px; flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  .phase-card h3{font-size:18px; margin-bottom:6px;}
+  .phase-card .sprint-tag{
+    font-family:'IBM Plex Mono',monospace; font-size:11px;
+    color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.07em;
+    padding-top:3px;
+  }
+  .phase-card .goal-list{margin-top:12px; margin-bottom:0;}
+  .phase-card .lead{
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px solid var(--line-soft);
+    font-size:13.5px;
+    color:var(--ink-soft);
+  }
+  .phase-card .lead strong{color:var(--ink);}
+
+  /* ---------- Member cards ---------- */
+  .member-card{
+    border-top:4px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .member-card .role-eyebrow{font-size:12px; color:var(--ink-faint);}
+  .member-card h3{font-size:19px; margin-bottom:2px;}
+  .member-card .owns{font-size:13.5px; color:var(--ink-soft); margin-bottom:4px;}
+  .member-card .also{
+    margin-top:6px;
+    padding-top:12px;
+    border-top:1px solid var(--line-soft);
+  }
+  .member-card .also .lbl{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+    text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--ink-faint);
+    margin-bottom:6px; display:block;
+  }
+  .m1{border-top-color:var(--teal);}
+  .m2{border-top-color:var(--a);}
+  .m3{border-top-color:var(--b);}
+  .m4{border-top-color:var(--d);}
+  .m5{border-top-color:var(--e);}
+
+  /* ---------- Git flow ---------- */
+  .flow{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:28px 30px;
+    box-shadow:var(--shadow);
+    margin-top:10px;
+  }
+  .lane{
+    display:grid;
+    grid-template-columns:110px 1fr;
+    align-items:center;
+    gap:16px;
+    padding:10px 0;
+  }
+  .lane .lane-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    text-align:right;
+    color:var(--ink-soft);
+  }
+  .lane .track{
+    height:10px;
+    border-radius:6px;
+    position:relative;
+  }
+  .lane.main .track{background:var(--teal);}
+  .lane.dev .track{background:#9FBFBF;}
+  .lane.feat .track{
+    display:flex; gap:8px;
+  }
+  .feat-branch{
+    height:10px; border-radius:6px; flex:1;
+    opacity:0.85;
+  }
+  .flow-caption{font-size:13px; color:var(--ink-faint); margin-top:16px; margin-bottom:0;}
+
+  .rule-list{margin-top:22px;}
+  .rule-list .card{margin-bottom:14px;}
+  .rule-list .card:last-child{margin-bottom:0;}
+  .rule-num{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--teal);
+    font-size:12px;
+    margin-bottom:6px;
+    display:block;
+  }
+
+  /* ---------- Feature list (UI) ---------- */
+  .feature-grid{margin-top:8px;}
+  .feature{
+    display:grid;
+    grid-template-columns:34px 1fr;
+    gap:14px;
+    padding:16px 0;
+    border-top:1px solid var(--line-soft);
+  }
+  .feature:first-child{border-top:none;}
+  .feature .fnum{
+    font-family:'Fraunces',serif; font-weight:600; color:var(--c);
+    font-size:18px;
+  }
+  .feature h4{font-size:15.5px; margin-bottom:4px;}
+  .feature p{font-size:14px; margin:0;}
+
+  /* ---------- NFR table-like rows ---------- */
+  .nfr-row{
+    display:grid;
+    grid-template-columns:200px 1fr;
+    gap:20px;
+    padding:18px 0;
+    border-top:1px solid var(--line-soft);
+  }
+  .nfr-row:first-child{border-top:none;}
+  .nfr-row h4{font-size:14.5px; margin-bottom:4px; color:var(--ink);}
+  .nfr-row .proof{font-size:14px; color:var(--ink-soft); margin:0;}
+  @media (max-width:700px){ .nfr-row{grid-template-columns:1fr;} }
+
+  /* ---------- Checklist ---------- */
+  .checklist{list-style:none; padding:0; margin:0;}
+  .checklist li{
+    display:flex; gap:12px; align-items:flex-start;
+    padding:11px 0;
+    border-top:1px solid var(--line-soft);
+    color:var(--ink-soft);
+    font-size:14.5px;
+  }
+  .checklist li:first-child{border-top:none;}
+  .checklist .box{
+    width:16px; height:16px; border-radius:5px;
+    border:1.5px solid var(--teal);
+    margin-top:2px; flex-shrink:0;
+  }
+
+  /* ---------- Demo script ---------- */
+  .demo-step{
+    display:grid;
+    grid-template-columns:30px 1fr;
+    gap:14px;
+    padding:13px 0;
+    border-top:1px solid var(--line-soft);
+  }
+  .demo-step:first-child{border-top:none;}
+  .demo-step .dstep-num{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--ink-faint); font-size:12.5px; padding-top:2px;
+  }
+  .demo-step p{margin:0; font-size:14.5px;}
+  .demo-step strong{color:var(--ink);}
+
+  footer{
+    padding:44px 56px 60px;
+    max-width:920px;
+    margin:0 auto;
+    color:var(--ink-faint);
+    font-size:13px;
+    border-top:1px solid var(--line);
+  }
+
+  /* ---------- mobile ---------- */
+  .mobile-toggle{display:none;}
+  @media (max-width:960px){
+    .shell{grid-template-columns:1fr;}
+    nav.sidebar{
+      position:relative; height:auto; border-right:none;
+      border-bottom:1px solid var(--line);
+      padding:20px 24px;
+    }
+    nav.sidebar ol{
+      display:none;
+    }
+    nav.sidebar.open ol{display:block;}
+    .mobile-toggle{
+      display:inline-flex; align-items:center; gap:8px;
+      background:var(--surface-2); border:1px solid var(--line);
+      border-radius:8px; padding:8px 12px; font-size:13px; cursor:pointer;
+      color:var(--ink); margin-top:6px;
+    }
+    .hero{padding:48px 24px 36px;}
+    .wrap{padding:0 24px 24px;}
+    footer{padding:32px 24px 48px;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-text">CATMS</div>
+    </div>
+    <div class="brand-sub">Team Delivery Plan · v1.0</div>
+    <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰ Contents</button>
+    <ol>
+      <li><a href="#snapshot"><span class="n">00</span> Project Snapshot</a></li>
+      <li><a href="#stack"><span class="n">01</span> Technology Stack</a></li>
+      <li><a href="#architecture"><span class="n">02</span> System Architecture</a></li>
+      <li><a href="#methodology"><span class="n">03</span> Delivery Methodology</a></li>
+      <li><a href="#timeline"><span class="n">04</span> Project Timeline</a></li>
+      <li><a href="#team"><span class="n">05</span> Team Structure</a></li>
+      <li><a href="#git"><span class="n">06</span> Git &amp; GitHub Workflow</a></li>
+      <li><a href="#ui"><span class="n">07</span> UI/UX &amp; Signature Features</a></li>
+      <li><a href="#nfr"><span class="n">08</span> Non-Functional Plan</a></li>
+      <li><a href="#qa"><span class="n">09</span> Testing &amp; QA</a></li>
+      <li><a href="#data"><span class="n">10</span> Dummy Data &amp; Demo Env</a></li>
+      <li><a href="#risk"><span class="n">11</span> Risk &amp; Conflict Prevention</a></li>
+      <li><a href="#demo"><span class="n">12</span> Demo Day Script</a></li>
+      <li><a href="#deliverables"><span class="n">13</span> Deliverables Checklist</a></li>
+    </ol>
+    <div class="navfoot">MedSync Clinics — Phase 1<br/>Database Management Systems Project</div>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <span class="eyebrow mono">Clinic Appointment &amp; Treatment Management System</span>
+      <h1>Building CATMS, start to showcase.</h1>
+      <p class="lede">A practical, conflict-free plan for five people to design, build, and demo CATMS — locally, transparently, and in a way every commit can be traced back to a person and a reason.</p>
+      <div class="hero-meta">
+        <span class="chip"><span class="dot"></span> 5 team members</span>
+        <span class="chip"><span class="dot"></span> 6 delivery phases</span>
+        <span class="chip"><span class="dot"></span> Local-first stack: PostgreSQL · Node · React</span>
+        <span class="chip"><span class="dot"></span> GitHub-native workflow</span>
+      </div>
+    </div>
+
+    <div class="wrap">
+
+      <!-- 00 SNAPSHOT -->
+      <section id="snapshot">
+        <div class="section-head">
+          <span class="eyebrow mono">00 · Framing</span>
+          <h2>Why we're building this locally, by hand</h2>
+          <p class="desc">A quick note on an intentional choice, before the plan itself.</p>
+        </div>
+        <p>This project is graded on the database: the entities, the constraints, the triggers and procedures that guarantee correctness, and the reasoning behind them. A managed backend platform that auto-generates CRUD APIs, auth, and admin panels would hide exactly the work we're being assessed on. So for this submission, everything runs <strong>locally</strong> — a self-managed PostgreSQL instance, a hand-written API layer, and a hand-written frontend — so that every constraint, trigger, and index in the system is something the team designed, wrote, and can defend live.</p>
+        <div class="callout">
+          <div class="mark">→</div>
+          <p><strong>Production path (for later, not for this submission):</strong> because the schema and API are plain, portable SQL and REST — not vendor-specific — the same system could move to a managed Postgres host (Neon, Supabase, RDS) with the frontend on Vercel or Netlify and CI/CD fully automated, without redesigning anything. That's a good closing line for the demo: "this was built by hand on purpose, and here's how it would scale."</p>
+        </div>
+      </section>
+
+      <!-- 01 STACK -->
+      <section id="stack">
+        <div class="section-head">
+          <span class="eyebrow mono">01 · Foundation</span>
+          <h2>Technology stack</h2>
+          <p class="desc">Every layer chosen so its inner workings stay visible — nothing that writes the schema or the auth logic for us.</p>
+        </div>
+        <div class="grid grid-3">
+          <div class="card stack-card">
+            <span class="tag tag-a">Database</span>
+            <h3>PostgreSQL 16</h3>
+            <ul>
+              <li><strong>Local via Docker Compose</strong><span>one command, identical on every laptop</span></li>
+              <li><strong>Hand-authored SQL migrations</strong><span>numbered, sequential .sql files — no ORM schema-magic</span></li>
+              <li><strong>node-postgres (pg) driver</strong><span>parameterized queries only, called directly</span></li>
+              <li><strong>pgAdmin / DBeaver</strong><span>for inspection, EXPLAIN ANALYZE, and manual QA</span></li>
+            </ul>
+          </div>
+          <div class="card stack-card">
+            <span class="tag tag-c">Backend</span>
+            <h3>Node.js + Express</h3>
+            <ul>
+              <li><strong>REST API</strong><span>one route group per module</span></li>
+              <li><strong>JWT sessions</strong><span>role embedded, checked on every route</span></li>
+              <li><strong>bcrypt</strong><span>password hashing, never plain text</span></li>
+              <li><strong>zod</strong><span>request validation before anything touches the database</span></li>
+            </ul>
+          </div>
+          <div class="card stack-card">
+            <span class="tag tag-e">Frontend</span>
+            <h3>React + Vite</h3>
+            <ul>
+              <li><strong>Tailwind CSS</strong><span>the shared design system, tokens defined once</span></li>
+              <li><strong>TanStack Query</strong><span>data fetching, caching, and rejection-message display</span></li>
+              <li><strong>React Router</strong><span>role-based routes and dashboards</span></li>
+              <li><strong>Recharts</strong><span>the five management reports, as real charts</span></li>
+            </ul>
+          </div>
+          <div class="card stack-card">
+            <span class="tag tag-b">Local environment</span>
+            <h3>Docker Compose</h3>
+            <ul>
+              <li><strong>Postgres + pgAdmin containers</strong><span>no cloud dependency to demo</span></li>
+              <li><strong>.env-based config</strong><span>one template, no shared secrets in git</span></li>
+              <li><strong>Seed script</strong><span>reproducible dummy data, one command to reset</span></li>
+            </ul>
+          </div>
+          <div class="card stack-card">
+            <span class="tag tag-d">Collaboration &amp; DevOps</span>
+            <h3>GitHub</h3>
+            <ul>
+              <li><strong>Repo + Issues + Projects board</strong><span>single source of truth for tasks</span></li>
+              <li><strong>GitHub Actions</strong><span>lint + a migration smoke-test on every PR</span></li>
+              <li><strong>Conventional Commits</strong><span>a readable, gradable history</span></li>
+              <li><strong>CODEOWNERS</strong><span>routes reviews to the right person automatically</span></li>
+            </ul>
+          </div>
+          <div class="card stack-card">
+            <span class="tag tag-a">Documentation</span>
+            <h3>Living docs</h3>
+            <ul>
+              <li><strong>SRS</strong><span>already produced, IEEE-830 structured</span></li>
+              <li><strong>ER diagram</strong><span>conceptual module map + full schema diagram</span></li>
+              <li><strong>This delivery plan</strong><span>the document you're reading</span></li>
+              <li><strong>README</strong><span>setup-to-running-app in under five minutes</span></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 ARCHITECTURE -->
+      <section id="architecture">
+        <div class="section-head">
+          <span class="eyebrow mono">02 · Structure</span>
+          <h2>System architecture</h2>
+          <p class="desc">Three tiers, and a folder structure that mirrors the five database modules — which is what makes the Git workflow in Section 06 actually conflict-free, not just hopeful.</p>
+        </div>
+
+        <div class="tiers">
+          <div class="tier">
+            <h4>Presentation — React (Vite + Tailwind)</h4>
+            <p class="sub">Role-based dashboards, one screen group per module, talking to the API only over HTTPS + JSON.</p>
+          </div>
+          <div class="tier-arrow">▲▼ REST · JSON · HTTPS</div>
+          <div class="tier">
+            <h4>Application — Node.js + Express</h4>
+            <p class="sub">One router per module, validation and RBAC checks before anything reaches the database.</p>
+          </div>
+          <div class="tier-arrow">▲▼ parameterized SQL only</div>
+          <div class="tier">
+            <h4>Data — PostgreSQL</h4>
+            <p class="sub">Owns every rule that must always hold true: constraints, triggers, procedures, and the reporting views.</p>
+          </div>
+        </div>
+
+        <div class="module-map">
+          <div class="module-row">
+            <div class="module-label"><span class="sw dot-a"></span>Module A</div>
+            <div class="module-entities"><strong>Branch &amp; Staff</strong> — Branch, Employee, Doctor, Specialty</div>
+          </div>
+          <div class="module-row">
+            <div class="module-label"><span class="sw dot-b"></span>Module B</div>
+            <div class="module-entities"><strong>Patient &amp; Insurance</strong> — Patient, Emergency Contact, Insurance Policy &amp; Coverage</div>
+          </div>
+          <div class="module-row">
+            <div class="module-label"><span class="sw dot-c"></span>Module C</div>
+            <div class="module-entities"><strong>Appointment &amp; Scheduling</strong> — Appointment, Consultation Note, status &amp; history logs</div>
+          </div>
+          <div class="module-row">
+            <div class="module-label"><span class="sw dot-d"></span>Module D</div>
+            <div class="module-entities"><strong>Treatment &amp; Billing</strong> — Treatment Catalogue, Appointment Treatment, Invoice</div>
+          </div>
+          <div class="module-row">
+            <div class="module-label"><span class="sw dot-e"></span>Module E</div>
+            <div class="module-entities"><strong>Payments, Claims &amp; Reporting</strong> — Payment, Insurance Claim, the five report views</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 03 METHODOLOGY -->
+      <section id="methodology">
+        <div class="section-head">
+          <span class="eyebrow mono">03 · Process</span>
+          <h2>Delivery methodology</h2>
+          <p class="desc">A lightweight Scrum — enough structure to stay coordinated, not so much that it becomes its own project.</p>
+        </div>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Cadence</h3>
+            <ul>
+              <li>Six sprints, roughly a week each (stretch to fit the actual term length).</li>
+              <li>A 15-minute check-in every 2–3 days — async on a group chat is fine, it just has to happen.</li>
+              <li>A 30-minute review-and-plan at the end of every sprint: what shipped, what's next, what's blocking whom.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Board</h3>
+            <ul>
+              <li>One GitHub Projects board: <em>Backlog → In Progress → In Review → Done.</em></li>
+              <li>Every card labelled by module color (A–E) so load is visible at a glance.</li>
+              <li>No task is "in progress" without an assignee — prevents quiet duplicate work.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 TIMELINE -->
+      <section id="timeline">
+        <div class="section-head">
+          <span class="eyebrow mono">04 · Sequence</span>
+          <h2>Project timeline</h2>
+          <p class="desc">Six phases, each building on the last. Order matters here: scheduling depends on staff and patients existing, billing depends on scheduling, and reporting depends on everything — so later modules are naturally unblocked earlier when this order is followed.</p>
+        </div>
+
+        <div class="timeline">
+
+          <div class="phase">
+            <div class="phase-num">0</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Sprint 0 · Foundation</span></div>
+              <h3>Repo, environment, and shared agreements</h3>
+              <ul class="goal-list">
+                <li>Repository created; branch protection and CODEOWNERS configured.</li>
+                <li>Docker Compose environment running identically for all five people.</li>
+                <li>Skeleton schema agreed: every table stubbed with primary/foreign keys, no business logic yet.</li>
+                <li>ER diagram, UI wireframes, and the design system's tokens agreed as a whole team.</li>
+              </ul>
+              <div class="lead">Whole-team decision meeting — the schema skeleton and wireframes are locked together, not solo work. <strong>Team Lead</strong> drives repo/environment setup.</div>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">1</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Sprint 1 · Schema, constraints &amp; triggers</span></div>
+              <h3>Each module's DDL, constraints, and business-rule triggers</h3>
+              <ul class="goal-list">
+                <li>Every member writes their module's tables, constraints, indexes, and triggers/procedures on its own feature branch.</li>
+                <li>Merged in dependency order: <strong>A and B first</strong> (nothing upstream depends on them), <strong>then C</strong> (needs doctors and patients to exist), <strong>then D</strong> (needs completed appointments), <strong>then E</strong> (needs invoices).</li>
+              </ul>
+              <div class="lead">This dependency order is also why the module sitting in the middle of that chain — Appointment &amp; Scheduling — is owned by whoever is already sequencing the merges: see Section 05.</div>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">2</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Sprint 2 · Backend APIs</span></div>
+              <h3>Endpoints, validation, and role guards</h3>
+              <ul class="goal-list">
+                <li>One route group per module, each calling parameterized queries or stored procedures — never string-built SQL.</li>
+                <li>Role checks (Reception / Clinician / Admin) enforced on every route, in addition to the database's own role grants.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">3</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Sprint 3 · Frontend screens</span></div>
+              <h3>Each module's UI, on the shared design system</h3>
+              <ul class="goal-list">
+                <li>Every member builds their module's screens against the Sprint 0 design tokens — so five people's work still looks like one product.</li>
+                <li><strong>Feature list frozen</strong> at the end of this sprint (see Section 11 — scope creep prevention).</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">4</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Sprint 4 · Cross-module integration</span></div>
+              <h3>Wiring the end-to-end flows</h3>
+              <ul class="goal-list">
+                <li>The flows that cross modules — book → complete → treat → invoice → pay → claim — get wired and tested together, in a whole-team integration session.</li>
+                <li>First full run-through of a realistic patient journey, start to finish.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">5</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Sprint 5 · Reporting, data &amp; hardening</span></div>
+              <h3>The five reports, dummy data at scale, and an NFR pass</h3>
+              <ul class="goal-list">
+                <li>Seed script populated to the volumes in the SRS (three branches, dozens of staff, hundreds of appointments).</li>
+                <li>The five report screens, built as charts, not just tables.</li>
+                <li>Security and performance pass: RBAC audit, parameterized-query audit, indexes verified with EXPLAIN ANALYZE.</li>
+                <li>Demo scenarios rehearsed once internally (overlap rejection, rollback, RBAC denial).</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">6</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Sprint 6 · Polish &amp; demo readiness</span></div>
+              <h3>Freeze, rehearse, submit</h3>
+              <ul class="goal-list">
+                <li>UI polish — empty states, error states, responsive check down to tablet width.</li>
+                <li>Full regression pass against every REQ-ID in the SRS.</li>
+                <li><strong>Feature freeze</strong> — only bug fixes merge from here.</li>
+                <li>Demo script (Section 12) rehearsed twice; release tagged <code>v1.0-demo</code>.</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 05 TEAM -->
+      <section id="team">
+        <div class="section-head">
+          <span class="eyebrow mono">05 · Ownership</span>
+          <h2>Team structure &amp; responsibilities</h2>
+          <p class="desc">One database module per person — the same person who argues for a requirement in the SRS implements and defends it live. Two members carry a light cross-cutting duty on top, matched to what their module already has spare capacity for.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card member-card m1">
+            <span class="role-eyebrow mono">Member 1</span>
+            <h3>Team Lead &amp; Appointment/Scheduling Owner</h3>
+            <p class="owns"><span class="tag tag-c" style="margin-bottom:0;">Module C</span></p>
+            <p>Owns booking, the doctor-overlap trigger, rescheduling, walk-ins, and the appointment status/audit log — the module every other module's timeline depends on.</p>
+            <div class="also">
+              <span class="lbl">Also carries</span>
+              <p style="margin:0;">Repository and environment setup, branch protection &amp; CODEOWNERS, schema-migration sequencing, sprint facilitation, and release tagging. This isn't a second job bolted on — sequencing the schema merges and owning the module in the middle of that dependency chain is one thread, not two.</p>
+            </div>
+          </div>
+
+          <div class="card member-card m2">
+            <span class="role-eyebrow mono">Member 2</span>
+            <h3>Branch &amp; Staff Owner</h3>
+            <p class="owns"><span class="tag tag-a" style="margin-bottom:0;">Module A</span></p>
+            <p>Owns branches, employees, doctors, and specialties — the foundation every other module's foreign keys point back to.</p>
+            <div class="also">
+              <span class="lbl">Also carries</span>
+              <p style="margin:0;">Design-system ownership: Tailwind tokens and the shared components (buttons, tables, modals, badges) every other module reuses, so five people's screens read as one product.</p>
+            </div>
+          </div>
+
+          <div class="card member-card m3">
+            <span class="role-eyebrow mono">Member 3</span>
+            <h3>Patient &amp; Insurance Owner</h3>
+            <p class="owns"><span class="tag tag-b" style="margin-bottom:0;">Module B</span></p>
+            <p>Owns patients, emergency contacts, and insurance policies/coverage — the record that has to stay consistent across all three branches.</p>
+            <div class="also">
+              <span class="lbl">Also carries</span>
+              <p style="margin:0;">Security &amp; NFR ownership: RBAC role definitions, the password-hashing review, and a parameterized-query audit across every module before it merges to <code>main</code>.</p>
+            </div>
+          </div>
+
+          <div class="card member-card m4">
+            <span class="role-eyebrow mono">Member 4</span>
+            <h3>Treatment &amp; Billing Owner</h3>
+            <p class="owns"><span class="tag tag-d" style="margin-bottom:0;">Module D</span></p>
+            <p>Owns the treatment catalogue, appointment-treatment records, and invoice generation — the module with the most transactional logic to get right.</p>
+            <div class="also">
+              <span class="lbl">Also carries</span>
+              <p style="margin:0;">Data-integrity &amp; testing ownership: the ACID demo scenarios (double-booking rejection, overpayment rejection, mid-transaction rollback) since billing is where these matter most.</p>
+            </div>
+          </div>
+
+          <div class="card member-card m5" style="grid-column:1 / -1;">
+            <span class="role-eyebrow mono">Member 5</span>
+            <h3>Payments, Claims &amp; Reporting Owner</h3>
+            <p class="owns"><span class="tag tag-e" style="margin-bottom:0;">Module E</span></p>
+            <p>Owns payments, insurance claims, and the five management-report views — the module that turns everyone else's data into something the clinic (and the lecturer) can actually see.</p>
+            <div class="also">
+              <span class="lbl">Also carries</span>
+              <p style="margin:0;">Demo &amp; QA coordination: since reporting is what actually gets shown on stage, this member drafts and times the demo-day script in Section 12 and keeps the shared manual QA checklist up to date.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 06 GIT -->
+      <section id="git">
+        <div class="section-head">
+          <span class="eyebrow mono">06 · Workflow</span>
+          <h2>Git &amp; GitHub workflow</h2>
+          <p class="desc">Standard, boring, and on purpose — the goal is that two people are structurally unlikely to touch the same file in the same week.</p>
+        </div>
+
+        <div class="flow">
+          <div class="lane main">
+            <div class="lane-label">main</div>
+            <div class="track"></div>
+          </div>
+          <div class="lane dev">
+            <div class="lane-label">dev</div>
+            <div class="track"></div>
+          </div>
+          <div class="lane feat">
+            <div class="lane-label">feature/*</div>
+            <div class="track">
+              <div class="feat-branch" style="background:var(--a);"></div>
+              <div class="feat-branch" style="background:var(--b);"></div>
+              <div class="feat-branch" style="background:var(--c);"></div>
+              <div class="feat-branch" style="background:var(--d);"></div>
+              <div class="feat-branch" style="background:var(--e);"></div>
+            </div>
+          </div>
+          <p class="flow-caption">Short-lived feature branches (one per task, coloured by module) branch off <code>dev</code> and merge back via reviewed PR. <code>dev</code> merges to the protected <code>main</code> only when a sprint's work is demo-ready.</p>
+        </div>
+
+        <div class="rule-list">
+          <div class="card">
+            <span class="rule-num mono">Branching</span>
+            <p style="margin:0;"><code>main</code> is protected — no direct pushes, always demo-ready. Everyone branches off <code>dev</code> as <code>feature/&lt;module-letter&gt;-&lt;short-task&gt;</code> (e.g. <code>feature/c-overlap-trigger</code>), kept short-lived — merged within two to three days, rebased onto <code>dev</code> first so it never goes stale enough to conflict.</p>
+          </div>
+          <div class="card">
+            <span class="rule-num mono">Ownership</span>
+            <p style="margin:0;">Database migrations, backend routes, and frontend module folders each belong to one member, enforced with a CODEOWNERS file so GitHub automatically requests the right reviewer. Migration files are numbered and claimed one at a time from the shared board, so two people can never claim the same migration number.</p>
+          </div>
+          <div class="card">
+            <span class="rule-num mono">Review</span>
+            <p style="margin:0;">Every PR needs one approving review and a passing CI check before it can merge — and never from the person who wrote it. Reviewers rotate rather than pairing the same two people every time, so schema knowledge doesn't stay siloed in one head.</p>
+          </div>
+          <div class="card">
+            <span class="rule-num mono">Commits &amp; PRs</span>
+            <p style="margin:0;">Conventional Commits (<code>feat</code>/<code>fix</code>/<code>docs</code>/<code>test</code>/<code>chore</code>) for a history the lecturer can actually read. Every PR description states what changed, which REQ-ID(s) it satisfies, and how it was tested.</p>
+          </div>
+          <div class="card">
+            <span class="rule-num mono">Continuous Integration</span>
+            <p style="margin:0;">A GitHub Actions workflow runs on every PR: lint, plus a migration smoke-test that spins up Postgres in CI and applies every migration in order — a broken schema fails the PR automatically, instead of being discovered during the demo.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 07 UI -->
+      <section id="ui">
+        <div class="section-head">
+          <span class="eyebrow mono">07 · Experience</span>
+          <h2>UI/UX &amp; signature features</h2>
+          <p class="desc">The brief only asks for a UI good enough for QA. We're building one that makes every enforced business rule visible — which is what turns a database project into a demo people remember.</p>
+        </div>
+
+        <div class="card feature-grid">
+          <div class="feature">
+            <div class="fnum">01</div>
+            <div><h4>A calendar, not a form</h4><p>A live, colour-coded doctor-availability calendar per branch, so the overlap rule is something you can <em>see</em> get enforced, not just trust is happening.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">02</div>
+            <div><h4>Rejections that teach</h4><p>Every blocked action surfaces the exact rule that fired ("Doctor already booked 10:00–10:30 at Kandy") instead of a generic error — every enforced constraint becomes a visible moment in the demo.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">03</div>
+            <div><h4>A claim tracker, not a status column</h4><p>Insurance claims rendered as a stepper — Submitted → Under Review → Approved/Rejected — instead of a plain text field.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">04</div>
+            <div><h4>A dashboard per role</h4><p>Reception sees today's bookings, a doctor sees today's patient list, Admin/Finance sees outstanding balances — one landing screen each, not one generic homepage for everyone.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">05</div>
+            <div><h4>Reports you can explore</h4><p>The five required reports as real charts (bar, line, donut) with a raw-table toggle underneath — satisfies the brief and looks like a product.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">06</div>
+            <div><h4>A one-click walk-in</h4><p>A visibly distinct "Walk-in" action that skips the calendar entirely, so REQ-17 is something you demonstrate in three seconds, not explain in words.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">07</div>
+            <div><h4>"Why is this disabled?"</h4><p>Hovering a greyed-out action (like recording a treatment before an appointment is Completed) names the exact rule blocking it.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">08</div>
+            <div><h4>Built for a reception desk</h4><p>Responsive down to tablet width, visible keyboard focus throughout, colour choices that still read correctly for colour-blind users — usability that holds up, not just looks fine on a laptop.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 08 NFR -->
+      <section id="nfr">
+        <div class="section-head">
+          <span class="eyebrow mono">08 · Proof, not claims</span>
+          <h2>Non-functional requirements — execution plan</h2>
+          <p class="desc">An NFR that can't be shown live is just a sentence in a document. For each one, here's exactly how we'll prove it during the demo.</p>
+        </div>
+
+        <div class="card">
+          <div class="nfr-row">
+            <h4>Performance</h4>
+            <p class="proof">EXPLAIN ANALYZE screenshots on the doctor-overlap check and each report query, taken before and after adding the SRS §6.3 indexes — an actual number on screen, not a claim.</p>
+          </div>
+          <div class="nfr-row">
+            <h4>Data integrity / ACID</h4>
+            <p class="proof">A rehearsed "interrupt mid-transaction" moment showing a partially-applied booking never commits — atomicity, visibly.</p>
+          </div>
+          <div class="nfr-row">
+            <h4>Security</h4>
+            <p class="proof">Live RBAC demo — log in as Reception, attempt a finance-only endpoint, show the 403 — plus one deliberate SQL-injection attempt against a search field, shown to fail safely.</p>
+          </div>
+          <div class="nfr-row">
+            <h4>Reliability &amp; audit</h4>
+            <p class="proof">Pull up the history/status log of one appointment that's been rescheduled and cancelled, proving nothing about it was silently lost.</p>
+          </div>
+          <div class="nfr-row">
+            <h4>Usability</h4>
+            <p class="proof">A five-minute "cold user" test before demo day — someone outside the team books an appointment with zero instructions, timed; anything confusing gets fixed before the feature freeze.</p>
+          </div>
+          <div class="nfr-row">
+            <h4>Maintainability</h4>
+            <p class="proof">The normalization note ready to explain on request, including the one deliberate, documented denormalization (the treatment-price snapshot) — and why it's there.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 09 QA -->
+      <section id="qa">
+        <div class="section-head">
+          <span class="eyebrow mono">09 · Verification</span>
+          <h2>Testing &amp; quality assurance</h2>
+          <p class="desc">Ownership follows the same module split — nobody is testing code they don't understand.</p>
+        </div>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Per-module testing</h3>
+            <ul>
+              <li>Each module owner writes and maintains the test scenarios for their own business rules.</li>
+              <li>Member 4 (Treatment &amp; Billing) additionally owns the cross-module ACID scenarios, since billing sits where most transactions converge.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Shared checklist</h3>
+            <ul>
+              <li>One manual QA checklist, one row per REQ-ID from the SRS.</li>
+              <li>Each member checks off their own module's rows before opening a PR; the whole team checks off every row together during Sprint 6.</li>
+              <li>Bugs tracked as GitHub Issues, labelled by module colour, triaged at the next check-in.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10 DATA -->
+      <section id="data">
+        <div class="section-head">
+          <span class="eyebrow mono">10 · Demo readiness</span>
+          <h2>Dummy data &amp; demo environment</h2>
+          <p class="desc">A demo is only as good as the data behind it — and it has to survive being re-run if something goes wrong live.</p>
+        </div>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Bulk seed data</h3>
+            <p>One shared seed script — each member contributes their module's rows, merged and maintained by the Team Lead — producing the volumes set out in the SRS: three branches, roughly twenty staff, sixty to a hundred patients, hundreds of appointments across a simulated two-to-three month window.</p>
+          </div>
+          <div class="card">
+            <h3>Reproducible &amp; safe to re-run</h3>
+            <p>A fixed random seed and a single reset command return the local database to a known state — so if anything breaks mid-presentation, recovery is a two-minute reset, not a crisis.</p>
+          </div>
+          <div class="card" style="grid-column:1 / -1;">
+            <h3>A rehearsed "happy path"</h3>
+            <p>Layered on top of the bulk seed: the same three or four named patients and doctors, used in every rehearsal and in the final demo, so the presenter never has to hunt through random data live.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11 RISK -->
+      <section id="risk">
+        <div class="section-head">
+          <span class="eyebrow mono">11 · Guardrails</span>
+          <h2>Risk management &amp; conflict prevention</h2>
+          <p class="desc">Every risk below is handled structurally, not just hoped away.</p>
+        </div>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Merge conflicts</h3>
+            <p>Prevented by folder ownership, numbered migrations, and short-lived branches — the same structure covered in Section 06, not an extra process.</p>
+          </div>
+          <div class="card">
+            <h3>Scope creep</h3>
+            <p>The feature list is frozen at the end of Sprint 3. Anything proposed after that becomes a "next version" note, not a distraction before the demo.</p>
+          </div>
+          <div class="card">
+            <h3>Single points of failure</h3>
+            <p>The rotating cross-review rule (Section 06) means at least two people understand every module by the time Sprint 6 starts.</p>
+          </div>
+          <div class="card">
+            <h3>Demo-day failure</h3>
+            <p>Local Docker Compose plus a one-command database reset means a broken demo machine is a two-minute fix. A recorded backup of a full successful run is prepared as insurance.</p>
+          </div>
+          <div class="card" style="grid-column:1 / -1;">
+            <h3>Deadline slip</h3>
+            <p>Sprint 6 is a built-in buffer: feature freeze first, polish and rehearsal after — so the last two to three days before submission are never the first time the full system is tested end to end.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12 DEMO -->
+      <section id="demo">
+        <div class="section-head">
+          <span class="eyebrow mono">12 · Showcase</span>
+          <h2>Demo day script</h2>
+          <p class="desc">A suggested running order — about ten minutes, with every member ready to speak to their own module during Q&amp;A.</p>
+        </div>
+        <div class="card">
+          <div class="demo-step"><div class="dstep-num">01</div><p><strong>Architecture recap</strong> — thirty seconds on the three-tier diagram from Section 02.</p></div>
+          <div class="demo-step"><div class="dstep-num">02</div><p><strong>Live booking</strong>, then a deliberate overlapping booking attempt — the rejection toast fires, naming the exact rule.</p></div>
+          <div class="demo-step"><div class="dstep-num">03</div><p><strong>Walk-in creation</strong> — one click, no calendar lookup.</p></div>
+          <div class="demo-step"><div class="dstep-num">04</div><p><strong>Treatment recording</strong> — shown blocked on a Scheduled appointment, then allowed the moment it's marked Completed.</p></div>
+          <div class="demo-step"><div class="dstep-num">05</div><p><strong>Auto-generated invoice</strong>, a partial payment, and the outstanding balance updating live.</p></div>
+          <div class="demo-step"><div class="dstep-num">06</div><p><strong>Insurance claim submitted</strong> — the stepper advances.</p></div>
+          <div class="demo-step"><div class="dstep-num">07</div><p><strong>Reports dashboard</strong> — pick one chart, drill into the raw table beneath it.</p></div>
+          <div class="demo-step"><div class="dstep-num">08</div><p><strong>One deliberate "attack"</strong> — a wrong-role access attempt or a SQL-injection try — shown blocked.</p></div>
+          <div class="demo-step"><div class="dstep-num">09</div><p><strong>Design maturity, thirty seconds</strong> — the one documented denormalization (treatment-price snapshot) and why it's there on purpose.</p></div>
+          <div class="demo-step"><div class="dstep-num">10</div><p><strong>Q&amp;A</strong> — each member takes questions on their own module first.</p></div>
+        </div>
+      </section>
+
+      <!-- 13 DELIVERABLES -->
+      <section id="deliverables">
+        <div class="section-head">
+          <span class="eyebrow mono">13 · Submission</span>
+          <h2>Deliverables checklist</h2>
+          <p class="desc">What actually gets handed in, alongside the live demo.</p>
+        </div>
+        <div class="card">
+          <ul class="checklist">
+            <li><span class="box"></span> GitHub repository, shared with the lecturer, tagged <code>v1.0-demo</code></li>
+            <li><span class="box"></span> Software Requirements Specification (IEEE-830 structured)</li>
+            <li><span class="box"></span> Entity-relationship diagram and schema documentation</li>
+            <li><span class="box"></span> Seed script and one-command database reset</li>
+            <li><span class="box"></span> This delivery plan</li>
+            <li><span class="box"></span> Individual contribution trail — naturally visible in git history, thanks to the folder-ownership model</li>
+            <li><span class="box"></span> A short backup recording of a full successful demo run</li>
+          </ul>
+        </div>
+      </section>
+
+    </div>
+
+    <footer>
+      CATMS — Clinic Appointment and Treatment Management System · Team Delivery Plan · Prepared for MedSync Clinics (Colombo · Kandy · Galle)
+    </footer>
+  </main>
+</div>
+</body>
+</html>
