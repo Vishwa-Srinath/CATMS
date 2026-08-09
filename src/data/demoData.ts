@@ -1,0 +1,75 @@
+import type { ClinicData, SessionUser } from '../types'
+
+export const demoUsers: SessionUser[] = [
+  { id: 'e8', name: 'Nimali Perera', role: 'Receptionist', jobTitle: 'Senior Receptionist', branchId: 'b1', initials: 'NP' },
+  { id: 'e1', name: 'Dr. Anjali Fernando', role: 'Clinician', jobTitle: 'Consultant Physician', branchId: 'b1', initials: 'AF' },
+  { id: 'e6', name: 'Tharindu Jayasinghe', role: 'Manager', jobTitle: 'Branch Manager', branchId: 'b1', initials: 'TJ' },
+  { id: 'e7', name: 'Ishara Bandara', role: 'Admin', jobTitle: 'Finance Administrator', branchId: 'all', initials: 'IB' },
+]
+
+export const initialData: ClinicData = {
+  branches: [
+    { id: 'b1', code: 'CMB', name: 'Colombo Central', city: 'Colombo', address: '104 Galle Road, Colombo 03', phone: '+94 11 244 8910', manager: 'Tharindu Jayasinghe', isActive: true },
+    { id: 'b2', code: 'KDY', name: 'Kandy Lakeside', city: 'Kandy', address: '18 Sangaraja Mawatha, Kandy', phone: '+94 81 221 4070', manager: 'Sanduni Ekanayake', isActive: true },
+    { id: 'b3', code: 'GLE', name: 'Galle Fort', city: 'Galle', address: '42 Wakwella Road, Galle', phone: '+94 91 223 6088', manager: 'Harsha de Silva', isActive: true },
+  ],
+  staff: [
+    { id: 'e1', employeeNo: 'EMP-0014', name: 'Dr. Anjali Fernando', role: 'Doctor', branchId: 'b1', email: 'anjali.f@medsync.lk', phone: '077 214 8091', nic: '886521430V', joined: '2021-04-12', isActive: true, license: 'SLMC-29481', specialties: ['General Medicine', 'Cardiology'], consultationFee: 3500 },
+    { id: 'e2', employeeNo: 'EMP-0021', name: 'Dr. Ruwan Weerasinghe', role: 'Doctor', branchId: 'b1', email: 'ruwan.w@medsync.lk', phone: '071 884 3370', nic: '853042616V', joined: '2022-01-10', isActive: true, license: 'SLMC-30852', specialties: ['ENT'], consultationFee: 3000 },
+    { id: 'e3', employeeNo: 'EMP-0009', name: 'Dr. Malini Abeysekara', role: 'Doctor', branchId: 'b2', email: 'malini.a@medsync.lk', phone: '076 404 2351', nic: '905643211V', joined: '2020-07-06', isActive: true, license: 'SLMC-27806', specialties: ['Paediatrics'], consultationFee: 3200 },
+    { id: 'e4', employeeNo: 'EMP-0033', name: 'Dr. Kavindu Senanayake', role: 'Doctor', branchId: 'b3', email: 'kavindu.s@medsync.lk', phone: '075 661 0255', nic: '912780841V', joined: '2023-03-20', isActive: true, license: 'SLMC-32610', specialties: ['Dermatology', 'General Medicine'], consultationFee: 3000 },
+    { id: 'e5', employeeNo: 'EMP-0018', name: 'Sachini Gunawardena', role: 'Nurse', branchId: 'b1', email: 'sachini.g@medsync.lk', phone: '077 980 1164', nic: '946110574V', joined: '2021-09-15', isActive: true },
+    { id: 'e6', employeeNo: 'EMP-0003', name: 'Tharindu Jayasinghe', role: 'Manager', branchId: 'b1', email: 'tharindu.j@medsync.lk', phone: '071 228 4560', nic: '820410934V', joined: '2019-02-04', isActive: true },
+    { id: 'e7', employeeNo: 'EMP-0006', name: 'Ishara Bandara', role: 'Admin', branchId: 'b1', email: 'ishara.b@medsync.lk', phone: '077 420 5336', nic: '887550980V', joined: '2019-11-18', isActive: true },
+    { id: 'e8', employeeNo: 'EMP-0027', name: 'Nimali Perera', role: 'Receptionist', branchId: 'b1', email: 'nimali.p@medsync.lk', phone: '076 891 0334', nic: '937742602V', joined: '2022-08-22', isActive: true },
+    { id: 'e9', employeeNo: 'EMP-0011', name: 'Sanduni Ekanayake', role: 'Manager', branchId: 'b2', email: 'sanduni.e@medsync.lk', phone: '071 380 7241', nic: '846381241V', joined: '2020-03-09', isActive: true },
+    { id: 'e10', employeeNo: 'EMP-0008', name: 'Harsha de Silva', role: 'Manager', branchId: 'b3', email: 'harsha.d@medsync.lk', phone: '077 442 0167', nic: '812570610V', joined: '2020-01-13', isActive: true },
+  ],
+  patients: [
+    { id: 'p1', patientNo: 'PAT-00421', name: 'Nadeesha Silva', nic: '927541286V', dob: '1992-09-10', gender: 'Female', bloodGroup: 'O+', phone: '077 238 9104', email: 'nadeesha.s@example.lk', address: '34/2 Flower Road, Colombo 07', registeredBranchId: 'b1', registeredAt: '2025-02-14', lastVisit: '2026-08-09', emergencyContacts: [{ name: 'Dinesh Silva', relationship: 'Spouse', phone: '071 690 2214' }], policies: [{ id: 'pol1', provider: 'Ceylinco Health', policyNo: 'CH-882104', validFrom: '2026-01-01', validTo: '2026-12-31', status: 'Active', coverage: [{ treatmentId: 't1', percentage: 80, maximum: 3000 }, { treatmentId: 't4', percentage: 60, maximum: 5000 }] }] },
+    { id: 'p2', patientNo: 'PAT-00384', name: 'Kasun Rathnayake', nic: '891260453V', dob: '1989-05-05', gender: 'Male', bloodGroup: 'A+', phone: '071 445 8832', email: 'kasun.r@example.lk', address: '18 Lake Drive, Rajagiriya', registeredBranchId: 'b2', registeredAt: '2025-01-02', lastVisit: '2026-08-09', emergencyContacts: [{ name: 'Amali Rathnayake', relationship: 'Sister', phone: '076 440 9120' }], policies: [] },
+    { id: 'p3', patientNo: 'PAT-00518', name: 'Fathima Rizna', nic: '965113002V', dob: '1996-04-20', gender: 'Female', bloodGroup: 'B+', phone: '075 312 4806', email: 'rizna.f@example.lk', address: '7 Station Lane, Dehiwala', registeredBranchId: 'b1', registeredAt: '2025-06-18', lastVisit: '2026-08-08', emergencyContacts: [{ name: 'Mohamed Azeez', relationship: 'Father', phone: '077 413 2589' }], policies: [{ id: 'pol2', provider: 'Allianz Lanka', policyNo: 'AL-449108', validFrom: '2025-10-01', validTo: '2026-09-30', status: 'Active', coverage: [{ treatmentId: 't1', percentage: 100, maximum: 3500 }, { treatmentId: 't3', percentage: 50, maximum: 2500 }] }] },
+    { id: 'p4', patientNo: 'PAT-00291', name: 'Suresh Balasubramaniam', nic: '760912498V', dob: '1976-04-01', gender: 'Male', bloodGroup: 'AB+', phone: '077 882 0169', email: 'suresh.b@example.lk', address: '29 Temple Street, Kandy', registeredBranchId: 'b2', registeredAt: '2024-09-11', lastVisit: '2026-08-09', emergencyContacts: [{ name: 'Vani Suresh', relationship: 'Spouse', phone: '071 399 7865' }], policies: [{ id: 'pol3', provider: 'Sri Lanka Insurance', policyNo: 'SLI-774203', validFrom: '2026-03-01', validTo: '2027-02-28', status: 'Active', coverage: [{ treatmentId: 't1', percentage: 70, maximum: 2500 }, { treatmentId: 't2', percentage: 80, maximum: 6000 }] }] },
+    { id: 'p5', patientNo: 'PAT-00570', name: 'Dinuki Amarasinghe', nic: '995840632V', dob: '1999-03-24', gender: 'Female', bloodGroup: 'O-', phone: '076 103 9442', email: 'dinuki.a@example.lk', address: '64 Havelock Road, Colombo 05', registeredBranchId: 'b3', registeredAt: '2025-09-04', lastVisit: '2026-08-07', emergencyContacts: [{ name: 'Nelum Amarasinghe', relationship: 'Mother', phone: '071 660 3207' }], policies: [] },
+    { id: 'p6', patientNo: 'PAT-00145', name: 'Mohamed Irfan', nic: '680412876V', dob: '1968-02-10', gender: 'Male', bloodGroup: 'B-', phone: '077 622 5710', email: 'irfan.m@example.lk', address: '10 Mosque Road, Galle', registeredBranchId: 'b3', registeredAt: '2024-03-12', lastVisit: '2026-07-29', emergencyContacts: [{ name: 'Safiya Irfan', relationship: 'Spouse', phone: '076 288 6104' }], policies: [{ id: 'pol4', provider: 'Union Assurance', policyNo: 'UA-240188', validFrom: '2025-01-01', validTo: '2025-12-31', status: 'Expired', coverage: [] }] },
+  ],
+  appointments: [
+    { id: 'a1', reference: 'APT-10842', patientId: 'p1', doctorId: 'e1', branchId: 'b1', date: '2026-08-09', start: '08:30', end: '09:00', status: 'Completed', source: 'Booked', reason: 'Recurring chest discomfort', createdBy: 'e8', updatedAt: '2026-08-09T09:04:00' },
+    { id: 'a2', reference: 'APT-10843', patientId: 'p2', doctorId: 'e2', branchId: 'b1', date: '2026-08-09', start: '09:00', end: '09:30', status: 'Scheduled', source: 'Booked', reason: 'Sinus congestion', createdBy: 'e8', updatedAt: '2026-08-08T16:20:00' },
+    { id: 'a3', reference: 'APT-10844', patientId: 'p4', doctorId: 'e1', branchId: 'b1', date: '2026-08-09', start: '09:15', end: '09:45', status: 'Scheduled', source: 'Walk-in', reason: 'Dizziness and fatigue', createdBy: 'e8', updatedAt: '2026-08-09T08:55:00' },
+    { id: 'a4', reference: 'APT-10845', patientId: 'p3', doctorId: 'e1', branchId: 'b1', date: '2026-08-09', start: '10:00', end: '10:30', status: 'Scheduled', source: 'Booked', reason: 'Cardiology review', createdBy: 'e8', updatedAt: '2026-08-06T11:42:00' },
+    { id: 'a5', reference: 'APT-10846', patientId: 'p5', doctorId: 'e4', branchId: 'b3', date: '2026-08-09', start: '10:30', end: '11:00', status: 'Cancelled', source: 'Booked', reason: 'Skin irritation', createdBy: 'e10', updatedAt: '2026-08-08T12:14:00', cancellationReason: 'Patient requested a later date' },
+    { id: 'a6', reference: 'APT-10847', patientId: 'p2', doctorId: 'e1', branchId: 'b1', date: '2026-08-09', start: '11:00', end: '11:30', status: 'Scheduled', source: 'Booked', reason: 'General consultation', createdBy: 'e8', updatedAt: '2026-08-07T09:20:00' },
+    { id: 'a7', reference: 'APT-10810', patientId: 'p3', doctorId: 'e1', branchId: 'b1', date: '2026-08-08', start: '09:30', end: '10:00', status: 'Completed', source: 'Booked', reason: 'Follow-up examination', createdBy: 'e8', updatedAt: '2026-08-08T10:05:00' },
+    { id: 'a8', reference: 'APT-10798', patientId: 'p5', doctorId: 'e4', branchId: 'b3', date: '2026-08-07', start: '14:00', end: '14:30', status: 'Completed', source: 'Walk-in', reason: 'Allergic rash', createdBy: 'e10', updatedAt: '2026-08-07T14:37:00' },
+    { id: 'a9', reference: 'APT-10754', patientId: 'p6', doctorId: 'e4', branchId: 'b3', date: '2026-07-29', start: '11:00', end: '11:30', status: 'Completed', source: 'Booked', reason: 'Routine review', createdBy: 'e10', updatedAt: '2026-07-29T11:38:00' },
+    { id: 'a10', reference: 'APT-10681', patientId: 'p4', doctorId: 'e3', branchId: 'b2', date: '2026-07-12', start: '15:00', end: '15:30', status: 'Completed', source: 'Booked', reason: 'Family consultation', createdBy: 'e9', updatedAt: '2026-07-12T15:36:00' },
+    { id: 'a11', reference: 'APT-10841', patientId: 'p6', doctorId: 'e1', branchId: 'b1', date: '2026-08-09', start: '12:00', end: '12:30', status: 'Completed', source: 'Booked', reason: 'Blood pressure review', createdBy: 'e8', updatedAt: '2026-08-09T12:35:00' },
+  ],
+  treatments: [
+    { id: 't1', serviceCode: 'CONS-GEN', name: 'General consultation', category: 'Consultation', price: 3500, duration: 30, isActive: true },
+    { id: 't2', serviceCode: 'XR-CHEST', name: 'Chest X-ray', category: 'Diagnostic imaging', price: 6800, duration: 20, isActive: true },
+    { id: 't3', serviceCode: 'ECG-STD', name: 'Standard ECG', category: 'Cardiac diagnostics', price: 4500, duration: 20, isActive: true },
+    { id: 't4', serviceCode: 'LAB-FBC', name: 'Full blood count', category: 'Laboratory', price: 2800, duration: 15, isActive: true },
+    { id: 't5', serviceCode: 'INJ-IM', name: 'Intramuscular injection', category: 'Procedures', price: 1800, duration: 15, isActive: true },
+    { id: 't6', serviceCode: 'CONS-ENT', name: 'ENT consultation', category: 'Consultation', price: 3000, duration: 30, isActive: true },
+    { id: 't7', serviceCode: 'DERM-SCR', name: 'Dermatology screening', category: 'Consultation', price: 3200, duration: 30, isActive: true },
+    { id: 't8', serviceCode: 'NEB-STD', name: 'Nebulisation', category: 'Respiratory care', price: 2200, duration: 20, isActive: true },
+    { id: 't9', serviceCode: 'DRESS-01', name: 'Wound dressing', category: 'Procedures', price: 1600, duration: 20, isActive: true },
+    { id: 't10', serviceCode: 'ULTRA-ABD', name: 'Abdominal ultrasound', category: 'Diagnostic imaging', price: 9500, duration: 30, isActive: false },
+  ],
+  clinicalRecords: [
+    { appointmentId: 'a1', diagnosis: 'Suspected stable angina', notes: 'Intermittent exertional discomfort. ECG completed. Review with reports in two weeks.', vitals: 'BP 132/84 · HR 76 · SpO₂ 98%', treatments: [{ treatmentId: 't1', quantity: 1, unitPrice: 3500 }, { treatmentId: 't3', quantity: 1, unitPrice: 4500 }], recordedAt: '2026-08-09T09:08:00' },
+    { appointmentId: 'a7', diagnosis: 'Symptoms resolving', notes: 'No new symptoms. Continue current advice and return if discomfort recurs.', vitals: 'BP 124/80 · HR 72', treatments: [{ treatmentId: 't1', quantity: 1, unitPrice: 3500 }], recordedAt: '2026-08-08T10:08:00' },
+    { appointmentId: 'a8', diagnosis: 'Contact dermatitis', notes: 'Avoid suspected trigger. Topical management discussed.', vitals: 'Temp 36.8 °C', treatments: [{ treatmentId: 't7', quantity: 1, unitPrice: 3200 }, { treatmentId: 't5', quantity: 1, unitPrice: 1800 }], recordedAt: '2026-08-07T14:41:00' },
+    { appointmentId: 'a9', diagnosis: 'Routine medical review', notes: 'Stable at assessment.', treatments: [{ treatmentId: 't1', quantity: 1, unitPrice: 3000 }], recordedAt: '2026-07-29T11:40:00' },
+    { appointmentId: 'a10', diagnosis: 'Viral upper respiratory infection', notes: 'Hydration and symptomatic care advised.', treatments: [{ treatmentId: 't1', quantity: 1, unitPrice: 3200 }, { treatmentId: 't4', quantity: 1, unitPrice: 2800 }], recordedAt: '2026-07-12T15:41:00' },
+  ],
+  invoices: [
+    { id: 'i1', invoiceNo: 'INV-260809-184', appointmentId: 'a1', subtotal: 8000, insuranceCovered: 3000, patientPayable: 5000, amountPaid: 2000, status: 'PartiallyPaid', issuedAt: '2026-08-09', payments: [{ id: 'pay1', amount: 2000, method: 'Card', reference: 'POS-83910', paidAt: '2026-08-09T09:18:00' }], claims: [{ id: 'cl1', policyNo: 'CH-882104', provider: 'Ceylinco Health', claimedAmount: 3000, approvedAmount: 3000, status: 'Approved', submittedAt: '2026-08-09' }] },
+    { id: 'i2', invoiceNo: 'INV-260808-178', appointmentId: 'a7', subtotal: 3500, insuranceCovered: 3500, patientPayable: 0, amountPaid: 0, status: 'Paid', issuedAt: '2026-08-08', payments: [], claims: [{ id: 'cl2', policyNo: 'AL-449108', provider: 'Allianz Lanka', claimedAmount: 3500, approvedAmount: 3500, status: 'Approved', submittedAt: '2026-08-08' }] },
+    { id: 'i3', invoiceNo: 'INV-260807-163', appointmentId: 'a8', subtotal: 5000, insuranceCovered: 0, patientPayable: 5000, amountPaid: 0, status: 'Unpaid', issuedAt: '2026-08-07', payments: [], claims: [] },
+    { id: 'i4', invoiceNo: 'INV-260729-122', appointmentId: 'a9', subtotal: 3000, insuranceCovered: 0, patientPayable: 3000, amountPaid: 3000, status: 'Paid', issuedAt: '2026-07-29', payments: [{ id: 'pay2', amount: 3000, method: 'Cash', reference: 'CASH-0173', paidAt: '2026-07-29T11:50:00' }], claims: [] },
+    { id: 'i5', invoiceNo: 'INV-260712-081', appointmentId: 'a10', subtotal: 6000, insuranceCovered: 2500, patientPayable: 3500, amountPaid: 1500, status: 'PartiallyPaid', issuedAt: '2026-07-12', payments: [{ id: 'pay3', amount: 1500, method: 'Online', reference: 'WEB-44082', paidAt: '2026-07-12T16:02:00' }], claims: [{ id: 'cl3', policyNo: 'SLI-774203', provider: 'Sri Lanka Insurance', claimedAmount: 2500, approvedAmount: 1800, status: 'PartiallyApproved', submittedAt: '2026-07-12' }] },
+  ],
+}

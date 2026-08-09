@@ -2,6 +2,25 @@
 
 **Clinic Appointment and Treatment Management System**
 
+## Frontend implementation
+
+The Phase 1 staff frontend is now implemented as a responsive React + TypeScript application. It includes role-gated Reception, Clinician, Branch Manager, and Admin/Finance workspaces; a deterministic in-browser demonstration layer exercises the complete journey while the Express API and PostgreSQL schema are still pending.
+
+```bash
+npm install
+npm run dev
+```
+
+Use any of the four role cards on the demonstration login screen. The frontend includes patient registration/search, scheduling and walk-ins, clinical treatment recording, generated invoice views, payments and claims, branch/staff administration, and all five management reports. Run the local checks with:
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+Copy `.env.example` to `.env` when connecting the forthcoming API. No real patient data should be used in demonstration mode.
+
 CATMS is a database-centred system planned for **MedSync Clinics**, a medium-scale, multi-specialty clinic operating in **Colombo, Kandy, and Galle, Sri Lanka**. It will replace disconnected paper records and spreadsheets with a single clinic-wide source of truth for appointments, clinical treatments, billing, payments, and insurance claims.
 
 > **Current status:** Planning and requirements definition. The SRS and delivery plan are complete, but no database schema, API, frontend, migrations, seed data, or deployment configuration has been implemented yet.
