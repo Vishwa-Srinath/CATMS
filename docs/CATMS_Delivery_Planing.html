@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CATMS — Ground Implementation Delivery Plan v2.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F7;
+    --surface:#FFFFFF;
+    --surface-2:#EFF3F3;
+    --ink:#12232B;
+    --ink-soft:#4B5D66;
+    --ink-faint:#7C8B92;
+    --line:#DCE4E4;
+    --line-soft:#EAEFEF;
+    --teal:#0E5E5E;
+    --teal-deep:#0A4747;
+
+    --a:#3B6EA5; --a-soft:#EAF0F8;
+    --b:#1E8A72; --b-soft:#E7F5F1;
+    --c:#6C4AB6; --c-soft:#F1ECFA;
+    --d:#C0721F; --d-soft:#FBF0E2;
+    --e:#B4425A; --e-soft:#FBEAEE;
+
+    --radius:14px;
+    --shadow: 0 1px 2px rgba(18,35,43,0.04), 0 8px 24px rgba(18,35,43,0.06);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    color:var(--ink);
+    margin:0 0 0.5em 0;
+    letter-spacing:-0.01em;
+  }
+  p{margin:0 0 1em 0; color:var(--ink-soft);}
+  a{color:var(--teal);}
+  .mono{
+    font-family:'IBM Plex Mono', monospace;
+    text-transform:uppercase;
+    letter-spacing:0.09em;
+    font-size:12.5px;
+  }
+  ul,ol{margin:0 0 1em 0; padding-left:1.25em; color:var(--ink-soft);}
+  li{margin-bottom:0.45em;}
+  li:last-child{margin-bottom:0;}
+  strong{color:var(--ink); font-weight:600;}
+
+  /* ---------- Layout shell ---------- */
+  .shell{
+    display:grid;
+    grid-template-columns:272px 1fr;
+    max-width:1360px;
+    margin:0 auto;
+  }
+  nav.sidebar{
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+    padding:36px 20px 40px 32px;
+    border-right:1px solid var(--line);
+  }
+  nav.sidebar .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  nav.sidebar .brand-mark{
+    width:30px;height:30px;border-radius:8px;
+    background:linear-gradient(135deg, var(--teal), var(--c));
+    flex-shrink:0;
+  }
+  nav.sidebar .brand-text{font-family:'Fraunces',serif; font-weight:600; font-size:17px;}
+  nav.sidebar .brand-sub{font-size:12px; color:var(--ink-faint); margin-bottom:28px;}
+  nav.sidebar ol{list-style:none; margin:0; padding:0; counter-reset:navcount;}
+  nav.sidebar li{margin-bottom:2px;}
+  nav.sidebar a{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    text-decoration:none;
+    color:var(--ink-soft);
+    font-size:13.5px;
+    padding:7px 10px;
+    border-radius:8px;
+    transition:background 0.15s ease, color 0.15s ease;
+  }
+  nav.sidebar a:hover{background:var(--surface-2); color:var(--ink);}
+  nav.sidebar a .n{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+    min-width:16px;
+  }
+  nav.sidebar .navfoot{
+    margin-top:28px;
+    padding-top:18px;
+    border-top:1px solid var(--line-soft);
+    font-size:12px;
+    color:var(--ink-faint);
+  }
+
+  main{padding:0;}
+  .wrap{max-width:920px; margin:0 auto; padding:0 56px 40px;}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    padding:80px 56px 56px;
+    max-width:920px;
+    margin:0 auto;
+  }
+  .hero .eyebrow{color:var(--teal); margin-bottom:18px; display:block;}
+  .hero h1{
+    font-size:clamp(34px, 4.4vw, 54px);
+    line-height:1.06;
+    max-width:14ch;
+  }
+  .hero .lede{
+    font-size:18px;
+    max-width:60ch;
+    margin-top:18px;
+    color:var(--ink-soft);
+  }
+  .hero-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:30px;
+  }
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    padding:8px 14px;
+    border-radius:100px;
+    font-size:13px;
+    color:var(--ink-soft);
+    box-shadow:var(--shadow);
+  }
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);}
+
+  /* ---------- Sections ---------- */
+  section{
+    padding:52px 0;
+    border-top:1px solid var(--line);
+  }
+  section:first-of-type{border-top:none;}
+  .section-head{margin-bottom:32px;}
+  .section-head .eyebrow{color:var(--ink-faint); margin-bottom:10px; display:block;}
+  .section-head h2{font-size:clamp(24px,3vw,32px);}
+  .section-head .desc{max-width:68ch; font-size:15.5px;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:24px 26px;
+    box-shadow:var(--shadow);
+  }
+  .grid{display:grid; gap:18px;}
+  .grid-2{grid-template-columns:1fr 1fr;}
+  .grid-3{grid-template-columns:repeat(3,1fr);}
+  @media (max-width:820px){ .grid-2, .grid-3{grid-template-columns:1fr;} }
+
+  .card h3{font-size:17px; margin-bottom:10px;}
+  .card .tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    padding:4px 9px;
+    border-radius:6px;
+    margin-bottom:12px;
+  }
+
+  /* module color utilities */
+  .tag-a{background:var(--a-soft); color:var(--a);}
+  .tag-b{background:var(--b-soft); color:var(--b);}
+  .tag-c{background:var(--c-soft); color:var(--c);}
+  .tag-d{background:var(--d-soft); color:var(--d);}
+  .tag-e{background:var(--e-soft); color:var(--e);}
+  .bar-a{background:var(--a);} .bar-b{background:var(--b);} .bar-c{background:var(--c);}
+  .bar-d{background:var(--d);} .bar-e{background:var(--e);}
+  .dot-a{background:var(--a);} .dot-b{background:var(--b);} .dot-c{background:var(--c);}
+  .dot-d{background:var(--d);} .dot-e{background:var(--e);}
+
+  /* ---------- Production path callout ---------- */
+  .callout{
+    display:flex;
+    gap:16px;
+    background:var(--surface-2);
+    border:1px dashed var(--line);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    margin-top:20px;
+  }
+  .callout .mark{
+    font-family:'Fraunces',serif; font-weight:600; font-size:20px;
+    color:var(--teal);
+    flex-shrink:0;
+  }
+  .callout p{margin:0; font-size:14.5px;}
+  .callout strong{color:var(--ink);}
+
+  /* ---------- Tech stack ---------- */
+  .stack-card ul{padding-left:1.1em; font-size:14.5px;}
+  .stack-card li strong{display:block; color:var(--ink); font-weight:600; font-size:14.5px;}
+  .stack-card li span{color:var(--ink-soft);}
+
+  /* ---------- Architecture tiers ---------- */
+  .tiers{display:flex; flex-direction:column; gap:0; margin-top:8px;}
+  .tier{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 22px;
+    box-shadow:var(--shadow);
+    position:relative;
+  }
+  .tier + .tier{margin-top:28px;}
+  .tier-arrow{
+    text-align:center;
+    color:var(--ink-faint);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    margin:8px 0;
+  }
+  .tier h4{font-size:15px; margin-bottom:4px;}
+  .tier .sub{font-size:13.5px; color:var(--ink-soft); margin:0;}
+
+  .module-map{margin-top:36px;}
+  .module-row{
+    display:grid;
+    grid-template-columns:150px 1fr;
+    gap:16px;
+    align-items:start;
+    padding:14px 0;
+    border-top:1px solid var(--line-soft);
+  }
+  .module-row:first-child{border-top:none;}
+  .module-label{
+    display:flex; align-items:center; gap:9px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    padding-top:2px;
+  }
+  .module-label .sw{width:11px; height:11px; border-radius:3px; flex-shrink:0;}
+  .module-entities{font-size:14px; color:var(--ink-soft);}
+
+  /* ---------- Timeline / phases ---------- */
+  .timeline{position:relative; margin-top:12px;}
+  .timeline::before{
+    content:"";
+    position:absolute;
+    left:23px; top:8px; bottom:8px;
+    width:2px;
+    background:var(--line);
+  }
+  .phase{
+    position:relative;
+    padding-left:64px;
+    padding-bottom:34px;
+  }
+  .phase:last-child{padding-bottom:0;}
+  .phase-num{
+    position:absolute;
+    left:0; top:0;
+    width:48px; height:48px;
+    border-radius:50%;
+    background:var(--surface);
+    border:2px solid var(--teal);
+    color:var(--teal-deep);
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:17px;
+    display:flex; align-items:center; justify-content:center;
+    z-index:1;
+  }
+  .phase-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px 24px;
+    box-shadow:var(--shadow);
+  }
+  .phase-card .ph-meta{
+    display:flex; gap:10px; flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  .phase-card h3{font-size:18px; margin-bottom:6px;}
+  .phase-card .sprint-tag{
+    font-family:'IBM Plex Mono',monospace; font-size:11px;
+    color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.07em;
+    padding-top:3px;
+  }
+  .phase-card .goal-list{margin-top:12px; margin-bottom:0;}
+  .phase-card .lead{
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px solid var(--line-soft);
+    font-size:13.5px;
+    color:var(--ink-soft);
+  }
+  .phase-card .lead strong{color:var(--ink);}
+
+  /* ---------- Member cards ---------- */
+  .member-card{
+    border-top:4px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .member-card .role-eyebrow{font-size:12px; color:var(--ink-faint);}
+  .member-card h3{font-size:19px; margin-bottom:2px;}
+  .member-card .owns{font-size:13.5px; color:var(--ink-soft); margin-bottom:4px;}
+  .member-card .also{
+    margin-top:6px;
+    padding-top:12px;
+    border-top:1px solid var(--line-soft);
+  }
+  .member-card .also .lbl{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+    text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--ink-faint);
+    margin-bottom:6px; display:block;
+  }
+  .m1{border-top-color:var(--teal);}
+  .m2{border-top-color:var(--a);}
+  .m3{border-top-color:var(--b);}
+  .m4{border-top-color:var(--d);}
+  .m5{border-top-color:var(--e);}
+
+  /* ---------- Git flow ---------- */
+  .flow{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:28px 30px;
+    box-shadow:var(--shadow);
+    margin-top:10px;
+  }
+  .lane{
+    display:grid;
+    grid-template-columns:110px 1fr;
+    align-items:center;
+    gap:16px;
+    padding:10px 0;
+  }
+  .lane .lane-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    text-align:right;
+    color:var(--ink-soft);
+  }
+  .lane .track{
+    height:10px;
+    border-radius:6px;
+    position:relative;
+  }
+  .lane.main .track{background:var(--teal);}
+  .lane.dev .track{background:#9FBFBF;}
+  .lane.feat .track{
+    display:flex; gap:8px;
+  }
+  .feat-branch{
+    height:10px; border-radius:6px; flex:1;
+    opacity:0.85;
+  }
+  .flow-caption{font-size:13px; color:var(--ink-faint); margin-top:16px; margin-bottom:0;}
+
+  .rule-list{margin-top:22px;}
+  .rule-list .card{margin-bottom:14px;}
+  .rule-list .card:last-child{margin-bottom:0;}
+  .rule-num{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--teal);
+    font-size:12px;
+    margin-bottom:6px;
+    display:block;
+  }
+
+  /* ---------- Feature list (UI) ---------- */
+  .feature-grid{margin-top:8px;}
+  .feature{
+    display:grid;
+    grid-template-columns:34px 1fr;
+    gap:14px;
+    padding:16px 0;
+    border-top:1px solid var(--line-soft);
+  }
+  .feature:first-child{border-top:none;}
+  .feature .fnum{
+    font-family:'Fraunces',serif; font-weight:600; color:var(--c);
+    font-size:18px;
+  }
+  .feature h4{font-size:15.5px; margin-bottom:4px;}
+  .feature p{font-size:14px; margin:0;}
+
+  /* ---------- NFR table-like rows ---------- */
+  .nfr-row{
+    display:grid;
+    grid-template-columns:200px 1fr;
+    gap:20px;
+    padding:18px 0;
+    border-top:1px solid var(--line-soft);
+  }
+  .nfr-row:first-child{border-top:none;}
+  .nfr-row h4{font-size:14.5px; margin-bottom:4px; color:var(--ink);}
+  .nfr-row .proof{font-size:14px; color:var(--ink-soft); margin:0;}
+  @media (max-width:700px){ .nfr-row{grid-template-columns:1fr;} }
+
+  /* ---------- Checklist ---------- */
+  .checklist{list-style:none; padding:0; margin:0;}
+  .checklist li{
+    display:flex; gap:12px; align-items:flex-start;
+    padding:11px 0;
+    border-top:1px solid var(--line-soft);
+    color:var(--ink-soft);
+    font-size:14.5px;
+  }
+  .checklist li:first-child{border-top:none;}
+  .checklist .box{
+    width:16px; height:16px; border-radius:5px;
+    border:1.5px solid var(--teal);
+    margin-top:2px; flex-shrink:0;
+  }
+
+  /* ---------- Demo script ---------- */
+  .demo-step{
+    display:grid;
+    grid-template-columns:30px 1fr;
+    gap:14px;
+    padding:13px 0;
+    border-top:1px solid var(--line-soft);
+  }
+  .demo-step:first-child{border-top:none;}
+  .demo-step .dstep-num{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--ink-faint); font-size:12.5px; padding-top:2px;
+  }
+  .demo-step p{margin:0; font-size:14.5px;}
+  .demo-step strong{color:var(--ink);}
+
+  /* ---------- Execution tables and gates ---------- */
+  .table-wrap{
+    overflow-x:auto;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:720px;
+    font-size:13.5px;
+  }
+  th,td{
+    text-align:left;
+    vertical-align:top;
+    padding:13px 15px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  th{
+    font-family:'IBM Plex Mono',monospace;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    background:var(--surface-2);
+  }
+  tr:last-child td{border-bottom:none;}
+  td{color:var(--ink-soft);}
+  td strong{display:block; margin-bottom:2px;}
+  .status{
+    display:inline-block;
+    border-radius:100px;
+    padding:3px 8px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    white-space:nowrap;
+  }
+  .status-must{background:#FBEAEE;color:#9F2F49;}
+  .status-gate{background:#FBF0E2;color:#9A5C18;}
+  .status-proof{background:#E7F5F1;color:#176F5C;}
+  .decision-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+  .decision{
+    border-left:3px solid var(--teal);
+    padding:14px 16px;
+    background:var(--surface);
+    border-radius:0 10px 10px 0;
+  }
+  .decision .id{color:var(--teal);margin-bottom:5px;display:block;}
+  .decision p{font-size:13.5px;margin:0;}
+  .gate{
+    margin-top:14px;
+    background:var(--teal-deep);
+    color:white;
+    border-radius:10px;
+    padding:13px 16px;
+    font-size:13.5px;
+  }
+  .gate strong{color:white;}
+  .workload{
+    height:8px;
+    border-radius:6px;
+    background:var(--surface-2);
+    overflow:hidden;
+    margin:8px 0 3px;
+  }
+  .workload span{display:block;height:100%;background:var(--teal);}
+  .small{font-size:12.5px;color:var(--ink-faint);}
+  .owner-line{font-size:13px;color:var(--ink-faint);margin-bottom:12px;}
+  .owner-line strong{color:var(--ink);}
+  .do-not{border-color:#E8C2CA;background:#FFF8FA;}
+  .accept{border-color:#BFD9D2;background:#F6FCFA;}
+  @media (max-width:700px){.decision-grid{grid-template-columns:1fr;}}
+
+  footer{
+    padding:44px 56px 60px;
+    max-width:920px;
+    margin:0 auto;
+    color:var(--ink-faint);
+    font-size:13px;
+    border-top:1px solid var(--line);
+  }
+
+  /* ---------- mobile ---------- */
+  .mobile-toggle{display:none;}
+  @media (max-width:960px){
+    .shell{grid-template-columns:1fr;}
+    nav.sidebar{
+      position:relative; height:auto; border-right:none;
+      border-bottom:1px solid var(--line);
+      padding:20px 24px;
+    }
+    nav.sidebar ol{
+      display:none;
+    }
+    nav.sidebar.open ol{display:block;}
+    .mobile-toggle{
+      display:inline-flex; align-items:center; gap:8px;
+      background:var(--surface-2); border:1px solid var(--line);
+      border-radius:8px; padding:8px 12px; font-size:13px; cursor:pointer;
+      color:var(--ink); margin-top:6px;
+    }
+    .hero{padding:48px 24px 36px;}
+    .wrap{padding:0 24px 24px;}
+    footer{padding:32px 24px 48px;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-text">CATMS</div>
+    </div>
+    <div class="brand-sub">Ground Implementation Plan · v2.0</div>
+    <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰ Contents</button>
+    <ol>
+      <li><a href="#snapshot"><span class="n">00</span> Outcome &amp; Scope</a></li>
+      <li><a href="#decisions"><span class="n">01</span> Decisions to Freeze</a></li>
+      <li><a href="#stack"><span class="n">02</span> Local-First Stack</a></li>
+      <li><a href="#architecture"><span class="n">03</span> Working Architecture</a></li>
+      <li><a href="#coverage"><span class="n">04</span> Requirement Coverage</a></li>
+      <li><a href="#timeline"><span class="n">05</span> Ground Timeline</a></li>
+      <li><a href="#team"><span class="n">06</span> Named Ownership</a></li>
+      <li><a href="#integration"><span class="n">07</span> Integration Contracts</a></li>
+      <li><a href="#git"><span class="n">08</span> Collaboration Workflow</a></li>
+      <li><a href="#ui"><span class="n">09</span> QA UI Scope</a></li>
+      <li><a href="#nfr"><span class="n">10A</span> NFR Proof</a></li>
+      <li><a href="#qa"><span class="n">10B</span> Verification Gates</a></li>
+      <li><a href="#data"><span class="n">11</span> Data &amp; Local Demo</a></li>
+      <li><a href="#risk"><span class="n">12</span> Risks &amp; Recovery</a></li>
+      <li><a href="#demo"><span class="n">13</span> Lecturer Showcase</a></li>
+      <li><a href="#server"><span class="n">14</span> Later Server Rollout</a></li>
+      <li><a href="#deliverables"><span class="n">15</span> Definition of Done</a></li>
+    </ol>
+    <div class="navfoot">MedSync Clinics — Phase 1<br/>Database Management Systems Project</div>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <span class="eyebrow mono">Clinic Appointment &amp; Treatment Management System</span>
+      <h1>From SRS to a working clinic system.</h1>
+      <p class="lede">A database-first, collaborative execution plan for five people to build CATMS locally, prove every important rule to the lecturers, and preserve a clean path to a real server deployment later.</p>
+      <div class="hero-meta">
+        <span class="chip"><span class="dot"></span> 5 team members</span>
+        <span class="chip"><span class="dot"></span> 7 gated stages</span>
+        <span class="chip"><span class="dot"></span> Local PostgreSQL · Express · React</span>
+        <span class="chip"><span class="dot"></span> 36 functional requirements</span>
+        <span class="chip"><span class="dot"></span> Server-ready after assessment</span>
+      </div>
+    </div>
+
+    <div class="wrap">
+
+      <!-- 00 SNAPSHOT -->
+      <section id="snapshot">
+        <div class="section-head">
+          <span class="eyebrow mono">00 · Target outcome</span>
+          <h2>What this phase must actually deliver</h2>
+          <p class="desc">The submission is not a mock-up and not only a schema. It is a complete local working slice of clinic operations whose correctness can be defended at the database level.</p>
+        </div>
+        <div class="grid grid-2">
+          <div class="card accept">
+            <span class="tag tag-b">Phase 1 must work</span>
+            <h3>Lecturer-ready local system</h3>
+            <ul>
+              <li>All 19 stored relations, their keys, delete policies, checks, indexes, procedures, functions, triggers, audit tables, and five reporting objects.</li>
+              <li>A thin API and role-based QA interface covering REQ-1 through REQ-36.</li>
+              <li>A reproducible dataset and one-command reset, plus automated and manual evidence for the critical rules.</li>
+              <li>A ten-minute live patient journey that still works with the internet disconnected.</li>
+            </ul>
+          </div>
+          <div class="card do-not">
+            <span class="tag tag-e">Not in assessed scope</span>
+            <h3>Explicitly deferred</h3>
+            <ul>
+              <li>No Supabase, Firebase, hosted database, generated CRUD backend, or third-party authentication dependency.</li>
+              <li>No patient self-service portal, SMS/email, external insurer integration, multi-currency, or branch-specific pricing.</li>
+              <li>No Kubernetes, microservices, mobile app, or production analytics platform.</li>
+              <li>No UI work that does not help exercise or explain a requirement.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout">
+          <div class="mark">→</div>
+          <p><strong>Why local-first is the right assessment choice:</strong> the course project grades database design and correctness. Keeping PostgreSQL, SQL migrations, procedures, triggers, API validation, and UI logic visible lets the team show exactly where each guarantee lives. Later, the same containers and migrations move to a server without changing the domain model.</p>
+        </div>
+      </section>
+
+      <!-- 01 DECISIONS -->
+      <section id="decisions">
+        <div class="section-head">
+          <span class="eyebrow mono">01 · Close the SRS TBDs</span>
+          <h2>Decisions to freeze before implementation</h2>
+          <p class="desc">These choices remove ambiguity from the SRS. They are recorded in an architecture decision log and may change only through team approval and an impact note.</p>
+        </div>
+        <div class="decision-grid">
+          <div class="decision"><span class="id mono">D-01 · DBMS</span><p><strong>PostgreSQL 16</strong> is the only Phase 1 target. MySQL fallback is dropped so the team can use range/exclusion behaviour and one tested SQL dialect.</p></div>
+          <div class="decision"><span class="id mono">D-02 · Runtime</span><p>Development is local. PostgreSQL runs in Docker; API and UI may use local hot-reload. The frozen demo profile runs database, API, and web together from one Compose definition.</p></div>
+          <div class="decision"><span class="id mono">D-03 · Authentication</span><p>Use a short-lived JWT in an HttpOnly cookie. Password hashes are separate from clinical data. The API maps the authenticated role to a restricted database role per transaction.</p></div>
+          <div class="decision"><span class="id mono">D-04 · Time</span><p>Store appointment timestamps with time zone in UTC and display them as Asia/Colombo. Validate end &gt; start and 15-minute scheduling increments.</p></div>
+          <div class="decision"><span class="id mono">D-05 · Overlap</span><p>The database is the final authority: a PostgreSQL time-range exclusion rule protects all non-cancelled appointments. The booking procedure returns a clear conflict message.</p></div>
+          <div class="decision"><span class="id mono">D-06 · Billing point</span><p>An invoice is ensured and recalculated automatically when a treatment is added to a Completed appointment. Catalogue price is copied into the line item at treatment time.</p></div>
+          <div class="decision"><span class="id mono">D-07 · Insurance</span><p>Policy terms calculate the eligible claim. Approved amount is the final insurance-covered amount; approval or rejection recalculates the patient's payable balance inside one transaction.</p></div>
+          <div class="decision"><span class="id mono">D-08 · Local transport</span><p>The demo is bound to localhost and can run without external network access. HTTPS and secure-cookie enforcement become mandatory in the later server profile.</p></div>
+          <div class="decision"><span class="id mono">D-09 · Delete policy</span><p>Clinical and financial history is retained. Master records are deactivated; dependent history uses RESTRICT. CASCADE is limited to true child/junction rows with no independent meaning.</p></div>
+          <div class="decision"><span class="id mono">D-10 · Completion gate</span><p>A stage is complete only when its artifact, tests, traceability links, review, and clean-machine run all pass. “Code written” alone is never Done.</p></div>
+        </div>
+        <div class="gate"><strong>Gate 0:</strong> the whole team signs off D-01 to D-10, the final ER model, table/column naming, money/time conventions, and the appointment/invoice/claim state transitions before the first schema migration is merged.</div>
+        <div class="card" style="margin-top:20px;">
+          <h3>Immediate kickoff — first 48 hours</h3>
+          <div class="table-wrap" style="box-shadow:none;">
+            <table>
+              <thead><tr><th>Owner</th><th>Before kickoff</th><th>By end of Day 2</th></tr></thead>
+              <tbody>
+                <tr><td><strong>GALLAGE</strong></td><td>Prepare decision agenda, master ER questions, repository/board structure, and dependency order.</td><td>Publish signed decisions, migration registry, local baseline, integration calendar, and G0 evidence.</td></tr>
+                <tr><td><strong>PILAPITIYA</strong></td><td>Review Branch/Employee/Doctor/Specialty attributes and delete policies.</td><td>Approved Module A contract plus UI shell/wireframe conventions; independently start the local baseline.</td></tr>
+                <tr><td><strong>LIYANAGAMAGE</strong></td><td>Review patient identity, policies, coverage, authentication and role questions.</td><td>Approved Module B/security contract and draft UI/API/DB role matrix.</td></tr>
+                <tr><td><strong>Willaddara</strong></td><td>Prepare one treatment-to-invoice worked example and transaction questions.</td><td>Approved Module D formulas, price-snapshot rule, and rollback scenarios.</td></tr>
+                <tr><td><strong>BANDARA</strong></td><td>Prepare five report definitions, payment/claim worked examples, and verification-sheet template.</td><td>Approved Module E/report semantics, initial REQ-1–36 matrix, and G0 checklist.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 01 STACK -->
+      <section id="stack">
+        <div class="section-head">
+          <span class="eyebrow mono">02 · Foundation</span>
+          <h2>Local-first technology stack</h2>
+          <p class="desc">Every required service is owned by the team, reproducible on each laptop, and replaceable by a server endpoint later through configuration rather than redesign.</p>
+        </div>
+        <div class="grid grid-3">
+          <div class="card stack-card">
+            <span class="tag tag-a">Database</span>
+            <h3>PostgreSQL 16</h3>
+            <ul>
+              <li><strong>Local via Docker Compose</strong><span>named volume for development; disposable volume for tests</span></li>
+              <li><strong>Hand-authored SQL migrations</strong><span>forward-only, numbered, sequential files; no ORM schema generation</span></li>
+              <li><strong>node-postgres (pg) driver</strong><span>parameterized queries only, called directly</span></li>
+              <li><strong>pgAdmin / DBeaver</strong><span>for inspection, EXPLAIN ANALYZE, and manual QA</span></li>
+            </ul>
+          </div>
+          <div class="card stack-card">
+            <span class="tag tag-c">Backend</span>
+            <h3>Node.js + Express</h3>
+            <ul>
+              <li><strong>REST API</strong><span>one route group per module</span></li>
+              <li><strong>JWT in HttpOnly cookie</strong><span>identity and role checked on every protected route</span></li>
+              <li><strong>bcrypt</strong><span>password hashing, never plain text</span></li>
+              <li><strong>zod</strong><span>request validation before anything touches the database</span></li>
+            </ul>
+          </div>
+          <div class="card stack-card">
+            <span class="tag tag-e">Frontend</span>
+            <h3>React + Vite</h3>
+            <ul>
+              <li><strong>Tailwind CSS</strong><span>the shared design system, tokens defined once</span></li>
+              <li><strong>TanStack Query</strong><span>data fetching, caching, and rejection-message display</span></li>
+              <li><strong>React Router</strong><span>role-based routes and dashboards</span></li>
+              <li><strong>Recharts</strong><span>the five management reports, as real charts</span></li>
+            </ul>
+          </div>
+          <div class="card stack-card">
+            <span class="tag tag-b">Local environment</span>
+            <h3>Docker Compose</h3>
+            <ul>
+              <li><strong>Dev and demo profiles</strong><span>hot reload while building; frozen all-service profile for the showcase</span></li>
+              <li><strong>.env-based config</strong><span>one template, no shared secrets in git</span></li>
+              <li><strong>Seed script</strong><span>reproducible dummy data, one command to reset</span></li>
+            </ul>
+          </div>
+          <div class="card stack-card">
+            <span class="tag tag-d">Collaboration &amp; DevOps</span>
+            <h3>GitHub</h3>
+            <ul>
+              <li><strong>Repo + Issues + Projects board</strong><span>single source of truth for tasks</span></li>
+              <li><strong>GitHub Actions</strong><span>lint, tests, clean migration, and seed smoke-test on every PR</span></li>
+              <li><strong>Conventional Commits</strong><span>a readable, gradable history</span></li>
+              <li><strong>CODEOWNERS</strong><span>routes reviews to the right person automatically</span></li>
+            </ul>
+          </div>
+          <div class="card stack-card">
+            <span class="tag tag-a">Documentation</span>
+            <h3>Living docs</h3>
+            <ul>
+              <li><strong>SRS</strong><span>already produced, IEEE-830 structured</span></li>
+              <li><strong>ER diagram</strong><span>conceptual module map + full schema diagram</span></li>
+              <li><strong>This delivery plan</strong><span>the document you're reading</span></li>
+              <li><strong>README</strong><span>setup-to-running-app in under five minutes</span></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 ARCHITECTURE -->
+      <section id="architecture">
+        <div class="section-head">
+          <span class="eyebrow mono">03 · Structure</span>
+          <h2>Working architecture and rule placement</h2>
+          <p class="desc">Three tiers, but one source of truth: anything that must remain correct under concurrency or API bypass belongs in PostgreSQL.</p>
+        </div>
+
+        <div class="tiers">
+          <div class="tier">
+            <h4>Presentation — React (Vite + Tailwind)</h4>
+            <p class="sub">Role-based dashboards and QA screens. It never connects to PostgreSQL and never decides a financial total.</p>
+          </div>
+          <div class="tier-arrow">▲▼ REST · JSON · localhost (HTTPS on server)</div>
+          <div class="tier">
+            <h4>Application — Node.js + Express</h4>
+            <p class="sub">Authenticates, validates request shape, checks application RBAC, then calls a stored procedure/function or a controlled read query.</p>
+          </div>
+          <div class="tier-arrow">▲▼ parameterized SQL only</div>
+          <div class="tier">
+            <h4>Data — PostgreSQL</h4>
+            <p class="sub">Owns tables, role grants, transactions, constraints, overlap protection, treatment gating, invoice/payment logic, audit history, and reporting views/functions.</p>
+          </div>
+        </div>
+
+        <div class="module-map">
+          <div class="module-row">
+            <div class="module-label"><span class="sw dot-a"></span>Module A</div>
+            <div class="module-entities"><strong>Branch &amp; Staff</strong> — Branch, Employee, Doctor, Specialty</div>
+          </div>
+          <div class="module-row">
+            <div class="module-label"><span class="sw dot-b"></span>Module B</div>
+            <div class="module-entities"><strong>Patient &amp; Insurance</strong> — Patient, Emergency Contact, Insurance Policy &amp; Coverage</div>
+          </div>
+          <div class="module-row">
+            <div class="module-label"><span class="sw dot-c"></span>Module C</div>
+            <div class="module-entities"><strong>Appointment &amp; Scheduling</strong> — Appointment, Consultation Note, status &amp; history logs</div>
+          </div>
+          <div class="module-row">
+            <div class="module-label"><span class="sw dot-d"></span>Module D</div>
+            <div class="module-entities"><strong>Treatment &amp; Billing</strong> — Treatment Catalogue, Appointment Treatment, Invoice</div>
+          </div>
+          <div class="module-row">
+            <div class="module-label"><span class="sw dot-e"></span>Module E</div>
+            <div class="module-entities"><strong>Payments, Claims &amp; Reporting</strong> — Payment, Insurance Claim, the five report views</div>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:30px;">
+          <table>
+            <thead><tr><th>Concern</th><th>Database responsibility</th><th>API responsibility</th><th>UI responsibility</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Appointment overlap</strong></td><td>Reject every conflicting non-cancelled range, including concurrent requests.</td><td>Call booking/reschedule procedure and translate its error code.</td><td>Show calendar availability and the exact rejection.</td></tr>
+              <tr><td><strong>Treatment gating</strong></td><td>Reject treatments/notes unless appointment is Completed.</td><td>Validate payload and invoke controlled procedure.</td><td>Disable premature action, then also show DB rejection if bypassed.</td></tr>
+              <tr><td><strong>Invoice totals</strong></td><td>Snapshot price and calculate subtotal, insurance portion, patient payable, paid, and status.</td><td>Expose read-only invoice DTO; never accept total fields from clients.</td><td>Display totals only.</td></tr>
+              <tr><td><strong>Payment cap</strong></td><td>Lock invoice, reject overpayment, insert payment, recalculate status atomically.</td><td>Pass amount/method/receiver; return new balance.</td><td>Guide valid input and show the remaining balance.</td></tr>
+              <tr><td><strong>Reports</strong></td><td>Produce defined views/parameterised functions and indexed query plans.</td><td>Apply authorised filters and pagination.</td><td>Render table first; charts are an additional view of the same result.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 04 COVERAGE -->
+      <section id="coverage">
+        <div class="section-head">
+          <span class="eyebrow mono">04 · SRS to implementation</span>
+          <h2>Requirement coverage map</h2>
+          <p class="desc">Every SRS requirement has a named owner, an enforcing mechanism, a visible UI path, and a test. This table is the master scope boundary.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Work package</th><th>SRS coverage</th><th>Database proof</th><th>UI/API proof</th><th>Accountable owner</th></tr></thead>
+            <tbody>
+              <tr><td><strong>A · Branch &amp; staff</strong>Branch, Employee, Doctor, Specialty, Doctor_Specialty</td><td>REQ-1–6</td><td>Unique NIC/license, role/subtype validation, manager FK, active flags, explicit delete rules.</td><td>Admin branch/staff CRUD and specialty assignment.</td><td>PILAPITIYA H.P.S.B</td></tr>
+              <tr><td><strong>B · Patient &amp; insurance</strong>Patient, contacts, providers, policies, coverage</td><td>REQ-7–12</td><td>Clinic-wide identity uniqueness, policy dates/status, coverage percentage/cap checks.</td><td>Cross-branch search, registration, policy and coverage screens.</td><td>LIYANAGAMAGE N.P</td></tr>
+              <tr><td><strong>C · Appointment &amp; audit</strong>Appointments, history, status log</td><td>REQ-13–18</td><td>Time-range overlap protection, valid transitions, walk-in source, immutable audit events.</td><td>Book, day view, reschedule, cancel, complete, walk-in.</td><td>GALLAGE G.D.V.S.</td></tr>
+              <tr><td><strong>D · Clinical &amp; invoice</strong>Consultation, catalogue, line items, invoice</td><td>REQ-19–25</td><td>Completed-only trigger, one note per appointment, price snapshot, automatic invoice totals.</td><td>Clinical worklist, treatment entry, notes, catalogue, read-only invoice.</td><td>Willaddara H.W.I</td></tr>
+              <tr><td><strong>E · Payment, claims &amp; reports</strong>Payment, Insurance_Claim, five report objects</td><td>REQ-26–34</td><td>Payment cap and row lock, claim status rules, final coverage recalculation, indexed reports.</td><td>Payment, claim tracker, report filters/tables/charts.</td><td>BANDARA V.M.V.A</td></tr>
+              <tr><td><strong>Shared platform</strong>Authentication, RBAC, errors, audit, documentation</td><td>REQ-35–36; NFR-1–9</td><td>Restricted DB roles, procedure grants, test fixtures, EXPLAIN plans, transaction evidence.</td><td>Role dashboards, route guards, standard error envelope, responsive QA shell.</td><td>GALLAGE accountable; cross-owners named below</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="gate"><strong>Traceability rule:</strong> every issue and pull request cites its REQ/BR/NFR identifiers. A requirement is not accepted until the traceability sheet links the migration, API route, UI screen, automated test, manual evidence, and owner.</div>
+      </section>
+
+      <!-- 04 TIMELINE -->
+      <section id="timeline">
+        <div class="section-head">
+          <span class="eyebrow mono">05 · Gated sequence</span>
+          <h2>Ground implementation timeline</h2>
+          <p class="desc">Seven stages over roughly six weeks. If the real calendar is shorter, compress the duration—not the order or exit gates. A later stage may be explored on mocks, but it cannot be declared complete before its upstream gate passes.</p>
+        </div>
+
+        <div class="timeline">
+
+          <div class="phase">
+            <div class="phase-num">0</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Stage 0 · 2 working days · Freeze foundations</span></div>
+              <h3>Decisions, model, contracts, and local baseline</h3>
+              <ul class="goal-list">
+                <li>Sign off D-01–D-10, the 19-relation ER model, cardinalities, naming, data types, state transitions, and delete policies.</li>
+                <li>Create repository protection, board, contribution rules, decision log, environment template, and shared API/error conventions.</li>
+                <li>Prove the blank local stack starts on all five laptops and that each member can open the DB, API health response, and UI shell.</li>
+                <li>Write the requirement-to-work-item sheet before assigning “In Progress”.</li>
+              </ul>
+              <div class="lead"><strong>Exit Gate G0:</strong> clean-machine start succeeds; ERD and decisions are approved by all five; every requirement has an owner and planned proof. GALLAGE chairs and records the decision.</div>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">1</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Stage 1 · 5 working days · Database foundation</span></div>
+              <h3>Build the schema in dependency order</h3>
+              <ul class="goal-list">
+                <li>A and B deliver foundational tables and reference data first; authentication/role tables and the migration harness land with them.</li>
+                <li>C lands after stable Doctor, Patient, Branch, and Employee identifiers. D follows C; E follows D. Cross-module foreign keys are merged only through reviewed integration migrations.</li>
+                <li>Every relation includes PK/FK, nullability, unique/check constraints, explicit delete behaviour, comments, and its required index candidates.</li>
+                <li>Seed a tiny deterministic fixture—not the bulk demo data—to make every relation and relationship testable.</li>
+              </ul>
+              <div class="lead"><strong>Exit Gate G1:</strong> all migrations apply from an empty database in order and roll forward with no manual repair; ERD matches the actual catalogue; key/constraint tests pass.</div>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">2</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Stage 2 · 6 working days · Database behaviour</span></div>
+              <h3>Implement the rules the project is graded on</h3>
+              <ul class="goal-list">
+                <li>C proves concurrent overlap rejection, rescheduling history, status-transition logging, cancellation retention, and walk-in behaviour.</li>
+                <li>D proves Completed-only treatments/notes, unit-price snapshotting, and automatic invoice recalculation.</li>
+                <li>E proves partial/full payment, overpayment rejection, claim transitions, insurance recalculation, and the five report queries.</li>
+                <li>A/B prove soft-deactivation, unique identities, doctor-specialty uniqueness, policy validity, and coverage limits.</li>
+              </ul>
+              <div class="lead"><strong>Exit Gate G2:</strong> BR-1–BR-6 pass when invoked directly against PostgreSQL, including a two-session concurrency test and a forced rollback test. No UI is used as evidence for this gate.</div>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">3</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Stage 3 · 5 working days · API and security</span></div>
+              <h3>Expose controlled contracts, not raw tables</h3>
+              <ul class="goal-list">
+                <li>One API route group per module calls stored procedures/functions or parameterised reads; financial totals and audit fields are never accepted from the browser.</li>
+                <li>Standardise validation, pagination/filter rules, transaction boundaries, success payloads, and database-error mapping.</li>
+                <li>Implement login/logout, password hashing, application route guards, database role switching, and negative access tests for Reception, Clinician, Manager, and Admin/Finance.</li>
+                <li>Publish the API contract used by all UI owners and freeze breaking changes after G3.</li>
+              </ul>
+              <div class="lead"><strong>Exit Gate G3:</strong> every required operation works through API tests; injection payloads are harmless; role-denied actions fail at both API and database levels; API contract is versioned.</div>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">4</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Stage 4 · 6 working days · QA interface</span></div>
+              <h3>Build requirement-oriented vertical slices</h3>
+              <ul class="goal-list">
+                <li>Build the shared shell first: login, role navigation, loading/empty/error patterns, tables, forms, confirmation dialogs, and exact database rejection display.</li>
+                <li>Each module owner builds the screens in Section 09 against the frozen API contract. Table-based report output is mandatory; charts follow only after values are verified.</li>
+                <li>Integrate the golden vertical slice: patient search/register → book/reschedule/walk-in → complete → record care → invoice → claim/payment → reports.</li>
+                <li>Freeze assessed features at G4. Any new idea goes to the post-assessment backlog.</li>
+              </ul>
+              <div class="lead"><strong>Exit Gate G4:</strong> REQ-1–REQ-36 can be exercised from the browser; refresh and role changes behave correctly; all failure paths surface understandable DB-derived messages.</div>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">5</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Stage 5 · 5 working days · Data, reports, NFRs</span></div>
+              <h3>Prove the system at realistic scale</h3>
+              <ul class="goal-list">
+                <li>Generate the exact SRS scale: 3 branches, about 20 employees, 10–12 doctors, 8–10 specialties, 60–100 patients, 3–4 insurers, 15–20 treatments, and 150–300 appointments over 2–3 months.</li>
+                <li>Include scheduled/completed/cancelled appointments, about 15% walk-ins, active/expired policies, paid/partial/unpaid invoices, and approved/partial/rejected claims.</li>
+                <li>Manually reconcile a known sample for all five reports before adding charts. Capture EXPLAIN ANALYZE evidence and keep only indexes with a demonstrated purpose.</li>
+                <li>Run concurrency, performance, audit, RBAC, accessibility, backup/restore, and clean reset checks.</li>
+              </ul>
+              <div class="lead"><strong>Exit Gate G5:</strong> NFR-1–NFR-9 evidence is recorded; seeded reports reconcile to expected totals; reset and backup/restore complete successfully on a second laptop.</div>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-num">6</div>
+            <div class="phase-card">
+              <div class="ph-meta"><span class="sprint-tag">Stage 6 · 4 working days · Release and showcase</span></div>
+              <h3>Freeze, recover, rehearse, and release</h3>
+              <ul class="goal-list">
+                <li>Only severity-1/2 defects merge. Re-run the full traceability matrix from a freshly cloned repository and empty Docker volumes.</li>
+                <li>Prepare demo seed, offline dependencies/container images where permitted, database dump, screenshots, SQL evidence, and a short backup recording.</li>
+                <li>Rehearse twice under the real time limit: once on the primary laptop, once on the backup laptop; rotate questions so every member can defend their own and one adjacent module.</li>
+                <li>Tag the exact demonstrated commit <code>v1.0-demo</code> and lock the release bundle.</li>
+              </ul>
+              <div class="lead"><strong>Exit Gate G6 / Go-live:</strong> two clean rehearsals, zero open critical/high defects, all deliverables present, contribution evidence reviewed, and a three-person go/no-go decision (Lead + QA owner + one independent module owner).</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 05 TEAM -->
+      <section id="team">
+        <div class="section-head">
+          <span class="eyebrow mono">06 · Ownership</span>
+          <h2>Named ownership and workload</h2>
+          <p class="desc">GALLAGE G.D.V.S. carries the heaviest critical-path work and final accountability, as requested. The load is intentionally substantial but has named deputies so the project does not become dependent on one person.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card member-card m1">
+            <span class="role-eyebrow mono">GALLAGE G.D.V.S. · 240178P</span>
+            <h3>Delivery Lead, Database Integrator &amp; Scheduling Owner</h3>
+            <p class="owns"><span class="tag tag-c" style="margin-bottom:0;">Module C</span></p>
+            <p>Owns the hardest cross-cutting path: appointment booking, concurrency-safe doctor-overlap prevention, rescheduling, walk-ins, valid status transitions, and both audit histories.</p>
+            <div class="also">
+              <span class="lbl">Critical project duties</span>
+              <p style="margin:0;">Final ER/schema conventions; cross-module FK and transaction review; migration sequencing; local/demo environment; API contract approval; integration branch; blocker resolution; release candidate; lecturer narrative and final go/no-go. Delegates UI shell to PILAPITIYA and test evidence coordination to BANDARA.</p>
+            </div>
+            <div><div class="workload"><span style="width:100%;"></span></div><span class="small">Planned load: ~28% of total team effort · highest technical and coordination criticality</span></div>
+          </div>
+
+          <div class="card member-card m2">
+            <span class="role-eyebrow mono">PILAPITIYA H.P.S.B · 240512L</span>
+            <h3>Branch/Staff Owner &amp; UI System Deputy</h3>
+            <p class="owns"><span class="tag tag-a" style="margin-bottom:0;">Module A</span></p>
+            <p>Owns branches, employees, doctors, specialties, manager assignment, employee deactivation, and the foundational identifiers every other module references.</p>
+            <div class="also">
+              <span class="lbl">Also carries</span>
+              <p style="margin:0;">Owns the reusable UI shell and design system (navigation, forms, tables, alerts, modals, responsive rules). Acts as GALLAGE's environment/release deputy and must be able to start the complete demo independently.</p>
+            </div>
+            <div><div class="workload"><span style="width:70%;background:var(--a);"></span></div><span class="small">Planned load: ~18% · dependency foundation + shared UI</span></div>
+          </div>
+
+          <div class="card member-card m3">
+            <span class="role-eyebrow mono">LIYANAGAMAGE N.P · 240390H</span>
+            <h3>Patient/Insurance Owner &amp; Security Owner</h3>
+            <p class="owns"><span class="tag tag-b" style="margin-bottom:0;">Module B</span></p>
+            <p>Owns clinic-wide patient identity, emergency contacts, providers, multiple policies, coverage percentages/caps, validity rules, and cross-branch search.</p>
+            <div class="also">
+              <span class="lbl">Also carries</span>
+              <p style="margin:0;">Owns login data model, password-hashing review, DB GRANT/REVOKE matrix, role-denial tests, sensitive-data review, and the final audit that every application query is parameterised.</p>
+            </div>
+            <div><div class="workload"><span style="width:70%;background:var(--b);"></span></div><span class="small">Planned load: ~18% · patient/insurance + security</span></div>
+          </div>
+
+          <div class="card member-card m4">
+            <span class="role-eyebrow mono">Willaddara H.W.I · 240738J</span>
+            <h3>Clinical/Treatment/Invoice Owner &amp; ACID Specialist</h3>
+            <p class="owns"><span class="tag tag-d" style="margin-bottom:0;">Module D</span></p>
+            <p>Owns consultation notes, treatment catalogue, appointment-treatment line items, historical price snapshots, invoice creation, recalculation, and read-only financial totals.</p>
+            <div class="also">
+              <span class="lbl">Also carries</span>
+              <p style="margin:0;">Designs transaction/rollback tests with GALLAGE and BANDARA, reviews every procedure that crosses appointment → treatment → invoice, and prepares the normalization/denormalization defence.</p>
+            </div>
+            <div><div class="workload"><span style="width:76%;background:var(--d);"></span></div><span class="small">Planned load: ~19% · dense transactional module</span></div>
+          </div>
+
+          <div class="card member-card m5" style="grid-column:1 / -1;">
+            <span class="role-eyebrow mono">BANDARA V.M.V.A · 240058A</span>
+            <h3>Payments/Claims/Reporting Owner &amp; QA Coordinator</h3>
+            <p class="owns"><span class="tag tag-e" style="margin-bottom:0;">Module E</span></p>
+            <p>Owns payment posting and caps, claim lifecycle, approved insurance coverage, outstanding balances, and all five management report objects and screens.</p>
+            <div class="also">
+              <span class="lbl">Also carries</span>
+              <p style="margin:0;">Maintains the REQ/NFR verification sheet, expected report totals, defect triage, evidence folder, backup recording, and timed demo rehearsal. Acts as independent quality sign-off for GALLAGE's release candidate.</p>
+            </div>
+            <div><div class="workload"><span style="width:70%;background:var(--e);"></span></div><span class="small">Planned load: ~17% · reporting breadth + QA coordination</span></div>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:22px;">
+          <table>
+            <thead><tr><th>Cross-cutting decision</th><th>Accountable</th><th>Required reviewers</th><th>Deputy if blocked</th></tr></thead>
+            <tbody>
+              <tr><td><strong>ER model, migrations, shared transaction boundaries</strong></td><td>GALLAGE</td><td>Owner of affected module + Willaddara for billing effects</td><td>PILAPITIYA</td></tr>
+              <tr><td><strong>API contract or error-envelope change</strong></td><td>GALLAGE</td><td>All affected UI/module owners</td><td>PILAPITIYA</td></tr>
+              <tr><td><strong>Authentication, role grants, sensitive data</strong></td><td>LIYANAGAMAGE</td><td>GALLAGE + affected module owner</td><td>PILAPITIYA</td></tr>
+              <tr><td><strong>Invoice/claim/payment formula</strong></td><td>Willaddara</td><td>BANDARA + GALLAGE</td><td>BANDARA</td></tr>
+              <tr><td><strong>Acceptance evidence and release quality</strong></td><td>BANDARA</td><td>GALLAGE + independent owner</td><td>LIYANAGAMAGE</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout"><div class="mark">!</div><p><strong>Workload safeguard:</strong> GALLAGE owns final decisions and the highest-risk technical path, but must not implement every shared component. A task that stays only in GALLAGE's head for more than two days is a project risk and must be paired, documented, or delegated.</p></div>
+      </section>
+
+      <!-- 07 INTEGRATION -->
+      <section id="integration">
+        <div class="section-head">
+          <span class="eyebrow mono">07 · Collaboration by contract</span>
+          <h2>Integration contracts and hand-offs</h2>
+          <p class="desc">Module ownership reduces conflict only when the boundaries are explicit. These contracts are agreed in Stage 0 and tested continuously.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Producer → consumer</th><th>Frozen contract</th><th>Acceptance handshake</th></tr></thead>
+            <tbody>
+              <tr><td><strong>A → C</strong>Staff/doctor to scheduling</td><td>Active doctor identity, branch, specialty relationship, role and license validity.</td><td>PILAPITIYA provides fixture IDs and negative cases; GALLAGE proves inactive/non-doctor staff cannot be booked.</td></tr>
+              <tr><td><strong>B → C</strong>Patient to scheduling</td><td>Clinic-wide patient ID and active record; registration branch does not restrict access.</td><td>LIYANAGAMAGE seeds one patient from each branch; GALLAGE books each at another branch.</td></tr>
+              <tr><td><strong>C → D</strong>Appointment to treatment/invoice</td><td>Completed status, doctor/patient/branch identity, immutable appointment key, status history.</td><td>GALLAGE supplies Scheduled/Completed/Cancelled fixtures; Willaddara proves only Completed accepts care.</td></tr>
+              <tr><td><strong>B + D → E</strong>Coverage and invoice to claims/payments</td><td>Policy/treatment terms, line-item price snapshot, invoice totals, patient identity.</td><td>Willaddara and LIYANAGAMAGE agree one worked monetary example; BANDARA reconciles system output exactly.</td></tr>
+              <tr><td><strong>A–E → Reports</strong>Operational data to management views</td><td>Status meanings, date basis, gross vs collected revenue, outstanding formula, insurance vs out-of-pocket definition.</td><td>Each source owner signs a hand-calculated report fixture maintained by BANDARA.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid grid-2" style="margin-top:22px;">
+          <div class="card">
+            <h3>Database artifact owned per module</h3>
+            <ul>
+              <li>Schema migration(s), table/column comments, constraints and delete policies.</li>
+              <li>Stored procedures/functions/triggers and stable application-facing views.</li>
+              <li>Indexes justified by a query and plan—not by guesswork.</li>
+              <li>Small deterministic fixture, positive tests, negative tests, and cleanup/reset behaviour.</li>
+              <li>A short design note: dependencies, invariants, transaction boundary, expected errors, and SRS IDs.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>API/UI artifact owned per module</h3>
+            <ul>
+              <li>Documented endpoint contract with role, input, output, error codes, filters, and sample scenario.</li>
+              <li>Request validation and parameterised database access only.</li>
+              <li>Role-visible UI path with loading, empty, success, validation, DB rejection, and permission-denied states.</li>
+              <li>Automated API tests plus one manual browser scenario linked to the traceability sheet.</li>
+              <li>No cross-module file edit without notifying and requesting review from its owner.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <h3>Definition of Ready for a task</h3>
+          <p>A card may enter <em>In Progress</em> only when it has: one owner; REQ/BR/NFR links; dependencies resolved; expected database rule; API/UI behaviour; acceptance examples; reviewer; and a target stage. If any is missing, the card stays in Backlog/Blocked.</p>
+          <h3 style="margin-top:20px;">Definition of Done for a task</h3>
+          <p style="margin-bottom:0;">Migration or code is merged; tests pass from a clean database; owner documentation is updated; traceability evidence is linked; reviewer reproduces the success and at least one failure case; no unrelated warnings; and the feature works inside the full stack—not only in the owner's branch.</p>
+        </div>
+      </section>
+
+      <!-- 08 GIT -->
+      <section id="git">
+        <div class="section-head">
+          <span class="eyebrow mono">08 · Daily collaboration</span>
+          <h2>Git, review, and communication workflow</h2>
+          <p class="desc">A small-team trunk-oriented workflow: short branches, reviewed integration, continuous clean-database proof, and an explicit blocker rhythm.</p>
+        </div>
+
+        <div class="flow">
+          <div class="lane main">
+            <div class="lane-label">main</div>
+            <div class="track"></div>
+          </div>
+          <div class="lane dev">
+            <div class="lane-label">dev</div>
+            <div class="track"></div>
+          </div>
+          <div class="lane feat">
+            <div class="lane-label">feature/*</div>
+            <div class="track">
+              <div class="feat-branch" style="background:var(--a);"></div>
+              <div class="feat-branch" style="background:var(--b);"></div>
+              <div class="feat-branch" style="background:var(--c);"></div>
+              <div class="feat-branch" style="background:var(--d);"></div>
+              <div class="feat-branch" style="background:var(--e);"></div>
+            </div>
+          </div>
+          <p class="flow-caption">Short-lived feature branches (one per task, coloured by module) branch off <code>dev</code> and merge back via reviewed PR. <code>dev</code> merges to the protected <code>main</code> only when a sprint's work is demo-ready.</p>
+        </div>
+
+        <div class="rule-list">
+          <div class="card">
+            <span class="rule-num mono">Branching</span>
+            <p style="margin:0;"><code>main</code> is protected — no direct pushes, always demo-ready. Everyone branches off <code>dev</code> as <code>feature/&lt;module-letter&gt;-&lt;short-task&gt;</code> (e.g. <code>feature/c-overlap-trigger</code>), kept short-lived — merged within two to three days, rebased onto <code>dev</code> first so it never goes stale enough to conflict.</p>
+          </div>
+          <div class="card">
+            <span class="rule-num mono">Ownership</span>
+            <p style="margin:0;">Database migrations, backend routes, and frontend module folders each belong to one member, enforced with a CODEOWNERS file so GitHub automatically requests the right reviewer. Migration files are numbered and claimed one at a time from the shared board, so two people can never claim the same migration number.</p>
+          </div>
+          <div class="card">
+            <span class="rule-num mono">Review</span>
+            <p style="margin:0;">Every PR needs one approving review and a passing CI check before it can merge — and never from the person who wrote it. Reviewers rotate rather than pairing the same two people every time, so schema knowledge doesn't stay siloed in one head.</p>
+          </div>
+          <div class="card">
+            <span class="rule-num mono">Commits &amp; PRs</span>
+            <p style="margin:0;">Conventional Commits (<code>feat</code>/<code>fix</code>/<code>docs</code>/<code>test</code>/<code>chore</code>) for a history the lecturer can actually read. Every PR description states what changed, which REQ-ID(s) it satisfies, and how it was tested.</p>
+          </div>
+          <div class="card">
+            <span class="rule-num mono">Continuous Integration</span>
+            <p style="margin:0;">Every PR runs formatting/lint, unit/API tests, a clean PostgreSQL start, all migrations from zero, the small seed, database rule tests, and a build of API/UI. A broken schema or stale contract blocks merge.</p>
+          </div>
+        </div>
+        <div class="table-wrap" style="margin-top:22px;">
+          <table>
+            <thead><tr><th>Rhythm</th><th>What happens</th><th>Output</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Daily asynchronous update</strong>Before 20:00</td><td>Yesterday / today / blocker / PR link. A blocker older than 24 hours is escalated to GALLAGE.</td><td>Visible board state; no silent waiting.</td></tr>
+              <tr><td><strong>Twice-weekly 25-minute integration</strong></td><td>Pull latest dev, start clean stack, run golden slice, review cross-module decisions.</td><td>Integration log with pass/fail and named fixes.</td></tr>
+              <tr><td><strong>End-of-stage review</strong></td><td>Owner demonstrates success and failure cases; reviewer checks evidence and exit gate.</td><td>Signed gate checklist and next-stage backlog.</td></tr>
+              <tr><td><strong>Decision rule</strong></td><td>Module owner decides local details. Cross-module/schema/security/financial changes require accountable owner and reviewers from Section 06.</td><td>Decision-log entry; SRS/ERD/API docs updated in same PR.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 07 UI -->
+      <section id="ui">
+        <div class="section-head">
+          <span class="eyebrow mono">09 · QA interface</span>
+          <h2>UI scope that serves the database demonstration</h2>
+          <p class="desc">The interface is deliberately complete enough to exercise REQ-1–36, but it remains a QA/admin system—not a production patient portal. Correctness and visible rule enforcement come before decorative polish.</p>
+        </div>
+
+        <div class="card feature-grid">
+          <div class="feature">
+            <div class="fnum">01</div>
+            <div><h4>Scheduling workbench · Required</h4><p>Branch/date/doctor filters, day slots, booking form, reschedule, cancel, complete, and walk-in. Availability is helpful, but the database rejection remains the authoritative proof.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">02</div>
+            <div><h4>Rejections that teach · Required</h4><p>Every blocked action surfaces a stable database error code plus a useful message, e.g. the conflicting doctor and time range, not a generic failure.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">03</div>
+            <div><h4>Clinical and billing worklists · Required</h4><p>Doctors see Completed visits awaiting notes/treatments; Finance sees invoices, balances, payments, and claim actions. Computed totals remain read-only.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">04</div>
+            <div><h4>A dashboard per role · Required</h4><p>Reception sees today's bookings, Clinician sees assigned visits, Manager sees branch summary, and Admin/Finance sees outstanding balances and claim work.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">05</div>
+            <div><h4>Reports that can be verified · Required</h4><p>All five reports have filters and a raw table. Charts are added only after the table totals match the hand-calculated fixture.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">06</div>
+            <div><h4>A distinct walk-in path · Required</h4><p>A clearly labelled staff action creates <code>source = Walk-in</code> while still applying patient, doctor, branch, time, status, and overlap rules.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">07</div>
+            <div><h4>Visible rule state · Required</h4><p>Disabled actions explain why, but tests also deliberately bypass UI prevention to prove PostgreSQL rejects invalid treatment, payment, and scheduling operations.</p></div>
+          </div>
+          <div class="feature">
+            <div class="fnum">08</div>
+            <div><h4>Usable on the demo machine · Required</h4><p>Responsive at laptop/tablet width, keyboard focus, labelled inputs, non-colour status cues, predictable loading/empty states, and no horizontally clipped core form.</p></div>
+          </div>
+        </div>
+        <div class="callout"><div class="mark">→</div><p><strong>Cut order if time slips:</strong> remove animations, dashboard decoration, chart drill-down, advanced calendar interactions, and secondary edit screens first. Never cut database constraints, negative tests, raw report tables, reset/recovery, or the golden patient journey.</p></div>
+      </section>
+
+      <!-- 08 NFR -->
+      <section id="nfr">
+        <div class="section-head">
+          <span class="eyebrow mono">10A · Proof, not claims</span>
+          <h2>Non-functional verification plan</h2>
+          <p class="desc">Each SRS NFR has a measurable test, retained evidence, and an accountable owner. Only a small selection is shown live; the full evidence remains available for lecturer questions.</p>
+        </div>
+
+        <div class="card">
+          <div class="nfr-row">
+            <h4>Performance</h4>
+            <p class="proof"><strong>Owner: GALLAGE + BANDARA.</strong> NFR-1: 5–10 concurrent booking attempts, accepted/rejected within 200 ms in the target dataset. NFR-2: each report under 2 s. Retain timed runs and EXPLAIN ANALYZE before/after justified indexes.</p>
+          </div>
+          <div class="nfr-row">
+            <h4>Data integrity / ACID</h4>
+            <p class="proof"><strong>Owner: Willaddara.</strong> Force a failure after the first step of multi-step booking, invoice, and payment operations; assert that no partial rows or totals remain. Run two-session collision tests to show one conflicting booking succeeds and the other fails.</p>
+          </div>
+          <div class="nfr-row">
+            <h4>Security</h4>
+            <p class="proof"><strong>Owner: LIYANAGAMAGE.</strong> Role matrix tests at UI, API, and PostgreSQL; password-hash inspection; secrets scan; parameterised-query review; one injection payload and one direct database permission denial.</p>
+          </div>
+          <div class="nfr-row">
+            <h4>Reliability &amp; audit</h4>
+            <p class="proof"><strong>Owner: GALLAGE.</strong> Reschedule and status audit trails retain actor, timestamp, old/new state and reason; backup and restore retain the same record counts and a checksum/reconciliation sample.</p>
+          </div>
+          <div class="nfr-row">
+            <h4>Usability</h4>
+            <p class="proof"><strong>Owner: PILAPITIYA.</strong> A non-team student completes patient search and appointment booking with no verbal instruction; keyboard focus, error text, role navigation, tablet-width layout, and empty/loading states are checked.</p>
+          </div>
+          <div class="nfr-row">
+            <h4>Maintainability</h4>
+            <p class="proof"><strong>Owner: GALLAGE + Willaddara.</strong> Clean migration from zero, schema comments, updated ERD/data dictionary, 3NF/BCNF proof, and the explicit treatment-price snapshot justification all agree with the released database.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 09 QA -->
+      <section id="qa">
+        <div class="section-head">
+          <span class="eyebrow mono">10B · Verification gates</span>
+          <h2>Testing and acceptance strategy</h2>
+          <p class="desc">Every important rule is tested at the lowest level that owns it, then repeated through the API and one end-to-end browser path. The author writes tests; a different owner reproduces acceptance.</p>
+        </div>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Layer 1–2 · Database and API</h3>
+            <ul>
+              <li>Schema tests: keys, nullability, unique/check constraints, FK/delete actions, role grants, views, migration order.</li>
+              <li>Rule tests: valid case, boundary case, invalid case, and concurrent case where relevant.</li>
+              <li>Procedure transaction tests: success commits all effects; induced failure rolls back all effects.</li>
+              <li>API contract tests: validation, role, status code, stable error code, response shape, pagination/filtering, injection payload.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Layer 3–4 · Integration and browser</h3>
+            <ul>
+              <li>Golden patient journey across all five modules, run after every integration session.</li>
+              <li>Role journeys for Reception, Clinician, Manager, Admin/Finance, and deliberate forbidden actions.</li>
+              <li>One manual checklist row per REQ-1–36 and NFR-1–9, with expected/actual/evidence/owner/reviewer fields.</li>
+              <li>Clean install, reset, backup/restore, offline-start, tablet-width, and wrong/empty data states.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="table-wrap" style="margin-top:22px;">
+          <table>
+            <thead><tr><th>Must-pass critical scenario</th><th>Expected result</th><th>Primary owner</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Two simultaneous bookings for the same doctor/time</strong></td><td>Exactly one commits; the other receives the defined overlap error; no duplicate slot exists.</td><td>GALLAGE</td></tr>
+              <tr><td><strong>Treatment added to Scheduled/Cancelled visit</strong></td><td>Rejected directly by PostgreSQL; no line item, note, or invoice side effect.</td><td>Willaddara</td></tr>
+              <tr><td><strong>Catalogue price changes after historical treatment</strong></td><td>Old invoice stays unchanged; new treatment uses the new price.</td><td>Willaddara</td></tr>
+              <tr><td><strong>Payment above outstanding balance</strong></td><td>Whole transaction rejected; Payment, amount_paid, balance, and status remain unchanged.</td><td>BANDARA</td></tr>
+              <tr><td><strong>Insurance approval/rejection</strong></td><td>Approved/covered and patient-payable amounts reconcile to policy rules and approved amount.</td><td>BANDARA + LIYANAGAMAGE</td></tr>
+              <tr><td><strong>Reception attempts finance report/payment access</strong></td><td>UI hides action, API returns forbidden, and database role cannot read/execute the protected object.</td><td>LIYANAGAMAGE</td></tr>
+              <tr><td><strong>Five seeded report reconciliations</strong></td><td>System totals match hand-calculated expected fixtures; filters use the documented date semantics.</td><td>BANDARA</td></tr>
+              <tr><td><strong>Clean clone and offline demo start</strong></td><td>Documented start succeeds, migrations/seed apply, health checks pass, and golden journey completes.</td><td>GALLAGE + PILAPITIYA</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="gate"><strong>Defect policy:</strong> Severity 1 (data loss/security/demo cannot start) and Severity 2 (required flow or rule broken) block release. Severity 3 defects need a workaround and owner. Severity 4 polish items may be deferred and documented.</div>
+      </section>
+
+      <!-- 10 DATA -->
+      <section id="data">
+        <div class="section-head">
+          <span class="eyebrow mono">11 · Reproducible local operation</span>
+          <h2>Data, environments, and demo recovery</h2>
+          <p class="desc">The team maintains three predictable data modes and two runtime profiles so development remains fast while the lecturer demonstration remains stable and offline-capable.</p>
+        </div>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Data mode 1 · Tiny test fixture</h3>
+            <p>Minimum deterministic rows needed for fast automated tests: every role, status, payment state, claim state, and one cross-module patient journey. Each owner maintains their portion; BANDARA validates shared financial expectations.</p>
+          </div>
+          <div class="card">
+            <h3>Data mode 2 · Realistic bulk dataset</h3>
+            <p>Fixed-random-seed data at SRS §6.4 volume and distribution. Dates are relative to a fixed demo anchor so report screenshots and expected totals do not change across laptops or rehearsals.</p>
+          </div>
+          <div class="card" style="grid-column:1 / -1;">
+            <h3>Data mode 3 · Golden demo overlay</h3>
+            <p>Named, easy-to-find Sri Lankan patients, doctors, branches, appointments, policy, treatments, invoice, and expected report values. The same IDs and sequence are used in every rehearsal and lecturer demonstration.</p>
+          </div>
+        </div>
+        <div class="grid grid-2" style="margin-top:18px;">
+          <div class="card">
+            <h3>Development profile</h3>
+            <ul>
+              <li>PostgreSQL in Docker with persistent named volume.</li>
+              <li>API/UI run with hot reload and local environment variables.</li>
+              <li>Fast fixture reset available without touching source files.</li>
+              <li>Every member runs the same PostgreSQL major version and migrations.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Frozen demo profile</h3>
+            <ul>
+              <li>Database, API, and web service versions pinned and started together.</li>
+              <li>No cloud calls, CDN fonts, online authentication, or external API dependencies required.</li>
+              <li>Health checks confirm database readiness, migration level, API health, and web availability.</li>
+              <li>Configuration contains demo-only credentials and binds only to the local machine.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="table-wrap" style="margin-top:22px;">
+          <table>
+            <thead><tr><th>Recovery target</th><th>Prepared action</th><th>Verified by</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Bad data during demo</strong></td><td>Reset to golden database state and reopen the known demo accounts.</td><td>Under 2 minutes on both laptops.</td></tr>
+              <tr><td><strong>Primary laptop failure</strong></td><td>Switch HDMI/browser to the backup laptop already running the tagged release.</td><td>Rehearsal with no code copy at presentation time.</td></tr>
+              <tr><td><strong>Container/image problem</strong></td><td>Keep pre-pulled images and an exported image bundle where permitted; verify offline start one day before.</td><td>Network disabled test.</td></tr>
+              <tr><td><strong>Live flow defect</strong></td><td>Use the backup recording/screenshots, then open database evidence for the same rule and continue.</td><td>Presenter cue card includes fallback step.</td></tr>
+              <tr><td><strong>Database corruption</strong></td><td>Restore the final tagged dump or recreate from migrations plus golden seed.</td><td>Record counts and known totals reconciled after restore.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 11 RISK -->
+      <section id="risk">
+        <div class="section-head">
+          <span class="eyebrow mono">12 · Guardrails</span>
+          <h2>Risk, change, and recovery controls</h2>
+          <p class="desc">Every material risk has an early signal, an owner, and a response. Risks are reviewed at each integration meeting, not only near submission.</p>
+        </div>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Merge conflicts</h3>
+            <p><strong>Signal:</strong> branch older than three days or two people editing one migration. <strong>Response:</strong> split work by contract, rebase daily, and never edit an already-shared migration; add a new corrective migration.</p>
+          </div>
+          <div class="card">
+            <h3>Scope creep</h3>
+            <p><strong>Signal:</strong> work item has no REQ/NFR or demo purpose. <strong>Response:</strong> move it to post-assessment backlog. Features freeze at G4; database correctness, tests, recovery, and required UI are protected.</p>
+          </div>
+          <div class="card">
+            <h3>Single points of failure</h3>
+            <p><strong>Signal:</strong> only one person can explain or run a module. <strong>Response:</strong> named deputy, rotating review, paired walkthrough, and one-page module runbook. GALLAGE's integration responsibilities are specifically duplicated with PILAPITIYA.</p>
+          </div>
+          <div class="card">
+            <h3>Demo-day failure</h3>
+            <p><strong>Signal:</strong> offline start/reset or backup-laptop rehearsal fails. <strong>Response:</strong> no release sign-off until both machines pass; keep golden reset, dump, pre-pulled dependencies, screenshots, and recording.</p>
+          </div>
+          <div class="card" style="grid-column:1 / -1;">
+            <h3>Deadline slip</h3>
+            <p><strong>Signal:</strong> any gate slips by more than two working days. <strong>Response:</strong> cut P1 polish, move available member to the blocker, keep Stage 6 as release buffer, and present only tested functionality.</p>
+          </div>
+        </div>
+        <div class="table-wrap" style="margin-top:22px;">
+          <table>
+            <thead><tr><th>Additional high risk</th><th>Prevention / response</th><th>Owner</th></tr></thead>
+            <tbody>
+              <tr><td><strong>SRS–schema drift</strong></td><td>ERD, data dictionary, migrations, and traceability sheet change in the same PR; schema catalogue comparison at every gate.</td><td>GALLAGE</td></tr>
+              <tr><td><strong>Financial-definition disagreement</strong></td><td>Freeze one written worked example for subtotal, eligibility, approval, patient payable, payment and outstanding; use it in tests.</td><td>Willaddara + BANDARA</td></tr>
+              <tr><td><strong>Reports look plausible but are wrong</strong></td><td>Hand-calculate golden fixtures, reconcile raw tables first, then charts; never validate a chart only by appearance.</td><td>BANDARA</td></tr>
+              <tr><td><strong>Rules enforced only in UI/API</strong></td><td>G2 runs direct SQL invalid/concurrent cases; reviewer checks that bypassing clients cannot violate invariants.</td><td>Each DB owner; GALLAGE signs</td></tr>
+              <tr><td><strong>Secret or patient-data leak</strong></td><td>Only fictional data; environment files ignored; secret scan; production backups/config never included in demo repository.</td><td>LIYANAGAMAGE</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 12 DEMO -->
+      <section id="demo">
+        <div class="section-head">
+          <span class="eyebrow mono">13 · Lecturer showcase</span>
+          <h2>Ten-minute database-first demonstration</h2>
+          <p class="desc">One rehearsed narrative, no hunting through screens. GALLAGE opens, demonstrates the most important scheduling and integration proof, and closes; each owner speaks briefly where their evidence is strongest.</p>
+        </div>
+        <div class="card">
+          <div class="demo-step"><div class="dstep-num">00:00</div><p><strong>GALLAGE · 45 s — problem, architecture, and local choice.</strong> State that the database is the authority, the UI is for QA, and the release is running entirely locally.</p></div>
+          <div class="demo-step"><div class="dstep-num">00:45</div><p><strong>PILAPITIYA + LIYANAGAMAGE · 60 s — foundations.</strong> Show branches/staff/specialties, register or find a patient clinic-wide, and show policy coverage.</p></div>
+          <div class="demo-step"><div class="dstep-num">01:45</div><p><strong>GALLAGE · 120 s — scheduling proof.</strong> Book a valid slot, attempt an overlap, show the database rejection, reschedule with history, and create a walk-in.</p></div>
+          <div class="demo-step"><div class="dstep-num">03:45</div><p><strong>Willaddara · 90 s — clinical and invoice integrity.</strong> Show treatment blocked before completion, complete the visit, record notes/treatments, and show automatic invoice plus historical price snapshot.</p></div>
+          <div class="demo-step"><div class="dstep-num">05:15</div><p><strong>BANDARA · 90 s — payment and claim.</strong> Post a partial payment, show outstanding/status update, reject an overpayment, then update a claim and reconcile coverage.</p></div>
+          <div class="demo-step"><div class="dstep-num">06:45</div><p><strong>BANDARA · 75 s — five reports.</strong> Rapidly show all five tabs; explain one hand-reconciled raw table and its chart.</p></div>
+          <div class="demo-step"><div class="dstep-num">08:00</div><p><strong>LIYANAGAMAGE · 45 s — defence in depth.</strong> Attempt a finance operation as Reception and show UI/API/database denial; mention parameterised queries and fictional seed data.</p></div>
+          <div class="demo-step"><div class="dstep-num">08:45</div><p><strong>GALLAGE · 45 s — ACID/performance evidence.</strong> Show the two-session overlap result, rollback evidence, and one EXPLAIN ANALYZE/index comparison.</p></div>
+          <div class="demo-step"><div class="dstep-num">09:30</div><p><strong>GALLAGE · 30 s — close.</strong> Point to the tagged reproducible release and explain that later server deployment changes infrastructure/configuration, not the schema or rules.</p></div>
+          <div class="demo-step"><div class="dstep-num">Q&amp;A</div><p><strong>Ownership rule.</strong> The named owner answers first; GALLAGE handles architecture/integration; a second member adds the independent review/test evidence.</p></div>
+        </div>
+        <div class="callout"><div class="mark">✓</div><p><strong>Presenter discipline:</strong> use one browser profile, known demo users, bookmarked routes, fixed IDs, and a printed cue card. Never run an untested migration, edit seed data, or type long SQL during the live narrative; open prepared evidence instead.</p></div>
+      </section>
+
+      <!-- 14 SERVER -->
+      <section id="server">
+        <div class="section-head">
+          <span class="eyebrow mono">14 · After assessment</span>
+          <h2>Path from local showcase to a real server</h2>
+          <p class="desc">This work starts only after <code>v1.0-demo</code> is frozen. It reuses the same migrations, API contract, tests, and container boundaries; it does not introduce a separate “cloud version” of CATMS.</p>
+        </div>
+        <div class="timeline">
+          <div class="phase">
+            <div class="phase-num">P1</div>
+            <div class="phase-card">
+              <h3>Production requirements and threat review</h3>
+              <ul class="goal-list"><li>Confirm hosting budget, expected staff concurrency, clinic connectivity, retention, backup, recovery, privacy, audit, domain, TLS, and operational ownership.</li><li>Resolve whether PostgreSQL is self-hosted on a VPS or managed; keep PostgreSQL 16 compatibility either way.</li></ul>
+              <div class="lead"><strong>Gate:</strong> approved production architecture, data classification, recovery objectives, and cost owner.</div>
+            </div>
+          </div>
+          <div class="phase">
+            <div class="phase-num">P2</div>
+            <div class="phase-card">
+              <h3>Harden configuration and infrastructure</h3>
+              <ul class="goal-list"><li>Separate development/staging/production environments and secrets; require HTTPS, secure cookies, restricted network access, least-privilege DB users, log redaction, rate limits, and health monitoring.</li><li>Automate database backups with encryption and retention; rehearse restore to a separate environment.</li></ul>
+              <div class="lead"><strong>Gate:</strong> security checklist, backup/restore drill, and staging environment pass.</div>
+            </div>
+          </div>
+          <div class="phase">
+            <div class="phase-num">P3</div>
+            <div class="phase-card">
+              <h3>Deploy the unchanged release candidate to staging</h3>
+              <ul class="goal-list"><li>Build immutable API/web images from a tag, apply migrations once through a controlled deployment job, and use non-production staging data.</li><li>Run the entire automated suite, performance tests, RBAC review, browser journey, and rollback rehearsal against server networking/TLS.</li></ul>
+              <div class="lead"><strong>Gate:</strong> staging sign-off by delivery, security, QA, and clinic representative.</div>
+            </div>
+          </div>
+          <div class="phase">
+            <div class="phase-num">P4</div>
+            <div class="phase-card">
+              <h3>Pilot one branch, then expand</h3>
+              <ul class="goal-list"><li>Train a small pilot group, import only validated real data, monitor errors/performance, maintain a rollback window, and collect workflow feedback.</li><li>After pilot acceptance, roll out branch by branch with support contacts, incident process, monitoring, and scheduled backup-restore tests.</li></ul>
+              <div class="lead"><strong>Gate:</strong> signed pilot acceptance and operational handover. Real patient data is never placed in the lecturer-demo environment.</div>
+            </div>
+          </div>
+        </div>
+        <div class="callout"><div class="mark">→</div><p><strong>Portability principle:</strong> only environment endpoints, TLS/secret management, storage/backup, monitoring, and capacity change. Tables, constraints, procedures, report semantics, API contracts, and tests remain the same unless a versioned migration deliberately changes them.</p></div>
+      </section>
+
+      <!-- 15 DELIVERABLES -->
+      <section id="deliverables">
+        <div class="section-head">
+          <span class="eyebrow mono">15 · Release definition</span>
+          <h2>Final deliverables and project-level Done</h2>
+          <p class="desc">The project is complete only when another team member can reproduce the tagged system and the evidence below without unpublished knowledge.</p>
+        </div>
+        <div class="card">
+          <ul class="checklist">
+            <li><span class="box"></span> Protected repository with readable history, issues/board, decisions, reviewed PRs, CI evidence, and exact <code>v1.0-demo</code> tag</li>
+            <li><span class="box"></span> Updated SRS with closed TBDs, assumptions, and final REQ/NFR traceability</li>
+            <li><span class="box"></span> Final ERD, full data dictionary for all 19 stored relations, cardinalities, FDs, 3NF/BCNF proof, and treatment-price snapshot justification</li>
+            <li><span class="box"></span> Ordered SQL migrations for tables, constraints, roles/grants, indexes, procedures/functions/triggers, audit objects, and five reports</li>
+            <li><span class="box"></span> Deterministic test fixture, realistic bulk seed, golden demo overlay, clean reset, backup, and verified restore procedure</li>
+            <li><span class="box"></span> Local database/API/web runtime profiles, environment template, health checks, and setup/troubleshooting guide</li>
+            <li><span class="box"></span> API contract, role matrix, QA user guide, demo accounts, and module design notes</li>
+            <li><span class="box"></span> Database/API/UI tests and signed REQ-1–36 + NFR-1–9 evidence matrix, including concurrency, rollback, RBAC, performance, and report reconciliation</li>
+            <li><span class="box"></span> Timed demo script, primary and backup laptop rehearsal result, screenshots/evidence, final database dump, and short backup recording</li>
+            <li><span class="box"></span> Individual contribution report showing ownership, PRs, reviews, tests, documentation, and demo responsibilities for all five members</li>
+            <li><span class="box"></span> This Ground Implementation Delivery Plan v2.0 and the post-assessment server backlog</li>
+          </ul>
+        </div>
+        <div class="gate"><strong>Project-level Done:</strong> all G0–G6 gates are signed; all critical requirements pass on a fresh machine; zero Severity 1/2 defects remain; expected report totals reconcile; reset and restore are proven; the exact release is tagged; and every member can explain their module, its database invariants, its transaction boundary, its indexes, and its test evidence.</div>
+      </section>
+
+    </div>
+
+    <footer>
+      CATMS — Clinic Appointment and Treatment Management System · Ground Implementation Delivery Plan v2.0 · Group 6 · MedSync Clinics
+    </footer>
+  </main>
+</div>
+</body>
+</html>
