@@ -9,7 +9,7 @@ export function Button({ variant = 'primary', size = 'md', className = '', child
     ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:text-slate-300',
     danger: 'border border-[#E8C2CA] bg-[#FBEAEE] text-[#C4425A] hover:bg-[#F7DCE2] disabled:opacity-50',
   }
-  return <button className={`inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition disabled:cursor-not-allowed ${size === 'sm' ? 'px-3 py-2 text-xs' : 'px-4 py-2.5 text-sm'} ${variants[variant]} ${className}`} {...props}>{children}</button>
+  return <button className={`inline-flex items-center justify-center gap-2 rounded font-semibold transition disabled:cursor-not-allowed ${size === 'sm' ? 'px-2.5 py-1.5 text-xs' : 'px-3.5 py-2 text-[13px]'} ${variants[variant]} ${className}`} {...props}>{children}</button>
 }
 
 const badgeStyles: Record<string, string> = {
@@ -91,9 +91,9 @@ export function Modal({ open, onClose, title, description, children, size = 'md'
   if (!open) return null
   const widths = { sm: 'max-w-lg', md: 'max-w-2xl', lg: 'max-w-3xl', xl: 'max-w-5xl' }
   return <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/45 p-0 backdrop-blur-[2px] sm:items-center sm:p-5" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="modal-title" className={`modal-panel floating-surface max-h-[94vh] w-full overflow-y-auto rounded-t-[14px] bg-white sm:rounded-[14px] ${widths[size]}`}>
+    <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="modal-title" className={`modal-panel floating-surface max-h-[94vh] w-full overflow-y-auto rounded-t bg-white sm:rounded ${widths[size]}`}>
       <div className="modal-head sticky top-0 z-10 flex items-start justify-between border-b border-slate-200 bg-white/95 px-5 py-5 backdrop-blur sm:px-7">
-        <div><h2 id="modal-title" className="font-display text-2xl font-semibold text-slate-900">{title}</h2>{description && <p className="mt-1 max-w-xl text-sm leading-5 text-slate-500">{description}</p>}</div>
+        <div><h2 id="modal-title" className="font-display text-xl font-semibold text-slate-900">{title}</h2>{description && <p className="mt-1 max-w-xl text-sm leading-5 text-slate-500">{description}</p>}</div>
         <button type="button" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-clinic-500" onClick={onClose} aria-label="Close dialog"><X size={19} /></button>
       </div>
       <div className="px-5 py-6 sm:px-7">{children}</div>

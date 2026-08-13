@@ -35,15 +35,15 @@
     min-height: 100vh;
     background: var(--paper);
     color: var(--ink);
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: Arial, "Segoe UI", Tahoma, sans-serif;
     font-size: 15px;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4 { font-family: Fraunces, Georgia, serif; letter-spacing: -.01em; }
+  h1, h2, h3, h4 { font-family: Arial, "Segoe UI", Tahoma, sans-serif; letter-spacing: 0; }
   button, input, select, textarea { font: inherit; }
   button { border-radius: 8px; }
-  code, .mono-data { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  code, .mono-data { font-family: Consolas, "Courier New", monospace; font-variant-numeric: tabular-nums; }
   svg { stroke-width: 1.5; }
   ::selection { background: color-mix(in srgb, var(--portal-accent) 22%, white); color: var(--ink); }
   :focus-visible { outline: 3px solid color-mix(in srgb, var(--portal-accent) 72%, white) !important; outline-offset: 2px; }
@@ -57,7 +57,7 @@
   .table-shell { @apply overflow-hidden border bg-white; border-color: color-mix(in srgb, var(--hairline) 72%, white); border-radius: 22px; box-shadow: 0 14px 42px rgba(18,35,43,.055); }
   .data-table { @apply w-full border-collapse text-left; font-variant-numeric: tabular-nums; }
   .data-table thead { background: var(--surface-alt); }
-  .data-table th { @apply sticky top-0 z-[2] whitespace-nowrap border-b px-5 py-3 text-left text-[11px] font-medium uppercase tracking-[.08em]; border-color: var(--hairline); background: var(--surface-alt); color: var(--ink-faint); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  .data-table th { @apply sticky top-0 z-[2] whitespace-nowrap border-b px-5 py-3 text-left text-[11px] font-medium uppercase tracking-[.08em]; border-color: var(--hairline); background: var(--surface-alt); color: var(--ink-faint); font-family: Consolas, "Courier New", monospace; }
   .data-table td { @apply border-b px-5 py-3.5 text-sm; border-color: #EAEFEF; color: var(--ink-soft); }
   .data-table tbody tr:last-child td { @apply border-b-0; }
   .data-table tbody tr { @apply transition-colors; }
@@ -72,7 +72,7 @@
   .tab-button:hover { color: var(--ink); }
   .tab-button-active { background: white; color: var(--portal-accent); box-shadow: 0 1px 2px rgba(18,35,43,.06); }
   .section-title { @apply font-display text-xl font-semibold; color: var(--ink); }
-  .label-caps { @apply text-[10px] font-medium uppercase tracking-[.1em]; color: var(--ink-faint); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  .label-caps { @apply text-[10px] font-medium uppercase tracking-[.1em]; color: var(--ink-faint); font-family: Consolas, "Courier New", monospace; }
   .btn-primary { background: var(--portal-accent); color: white; }
   .btn-primary:hover { filter: brightness(.88); }
   .btn-secondary { border-color: var(--hairline); background: white; color: var(--ink-soft); }
@@ -241,7 +241,7 @@
 .floating-appointment.appointment-2 { left: 52px; top: 143px; width: calc(100% - 86px); transform: rotate(.45deg); }
 .floating-appointment.appointment-3 { left: 76px; top: 216px; width: calc(100% - 109px); transform: rotate(-.5deg); }
 .appointment-time { width: 46px; padding-right: 8px; border-right: 1px solid #E6ECEC; }
-.appointment-time strong, .appointment-time span { display: block; font-family: "IBM Plex Mono", monospace; font-size: 10px; }
+.appointment-time strong, .appointment-time span { display: block; font-family: Consolas, "Courier New", monospace; font-size: 10px; }
 .appointment-time span { margin-top: 2px; color: var(--ink-faint); font-size: 8px; }
 .floating-appointment p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 750; }
 .floating-appointment .min-w-0 > span { display: block; overflow: hidden; margin-top: 2px; color: var(--ink-faint); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
@@ -288,8 +288,8 @@
 .flow-time { z-index: 1; display: flex; width: 68px; flex-shrink: 0; align-items: center; gap: 10px; }
 .flow-time > span { width: 9px; height: 9px; flex-shrink: 0; border: 2px solid white; border-radius: 50%; background: #B9C6C8; box-shadow: 0 0 0 2px #DDE6E6; }
 .flow-time > span.is-current { background: var(--portal-accent); box-shadow: 0 0 0 3px var(--portal-accent-soft); }
-.flow-time p { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 700; color: var(--ink); }
-.flow-time small { display: block; margin-top: 1px; font-family: "IBM Plex Mono", monospace; font-size: 8px; color: var(--ink-faint); }
+.flow-time p { font-family: Consolas, "Courier New", monospace; font-size: 11px; font-weight: 700; color: var(--ink); }
+.flow-time small { display: block; margin-top: 1px; font-family: Consolas, "Courier New", monospace; font-size: 8px; color: var(--ink-faint); }
 .activity-surface { position: relative; overflow: hidden; padding: 23px 23px 18px; border: 1px solid rgba(220,228,228,.74); border-radius: 24px 24px 52px 24px; background: rgba(255,255,255,.92); box-shadow: 0 14px 42px rgba(18,35,43,.05); }
 .activity-surface::after { content: ""; position: absolute; right: -44px; top: -62px; width: 140px; height: 140px; border: 1px solid color-mix(in srgb, var(--portal-accent) 10%, transparent); border-radius: 50%; pointer-events: none; }
 .activity-total { z-index: 1; color: var(--portal-accent); font-size: 18px; font-weight: 800; }
@@ -385,7 +385,7 @@
 .entry-check { display: grid; width: 20px; height: 20px; place-items: center; border-radius: 50%; color: white; background: var(--entry-color); box-shadow: 0 4px 10px color-mix(in srgb, var(--entry-color) 25%, transparent); }
 .entry-arrow { display: grid; width: 27px; height: 27px; place-items: center; border-radius: 8px; color: var(--entry-color); background: var(--entry-soft); transition: transform 350ms cubic-bezier(.2,.8,.2,1), background 280ms ease, color 280ms ease; }
 .portal-entry-card:hover .entry-arrow { color: white; background: var(--entry-color); transform: translateX(3px); }
-.status-badge { border-radius: 8px; font-family: "IBM Plex Mono", ui-monospace, monospace; transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease; }
+.status-badge { border-radius: 8px; font-family: Consolas, "Courier New", monospace; transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease; }
 .rule-error { border-left: 4px solid var(--state-coral) !important; animation: rejection-flash 420ms ease-out; box-shadow: 0 8px 24px rgba(18,35,43,.08); }
 .floating-surface { box-shadow: 0 8px 24px rgba(18,35,43,.08); }
 
@@ -466,6 +466,173 @@
   .appointment-flow-row { flex-wrap: nowrap; }
   .appointment-flow-row > .ml-auto { display: none; }
   .walkin-callout { align-items: flex-start; flex-direction: column; padding: 25px 24px; border-radius: 22px 22px 52px 22px; }
+}
+
+/* Internal workstation mode: dense, familiar and optimized for repeat staff use. */
+body {
+  background: #EDF1F3;
+  font-family: Arial, "Segoe UI", Tahoma, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+}
+h1, h2, h3, h4,
+.font-display { font-family: Arial, "Segoe UI", Tahoma, sans-serif !important; letter-spacing: 0 !important; }
+code, .mono-data, .font-mono { font-family: Consolas, "Courier New", monospace !important; }
+button { border-radius: 3px; }
+
+.portal-shell { background: #EDF1F3; }
+.portal-shell .rounded-lg,
+.portal-shell .rounded-xl,
+.portal-shell .rounded-2xl,
+.portal-shell .rounded-\[14px\] { border-radius: 4px !important; }
+.card,
+.table-shell {
+  border-color: #CCD6DB;
+  border-radius: 4px;
+  box-shadow: none;
+}
+.input { border-color: #BCC9CF; border-radius: 3px; padding-top: .48rem; padding-bottom: .48rem; }
+.input:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--portal-accent) 14%, transparent); }
+.data-table th { padding: 9px 12px; background: #E4EAED; font-size: 10px; letter-spacing: .045em; }
+.data-table td { padding: 10px 12px; }
+.tab-list { border: 1px solid #CCD6DB; border-radius: 3px; padding: 2px; background: #E4EAED; }
+.tab-button { border-radius: 2px; padding: 7px 11px; }
+.section-title { font-family: Arial, "Segoe UI", Tahoma, sans-serif !important; font-size: 17px; font-weight: 700; }
+.label-caps { letter-spacing: .07em; }
+.btn-primary:hover { filter: brightness(.94); }
+
+.portal-sidebar {
+  background: linear-gradient(180deg, rgba(235,248,252,.97), rgba(220,241,248,.94));
+  box-shadow: 4px 0 12px rgba(40,111,139,.07);
+  backdrop-filter: blur(10px);
+}
+.portal-sidebar::before { animation: none; opacity: .42; }
+.portal-sidebar::after { display: none; }
+.sidebar-brand { min-height: 76px; border-radius: 4px; padding: 4px 8px; box-shadow: none; background: rgba(255,255,255,.58); }
+.sidebar-brand-logo { width: 130px; }
+.workspace-switcher { border-radius: 4px !important; box-shadow: none; backdrop-filter: none; background: rgba(255,255,255,.62); }
+.workspace-switcher::after { display: none; }
+.portal-nav-active { border-radius: 3px !important; box-shadow: none; background: rgba(255,255,255,.82); }
+.portal-nav-active::after { width: 4px; height: 4px; box-shadow: none; }
+.portal-nav-idle { border-radius: 3px !important; transition: color 120ms ease, background-color 120ms ease; }
+.portal-nav-idle:hover { transform: none; background: rgba(255,255,255,.62); }
+.portal-nav-idle:hover svg { transform: none; }
+.portal-topbar { box-shadow: none; background: #F9FAFB !important; }
+.topbar-search { border-radius: 3px !important; background: white; }
+
+.page-hero {
+  min-height: 112px;
+  padding: 17px 19px;
+  border-color: #C6D1D6;
+  border-radius: 4px;
+  background: #F9FAFB;
+  box-shadow: none;
+}
+.page-hero::before { width: 3px; border-radius: 0; }
+.page-hero-orbit { display: none; }
+.page-hero h1 { font-size: 25px !important; }
+.page-hero-photo { width: 174px; height: 72px; border-radius: 3px; box-shadow: none; border-color: #C6D1D6; }
+.page-hero-photo img,
+.page-hero:hover .page-hero-photo img { transform: none; filter: saturate(.65) contrast(.94); }
+
+.metric-card {
+  min-height: 116px;
+  padding: 15px;
+  border-color: #CCD6DB;
+  border-radius: 4px;
+  box-shadow: none;
+  transition: background-color 120ms ease;
+}
+.metric-card:hover { transform: none; box-shadow: none; background: #FAFCFD; }
+.metric-curve { display: none; }
+.metric-card .rounded-2xl { border-radius: 3px !important; }
+
+.role-home-hero {
+  min-height: 318px;
+  grid-template-columns: minmax(0,1.12fr) minmax(360px,.88fr);
+  gap: 20px;
+  padding: 22px;
+  border-color: #C6D1D6;
+  border-radius: 4px;
+  background: #F9FAFB;
+  box-shadow: none;
+}
+.role-home-hero h1 { font-size: 30px !important; line-height: 1.15 !important; }
+.hero-orbit { display: none; }
+.role-showcase { min-height: 274px; border-radius: 4px; box-shadow: none; }
+.role-showcase::before { display: none; }
+.showcase-heading { padding: 17px 18px; }
+.showcase-heading strong { border-radius: 2px; }
+.floating-appointment { min-height: 55px; border-radius: 3px; box-shadow: 0 2px 5px rgba(9,24,29,.18); backdrop-filter: none; }
+.floating-appointment.appointment-1 { left: 60px; top: 54px; transform: none; }
+.floating-appointment.appointment-2 { left: 60px; top: 115px; width: calc(100% - 78px); transform: none; }
+.floating-appointment.appointment-3 { left: 60px; top: 176px; width: calc(100% - 78px); transform: none; }
+.showcase-foot { right: 18px; bottom: 11px; left: 18px; }
+.clinical-focus { height: 120px; }
+.clinical-ring { width: 98px; height: 98px; box-shadow: none; }
+.next-patient-note { right: 18px; bottom: 40px; left: 18px; padding: 10px 12px; border-radius: 3px; backdrop-filter: none; }
+.manager-insight { grid-template-columns: 115px 1fr; padding: 2px 20px 40px; }
+.completion-dial { width: 108px; height: 108px; box-shadow: none; }
+.completion-dial::before { width: 88px; height: 88px; }
+.flow-bars { height: 105px; }
+.finance-figure { padding: 2px 20px; }
+.finance-spark { bottom: 49px; height: 92px; }
+
+.flow-surface,
+.activity-surface {
+  border-color: #CCD6DB;
+  border-radius: 4px;
+  box-shadow: none;
+}
+.activity-surface { padding: 17px; }
+.activity-surface::after { display: none; }
+.attention-surface { padding: 17px; border: 1px solid #CCD6DB; border-radius: 4px; background: #F4F7F8; }
+.appointment-flow-row { min-height: 64px; border-radius: 2px; }
+.appointment-flow-row:hover { transform: none; }
+.attention-row { border-radius: 2px; }
+.attention-row:hover { transform: none; }
+.walkin-callout { min-height: 112px; padding: 20px 22px; border-radius: 4px; box-shadow: none; }
+.walkin-orbit { display: none; }
+
+.access-gateway { background: #E8EDF0; }
+.access-gateway::before { opacity: .2; background-size: 32px 32px; mask-image: none; }
+.gateway-orb { display: none; }
+.access-panel { border-radius: 4px !important; box-shadow: 0 3px 12px rgba(18,35,43,.10); backdrop-filter: none; }
+.portal-entry-card {
+  min-height: 205px;
+  border-radius: 4px;
+  padding: 17px;
+  box-shadow: none;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+.portal-entry-card::after,
+.entry-spotlight { display: none; }
+.portal-entry-card:hover,
+.portal-entry-card:focus-visible { transform: none; box-shadow: none; }
+.portal-entry-card.is-selected { box-shadow: inset 4px 0 var(--entry-color); }
+.portal-entry-card:hover .entry-photo img,
+.portal-entry-card:focus-visible .entry-photo img { transform: scale(1.035); filter: grayscale(.25) saturate(.76) contrast(.92); }
+.entry-icon { width: 36px; height: 36px; border-radius: 3px; transition: none; }
+.portal-entry-card:hover .entry-icon { transform: none; }
+.entry-check { border-radius: 2px; box-shadow: none; }
+.entry-arrow { border-radius: 2px; transition: none; }
+.portal-entry-card:hover .entry-arrow { transform: none; }
+.status-badge { border-radius: 2px; }
+.floating-surface { box-shadow: 0 4px 16px rgba(18,35,43,.14); }
+.modal-panel { border-radius: 4px !important; box-shadow: 0 5px 20px rgba(18,35,43,.18); }
+
+@media (max-width: 900px) {
+  .role-home-hero { grid-template-columns: 1fr; }
+  .role-home-copy { min-height: 245px; }
+}
+
+@media (max-width: 640px) {
+  .page-hero { padding: 15px; border-radius: 4px; }
+  .page-hero-photo { height: 105px; border-radius: 3px; }
+  .role-home-hero { padding: 16px; border-radius: 4px; }
+  .role-home-hero h1 { font-size: 26px !important; }
+  .role-showcase { border-radius: 4px; }
+  .walkin-callout { border-radius: 4px; }
 }
 
 @media print {

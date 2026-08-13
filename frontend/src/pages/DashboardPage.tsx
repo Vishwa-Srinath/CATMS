@@ -20,24 +20,24 @@ const weeklyData = [
 
 const roleCopy = {
   Receptionist: {
-    eyebrow: 'Front desk command',
-    title: 'Every arrival, one calm flow.',
-    description: 'Keep patients welcomed, doctors prepared, and the day moving without losing the human details.',
+    eyebrow: 'Reception operations',
+    title: 'Reception dashboard',
+    description: 'Manage today’s arrivals, appointments, walk-ins, and patient registration from this work area.',
   },
   Clinician: {
-    eyebrow: 'Clinical day',
-    title: 'Care first. Documentation in step.',
-    description: 'Your patients, clinical priorities, and unfinished records are gathered into one focused workspace.',
+    eyebrow: 'Clinical operations',
+    title: 'Clinical dashboard',
+    description: 'Review assigned patients, today’s consultation sequence, and clinical records awaiting completion.',
   },
   Manager: {
-    eyebrow: 'Branch pulse',
-    title: 'See the branch before the day gets busy.',
-    description: 'Follow patient flow, service performance, and operational pressure without hunting through reports.',
+    eyebrow: 'Branch operations',
+    title: 'Branch management dashboard',
+    description: 'Review branch activity, appointment completion, service demand, and operational exceptions.',
   },
   Admin: {
-    eyebrow: 'Revenue command',
-    title: 'Keep every rupee and claim accounted for.',
-    description: 'A clinic-wide view of collections, open balances, claims, and the work that needs financial follow-through.',
+    eyebrow: 'Administration and finance',
+    title: 'Finance administration dashboard',
+    description: 'Review clinic-wide collections, outstanding balances, insurance claims, and administrative actions.',
   },
 } as const
 
