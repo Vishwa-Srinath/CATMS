@@ -36,8 +36,8 @@ function Sidebar({ close }: { close?: () => void }) {
   if (!user) return null
   return <div className="portal-sidebar flex h-full flex-col px-4 py-5 text-slate-800">
     <div className="px-2"><Brand /></div>
-    <div className="workspace-switcher mt-7 rounded-2xl border px-3.5 py-3.5">
-      <p className="font-mono text-[9px] font-medium uppercase tracking-[.1em] text-slate-400">Workspace</p>
+    <div className="workspace-switcher mt-4 rounded-2xl border px-3.5 py-3">
+      <p className="font-mono text-[9px] font-medium uppercase tracking-[.1em] text-slate-400">Authorized work area</p>
       <div className="mt-1.5 flex items-center gap-2 text-sm font-semibold text-[var(--portal-accent)]"><ShieldCheck size={15} />{roleLabels[user.role]}</div>
     </div>
     <nav className="mt-5 flex-1 space-y-1" aria-label="Main navigation">
@@ -63,18 +63,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:block"><Sidebar /></aside>
     {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><button className="absolute inset-0 bg-slate-950/50" aria-label="Close navigation" onClick={() => setMobileOpen(false)} /><aside className="floating-surface relative h-full w-[min(86vw,20rem)]"><button className="absolute right-3 top-3 z-10 rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X size={20} /></button><Sidebar close={() => setMobileOpen(false)} /></aside></div>}
     <div className="lg:pl-64">
-      <header className="portal-topbar sticky top-0 z-30 flex h-[72px] items-center justify-between border-b bg-white/90 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+      <header className="portal-topbar sticky top-0 z-30 flex h-[60px] items-center justify-between border-b bg-white/95 px-4 sm:px-5 lg:px-6">
         <div className="flex items-center gap-3"><button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" aria-label="Open navigation"><Menu size={21} /></button><img className="h-9 w-9 object-contain lg:hidden" src={medSyncMark} alt="MedSync" /><div className="hidden sm:block"><p className="text-sm font-bold text-slate-800">{currentPage}</p><p className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium text-slate-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{branchName} · Live workspace</p></div></div>
         <div className="flex items-center gap-2 sm:gap-3">
           {user.role === 'Clinician' && <button type="button" onClick={() => setNightCharting((active) => !active)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label={nightCharting ? 'Turn off Night Charting' : 'Turn on Night Charting'} title={nightCharting ? 'Use light charting mode' : 'Night Charting'}>{nightCharting ? <Sun size={18} /> : <Moon size={18} />}</button>}
-          <button type="button" className="topbar-search hidden items-center gap-2 rounded-xl border px-3 py-2 text-slate-500 transition hover:text-slate-800 sm:flex" aria-label="Search workspace"><Search size={16} /><span className="text-xs font-medium">Search</span><kbd className="ml-3 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[9px] text-slate-400">⌘ K</kbd></button>
+          <button type="button" className="topbar-search hidden items-center gap-2 rounded-xl border px-3 py-1.5 text-slate-500 transition hover:text-slate-800 sm:flex" aria-label="Search workspace"><Search size={16} /><span className="text-xs font-medium">Search records</span><kbd className="ml-3 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[9px] text-slate-400">Ctrl K</kbd></button>
           <button type="button" className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Notifications"><Bell size={19} /><span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-coral ring-2 ring-white" /></button>
           <span className="mx-1 hidden h-7 w-px bg-slate-200 sm:block" />
           <button type="button" className="flex items-center gap-2 rounded-lg p-1.5 text-left hover:bg-slate-100"><Avatar name={user.name} size="sm" className="portal-avatar" /><span className="hidden md:block"><span className="block text-xs font-bold text-slate-800">{user.name}</span><span className="block text-[10px] text-slate-500">{user.jobTitle}</span></span><ChevronDown size={14} className="hidden text-slate-400 md:block" /></button>
         </div>
       </header>
-      <main id="main-content" className="mx-auto max-w-[1560px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</main>
-      <footer className="px-6 pb-6 text-center text-[11px] text-slate-400"><span className="inline-flex items-center gap-1.5"><ShieldCheck size={12} />CATMS Phase 1 · Fictional demonstration data only</span></footer>
+      <main id="main-content" className="mx-auto max-w-[1560px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6">{children}</main>
+      <footer className="px-6 pb-4 text-center text-[11px] text-slate-400"><span className="inline-flex items-center gap-1.5"><ShieldCheck size={12} />MedSync CATMS · Local staff system · Demonstration data</span></footer>
     </div>
   </div>
 }

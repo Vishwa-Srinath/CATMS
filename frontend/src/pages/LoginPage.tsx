@@ -67,17 +67,17 @@ export default function LoginPage() {
     <header className="relative z-10 mx-auto flex h-24 max-w-[1480px] items-center justify-between px-5 sm:px-8 lg:px-12">
       <img className="gateway-brand-logo w-[142px] sm:w-[166px]" src={medSyncLogo} alt="MedSync Medical Network" />
       <div className="flex items-center gap-3">
-        <span className="hidden items-center gap-2 rounded-lg border border-[#DCE4E4] bg-white/75 px-3 py-2 text-xs font-medium text-slate-600 backdrop-blur sm:flex"><span className="live-pulse !bg-[#1E8A5F]" />Systems operational</span>
-        <span className="flex items-center gap-2 text-xs font-medium text-slate-500"><LockKeyhole size={14} />Protected staff access</span>
+        <span className="hidden items-center gap-2 rounded-lg border border-[#DCE4E4] bg-white/75 px-3 py-2 text-xs font-medium text-slate-600 backdrop-blur sm:flex"><span className="live-pulse !bg-[#1E8A5F]" />Local system online</span>
+        <span className="flex items-center gap-2 text-xs font-medium text-slate-500"><LockKeyhole size={14} />Authorized staff only</span>
       </div>
     </header>
 
     <div className="relative z-[1] mx-auto grid max-w-[1480px] gap-8 px-5 pb-10 pt-6 sm:px-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)] lg:items-center lg:gap-12 lg:px-12 lg:pb-14 lg:pt-8">
       <section aria-labelledby="gateway-title">
         <div className="max-w-3xl">
-          <span className="inline-flex items-center gap-2 rounded-lg border border-[#DCE4E4] bg-white/70 px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[.1em] text-slate-600 backdrop-blur"><Network size={13} className="text-clinic-600" />One clinic · four focused workspaces</span>
-          <h1 id="gateway-title" className="mt-5 max-w-[700px] font-display text-[clamp(2.5rem,5vw,4.4rem)] font-semibold leading-[1.01] tracking-[-.035em] text-[#12232B]">Choose where your day starts.</h1>
-          <p className="mt-4 max-w-2xl text-[15px] leading-7 text-[#4B5D66] sm:text-base">Each workspace is shaped around a specific clinic responsibility, with the right tools and permissions ready from the first screen.</p>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-[#DCE4E4] bg-white/70 px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[.1em] text-slate-600 backdrop-blur"><Network size={13} className="text-clinic-600" />CATMS · Internal clinic operations</span>
+          <h1 id="gateway-title" className="mt-5 max-w-[700px] font-display text-[clamp(2.1rem,4vw,3.2rem)] font-semibold leading-[1.08] text-[#12232B]">Staff system access</h1>
+          <p className="mt-3 max-w-2xl text-[14px] leading-6 text-[#4B5D66]">Select your assigned work area and sign in. Access, actions, and patient information are restricted by staff role.</p>
         </div>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2" aria-label="Choose your MedSync workspace">
@@ -124,7 +124,7 @@ export default function LoginPage() {
       <aside className="access-panel relative overflow-hidden rounded-[20px] border border-white/80 bg-white/90 p-5 backdrop-blur-xl sm:p-7 lg:p-8" aria-label={`${selectedMeta.label} sign in`}>
         <div className="absolute inset-x-0 top-0 h-1 bg-[var(--portal-accent)]" />
         <div className="flex items-start justify-between gap-4">
-          <div><p className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-[var(--portal-accent)]">Selected workspace</p><h2 className="mt-2 font-display text-[30px] font-semibold leading-tight text-slate-900">Sign in to {selectedMeta.label}</h2><p className="mt-2 text-sm leading-6 text-slate-500">Continue as <strong className="font-semibold text-slate-700">{selected.name}</strong> for this demonstration.</p></div>
+          <div><p className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-[var(--portal-accent)]">Selected work area</p><h2 className="mt-2 font-display text-[26px] font-semibold leading-tight text-slate-900">{selectedMeta.label} sign in</h2><p className="mt-2 text-sm leading-6 text-slate-500">Demo operator: <strong className="font-semibold text-slate-700">{selected.name}</strong></p></div>
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--portal-accent-soft)] text-[var(--portal-accent)]"><selectedMeta.icon size={20} /></span>
         </div>
 
@@ -132,7 +132,7 @@ export default function LoginPage() {
           <Field label="Work email"><input className="input h-12" type="email" value={selected.name.toLowerCase().replace('dr. ', '').replace(' ', '.') + '@medsync.lk'} readOnly autoComplete="username" /></Field>
           <Field label="Password"><div className="relative"><input className="input h-12 pr-11" type={showPassword ? 'text' : 'password'} value="medsync-demo" readOnly autoComplete="current-password" /><button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div></Field>
           <div className="flex items-center justify-between text-xs"><label className="flex items-center gap-2 font-medium text-slate-600"><input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-[var(--portal-accent)]" />Keep me signed in</label><button type="button" className="font-semibold text-[var(--portal-accent)] hover:underline">Forgot password?</button></div>
-          <Button type="submit" className="h-12 w-full text-[14px]">Enter {selectedMeta.label} workspace<ArrowRight size={17} /></Button>
+          <Button type="submit" className="h-11 w-full text-[14px]">Sign in<ArrowRight size={17} /></Button>
         </form>
 
         <div className="mt-6 rounded-xl border border-[#DCE4E4] bg-[#F8FAFA] p-4">
