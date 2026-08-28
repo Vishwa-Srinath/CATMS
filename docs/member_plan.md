@@ -588,8 +588,9 @@ Reserve migration ranges before writing SQL:
 | `020–039` | Dev2 | Branch/staff/access tables, procedures and grants |
 | `040–059` | Dev3 | Patient/insurance-term tables and procedures |
 | `060–089` | Dev1 | Availability, appointments, exclusion rule and histories |
-| `090–119` | Dev4 | Clinical, treatments, invoices, payments and reversals |
-| `120–139` | Dev3 | Claims, claim lines, histories and approval procedures |
+| `090–109` | Dev4 | Clinical, treatments and invoices |
+| `110–129` | Dev3 | Claims, claim lines, histories and approval procedures |
+| `130–139` | Dev4 | Patient/insurer payments, claim links, caps and reversals |
 | `140–159` | Dev5 | Reporting objects, report indexes and controlled import support |
 | `160+` | Dev1 + affected owner | Cross-module integration/corrections only |
 
@@ -867,8 +868,9 @@ fix(ui-e): use live monthly funding rows
 /database/migrations/04*             @dev3
 /database/migrations/06*             @dev1
 /database/migrations/09*             @dev4
-/database/migrations/1[0-1]*          @dev4
-/database/migrations/12*             @dev3
+/database/migrations/10*             @dev4
+/database/migrations/1[1-2]*          @dev3
+/database/migrations/13*             @dev4
 /database/migrations/14*             @dev5
 /backend/src/app/                    @dev1
 /backend/src/db/                     @dev1
