@@ -1,0 +1,69 @@
+# CATMS Codeowners Matrix
+# Assigns folder review ownership across Dev1 - Dev5
+
+# Shared Infrastructure & Repository Platform (Dev1)
+/infra/                              @dev1
+/scripts/                            @dev1
+/.github/                            @dev1
+
+# Database Migrations by Assigned Range
+/database/migrations/00*             @dev1
+/database/migrations/01*             @dev1
+/database/migrations/02*             @dev2
+/database/migrations/03*             @dev2
+/database/migrations/04*             @dev3
+/database/migrations/05*             @dev3
+/database/migrations/06*             @dev1
+/database/migrations/07*             @dev1
+/database/migrations/08*             @dev1
+/database/migrations/09*             @dev4
+/database/migrations/10*             @dev4
+/database/migrations/1[1-2]*         @dev3
+/database/migrations/13*             @dev4
+/database/migrations/14*             @dev5
+/database/migrations/15*             @dev5
+/database/migrations/16*             @dev1
+
+# Backend Shared Platform (Dev1)
+/backend/src/app/                    @dev1
+/backend/src/db/                     @dev1
+/backend/src/shared/                 @dev1
+/backend/src/contracts/              @dev1
+
+# Backend Modules by Owner
+/backend/src/modules/auth-staff/          @dev2
+/backend/src/modules/patients-insurance/  @dev3
+/backend/src/modules/claims/              @dev3
+/backend/src/modules/appointments/        @dev1
+/backend/src/modules/clinical-billing/    @dev4
+/backend/src/modules/payments/            @dev4
+/backend/src/modules/reports-import/      @dev5
+
+# Frontend Foundation & App Configuration (Dev1)
+/frontend/src/app/                   @dev1
+/frontend/src/api/                   @dev1
+/frontend/src/components/            @dev1
+/frontend/src/context/               @dev1
+/frontend/src/App.tsx                @dev1
+/frontend/src/main.tsx               @dev1
+/frontend/src/types.ts               @dev1
+
+# Frontend Feature Areas by Owner
+/frontend/src/features/appointments/       @dev1
+/frontend/src/features/administration/     @dev2
+/frontend/src/features/patients-insurance/ @dev3
+/frontend/src/features/clinical-billing/   @dev4
+/frontend/src/features/reports/            @dev5
+
+# Frontend Pages by Owner
+/frontend/src/pages/LoginPage.tsx          @dev2
+/frontend/src/pages/DashboardPage.tsx      @dev1
+/frontend/src/pages/PatientsPage.tsx       @dev3
+/frontend/src/pages/AppointmentsPage.tsx   @dev1
+/frontend/src/pages/ClinicalPage.tsx       @dev4
+/frontend/src/pages/FinancePage.tsx        @dev3 @dev4
+/frontend/src/pages/ReportsPage.tsx        @dev5
+/frontend/src/pages/AdministrationPage.tsx @dev2
+
+# Architecture Decision Records (Dev1)
+/docs/adr/                           @dev1
