@@ -1,18 +1,16 @@
 # CATMS — Codebase Structure & Standards Guide
 
-**Clinic Appointment and Treatment Management System**  
 **Who this is for:** Every team member — Dev1 through Dev5  
 **Rule:** Follow this structure exactly. Do not create files or folders outside these boundaries without Dev1 sign-off.
 
-> **Companion docs:**
-> - Requirements → `docs/CATMS_SRS_new.pdf`
-> - What to build & who owns what → `docs/member_plan.md`
-> - What issues to track → `docs/CATMS_Complete_GitHub_Issue_Backlog.md`
-> - UI/UX rules → `docs/CATMS_Design_System.md`
+> **Navigation:** Start at [`docs/README.md`](./README.md) if you are new to the project.  
+> **What to build:** `docs/member_plan.md`  
+> **What issues to track:** `docs/CATMS_Complete_GitHub_Issue_Backlog.md`  
+> **UI/UX rules:** `docs/CATMS_Design_System.md`
 
 ---
 
-## 1. Architecture in One Picture
+## 1. Architecture
 
 ```
 Browser (React + Vite + TypeScript)
@@ -27,7 +25,7 @@ Express REST API  (Node.js 20 + TypeScript)
          ▼
 PostgreSQL 16
   ├─ Tables, FKs, CHECK constraints
-  ├─ GiST exclusion (overlap prevention)
+  ├─ GiST exclusion constraint (overlap prevention)
   ├─ Stored procedures & triggers
   ├─ Immutable audit histories
   └─ Reporting views / functions
@@ -35,13 +33,14 @@ PostgreSQL 16
 
 **The database is the authority for every business rule.**  
 The API is a thin, secure transport layer.  
-The frontend is a role-gated QA/demo interface.
+The frontend is a role-gated QA and demo interface.
 
 ---
 
 ## 2. Required Folder Structure
 
-Every member must create their files **inside** the paths shown below. This is the structure to set up in the repo (CATMS-010).
+Every member must create their files **inside** the paths shown below.  
+This is the structure Dev1 sets up under CATMS-010.
 
 ```
 CATMS/
@@ -62,24 +61,24 @@ CATMS/
 │
 ├── backend/
 │   └── src/
-│       ├── app/             ← Express bootstrap + shared middleware (Dev1)
+│       ├── app/             ← Express bootstrap + shared middleware   (Dev1)
 │       │   └── middleware/  ← auth, rbac, csrf, errorHandler, correlationId
 │       ├── db/              ← Pool, transaction helper, role switcher (Dev1)
 │       ├── modules/         ← One folder per domain module
-│       │   ├── auth-staff/          (Dev2)
-│       │   ├── patients-insurance/  (Dev3)
-│       │   ├── appointments/        (Dev1)
-│       │   ├── clinical-billing/    (Dev4)
-│       │   ├── claims/              (Dev3)
-│       │   ├── payments/            (Dev4)
-│       │   └── reports-import/      (Dev5)
+│       │   ├── auth-staff/            (Dev2)
+│       │   ├── patients-insurance/    (Dev3)
+│       │   ├── appointments/          (Dev1)
+│       │   ├── clinical-billing/      (Dev4)
+│       │   ├── claims/                (Dev3)
+│       │   ├── payments/              (Dev4)
+│       │   └── reports-import/        (Dev5)
 │       ├── contracts/       ← TypeScript DTOs, one file per module
 │       └── shared/          ← Errors, logger, utility functions
 │
 ├── frontend/
 │   └── src/
-│       ├── app/             ← Query client, router, session hook (Dev1)
-│       ├── api/             ← Typed API client, one file per module (Dev1)
+│       ├── app/             ← Query client, router, session hook      (Dev1)
+│       ├── api/             ← Typed API client, one file per module   (Dev1)
 │       ├── features/        ← Domain feature folders (module owner)
 │       │   ├── administration/        (Dev2)
 │       │   │   ├── components/
@@ -101,11 +100,11 @@ CATMS/
 │       │       ├── components/
 │       │       ├── hooks/
 │       │       └── index.ts
-│       ├── components/      ← Shared UI primitives — LOCKED, no edits without Dev1
-│       │   ├── AppShell.tsx
-│       │   ├── ToastRegion.tsx
-│       │   └── ui.tsx
-│       ├── pages/           ← Thin compositions, import from features/
+│       ├── components/      ← Shared UI primitives — LOCKED
+│       │   ├── AppShell.tsx           ← sidebar, nav, portal theming
+│       │   ├── ToastRegion.tsx        ← global toast notifications
+│       │   └── ui.tsx                 ← Button, Badge, Modal, etc.
+│       ├── pages/           ← Thin compositions — import from features/
 │       │   ├── LoginPage.tsx
 │       │   ├── DashboardPage.tsx
 │       │   ├── PatientsPage.tsx
@@ -116,12 +115,12 @@ CATMS/
 │       │   ├── AdministrationPage.tsx
 │       │   └── NotFoundPage.tsx
 │       ├── context/
-│       │   └── ClinicContext.tsx      ← Session/UI state only (no business logic)
-│       └── types.ts                   ← Shared TypeScript types
+│       │   └── ClinicContext.tsx      ← session/UI state only, no business logic
+│       └── types.ts                   ← shared TypeScript types
 │
 ├── infra/
-│   ├── compose.yaml         ← Dev environment (PostgreSQL + API + web)
-│   ├── compose.test.yaml    ← Disposable test environment (tmpfs, no volume)
+│   ├── compose.yaml         ← dev environment (PostgreSQL + API + web)
+│   ├── compose.test.yaml    ← disposable test environment (tmpfs)
 │   └── docker/
 │       ├── postgres/
 │       └── api/
@@ -135,15 +134,15 @@ CATMS/
 │   └── import.sh
 │
 ├── docs/
-│   ├── adr/                 ← Architecture Decision Records
-│   ├── api/                 ← API contract examples per module
-│   ├── evidence/            ← Generated locally, never committed
-│   ├── runbooks/            ← Operational recovery guides
-│   ├── CATMS_Design_System.md
-│   ├── member_plan.md
-│   ├── CATMS_Complete_GitHub_Issue_Backlog.md
-│   ├── CODEBASE_GUIDE.md    ← This file
-│   └── CATMS_SRS_new.pdf
+│   ├── README.md                                ← START HERE (team navigation hub)
+│   ├── CODEBASE_GUIDE.md                        ← This file (structure & standards)
+│   ├── member_plan.md                           ← Per-developer task plans
+│   ├── CATMS_Complete_GitHub_Issue_Backlog.md   ← All 85 issues with dependencies
+│   ├── CATMS_Design_System.md                   ← UI/UX specification
+│   ├── CATMS_SRS_new.pdf                        ← Requirements authority
+│   ├── CATMS_Production_Implementation_ERD.drawio
+│   ├── CATMS_Delivery_Plan.html
+│   └── adr/                ← Architecture Decision Records (created during G0)
 │
 ├── .github/
 │   ├── workflows/
@@ -161,7 +160,7 @@ CATMS/
 
 Do not touch another developer's folder without their review.
 
-| Layer / Area | Owner | Folders |
+| Layer / Area | Owner | Paths |
 |---|---|---|
 | Platform, infra, CI, release | **Dev1** | `infra/`, `scripts/`, `backend/src/app/`, `backend/src/db/`, `frontend/src/app/`, `frontend/src/api/` |
 | Appointments & scheduling | **Dev1** | `database/migrations/060–089`, `backend/src/modules/appointments/`, `frontend/src/features/appointments/` |
@@ -172,28 +171,7 @@ Do not touch another developer's folder without their review.
 
 ---
 
-## 4. Each Module's Files (Standard Pattern)
-
-Every `backend/src/modules/<module>/` folder must contain exactly these files:
-
-```
-<module>.routes.ts    ← Express router, auth/rbac guards, request/response
-<module>.service.ts   ← DB calls via withTransaction(), business orchestration
-<module>.schema.ts    ← Zod input validation schemas
-<module>.test.ts      ← Supertest integration tests
-```
-
-Every `frontend/src/features/<module>/` folder must contain:
-
-```
-components/           ← UI components for this feature only
-hooks/                ← TanStack Query hooks (useQuery, useMutation)
-index.ts              ← Re-export everything used by pages/
-```
-
----
-
-## 5. Migration File Naming
+## 4. Migration File Naming & Template
 
 ```
 NNN_short_description.sql
@@ -202,10 +180,8 @@ NNN_short_description.sql
 - `NNN` = three-digit number from your assigned range (§3 above).
 - **Claim your number on the team board before creating the file.**
 - Always wrap in `BEGIN` / `COMMIT`.
-- Every table and column must have a `COMMENT ON ...` statement.
+- Every table and column must have a `COMMENT ON` statement.
 - Never modify a merged migration — add a corrective one instead.
-
-### Migration file template
 
 ```sql
 -- NNN_description.sql
@@ -230,25 +206,37 @@ COMMIT;
 
 ---
 
-## 6. API Contract (All Routes Must Follow This)
+## 5. Each Module's Files (Standard Pattern)
 
-**URL pattern:**
+**Backend** — `backend/src/modules/<module>/` must contain:
+
 ```
-/api/v1/auth/*
-/api/v1/branches/*       /api/v1/staff/*
-/api/v1/patients/*       /api/v1/insurance/*
-/api/v1/appointments/*
-/api/v1/clinical/*       /api/v1/invoices/*
-/api/v1/claims/*         /api/v1/payments/*
-/api/v1/reports/*        /api/v1/imports/*
+<module>.routes.ts    ← Express router, auth/rbac guards, request/response
+<module>.service.ts   ← DB calls via withTransaction(), business orchestration
+<module>.schema.ts    ← Zod input validation schemas
+<module>.test.ts      ← Supertest integration tests
 ```
 
-**Success response:**
+**Frontend** — `frontend/src/features/<module>/` must contain:
+
+```
+components/           ← UI components for this feature only
+hooks/                ← TanStack Query hooks (useQuery, useMutation)
+index.ts              ← Re-exports everything used by pages/
+```
+
+---
+
+## 6. API Contract Standard
+
+**URL prefix:** `/api/v1/<resource>`
+
+**Success:**
 ```json
 { "data": {}, "meta": { "correlationId": "uuid" } }
 ```
 
-**Error response:**
+**Error:**
 ```json
 {
   "error": {
@@ -260,21 +248,22 @@ COMMIT;
 }
 ```
 
-**Non-negotiable rules:**
+**Non-negotiable:**
 - Every state-changing route uses `withTransaction()`.
-- Never accept `total`, `amount_paid`, `status`, or audit fields from the browser.
-- Never log clinical data, passwords, tokens, or cookie values.
-- Raw SQL errors, stack traces, and hashes must never reach the client.
+- `SET LOCAL ROLE` inside the transaction, never on the pool connection.
+- Zod validates all inputs before any DB call.
+- Never accept `total`, `amount_paid`, `status`, or audit timestamps from the browser.
+- Raw SQL errors and stack traces must never reach the client.
 
 ---
 
 ## 7. Frontend Rules
 
-- **`pages/`** files are thin compositions only — they import from `features/`.
+- **`pages/`** files are thin compositions — they import from `features/`, not the other way.
 - All logic, hooks, and components live inside `features/<module>/`.
-- Every data-fetching component must handle: `loading`, `empty`, `success`, `error`, `forbidden`.
+- Every data-fetching component handles: `loading` · `empty` · `success` · `error` · `forbidden`.
 - All values displayed to the user (totals, status, balances) must come from the API — never calculated in React.
-- Disabled actions must show a tooltip naming the rule blocking them.
+- Disabled actions must show a tooltip naming the rule that is blocking them.
 - Shared `components/` is **locked** — no changes without Dev1 + affected owner review.
 
 ---
@@ -282,7 +271,6 @@ COMMIT;
 ## 8. Naming Conventions
 
 ### SQL
-
 ```sql
 -- Tables: singular, snake_case
 appointment,  invoice_line,  insurance_claim
@@ -296,21 +284,19 @@ book_appointment(),  resolve_claim(),  post_payment()
 -- Views: v_ prefix
 v_daily_appointment_summary
 
--- Indexes: idx_table_column
+-- Indexes: idx_table_columns
 idx_appointment_doctor_time
 ```
 
-### TypeScript (backend + frontend)
-
+### TypeScript
 ```
-Files:        kebab-case         →  appointments.routes.ts,  use-appointments.ts
-Types:        PascalCase         →  Appointment,  AppointmentStatus
-Functions:    camelCase          →  bookAppointment(),  useAppointments()
-Constants:    SCREAMING_SNAKE    →  MAX_DURATION_MIN
+Files:      kebab-case       →  appointments.routes.ts,  use-appointments.ts
+Types:      PascalCase       →  Appointment,  AppointmentStatus
+Functions:  camelCase        →  bookAppointment(),  useAppointments()
+Constants:  SCREAMING_SNAKE  →  MAX_DURATION_MIN
 ```
 
 ### Git commits (Conventional Commits — mandatory)
-
 ```
 feat(db-c): add appointment overlap exclusion constraint
 feat(api-b): add claim eligibility endpoint
@@ -319,10 +305,9 @@ fix(ui-a): show disabled state on branch limit
 docs(adr): record JWT session strategy
 ```
 
-Scopes: `db-a`, `db-b`, `db-c`, `db-d`, `db-e` | `api-a/b/c/d/e` | `ui-a/b/c/d/e` | `infra` | `ci` | `docs`
+Scopes: `db-a` `db-b` `db-c` `db-d` `db-e` · `api-a` `api-b` `api-c` `api-d` `api-e` · `ui-a` `ui-b` `ui-c` `ui-d` `ui-e` · `infra` `ci` `docs`
 
-### Branches
-
+### Branch naming
 ```
 feature/c-appointment-exclusion
 feature/a-role-grants
@@ -341,66 +326,66 @@ fix/c-walk-in-status-bug
 | All physical names | `snake_case` |
 | Primary keys | `BIGINT GENERATED ALWAYS AS IDENTITY` |
 | Money | `NUMERIC(12,2)`, currency always `LKR` |
-| Timestamps | `TIMESTAMPTZ` stored in UTC; convert to `Asia/Colombo` only in reports |
-| Case-insensitive identifiers (NIC, licence) | `citext` extension |
+| Timestamps | `TIMESTAMPTZ` stored UTC; convert to `Asia/Colombo` only in reports |
+| Case-insensitive IDs (NIC, licence) | `citext` extension |
 | FK delete actions | Explicit on every FK; financial/audit default to `RESTRICT` |
-| Business rules location | PostgreSQL only — NOT in Express or React |
+| Business rules location | PostgreSQL only — not in Express or React |
 | SQL access | `node-postgres (pg)` — parameterized SQL only, no ORM |
 
 ---
 
-## 10. How to Add a Feature — Checklist
+## 10. Adding a Feature — Step-by-Step Checklist
 
 Do these in order for every feature branch:
 
-- [ ] **Claim migration number** from your range on the team board
+- [ ] Claim migration number from your range on the team board
 - [ ] Write `database/migrations/NNN_description.sql` (with `COMMENT ON` everything)
-- [ ] Add direct SQL tests in `database/tests/rules/` (valid, invalid, boundary, bypass attempt)
+- [ ] Add direct SQL tests in `database/tests/rules/` — valid, invalid, boundary, direct bypass
 - [ ] Write `backend/src/modules/<module>/<module>.service.ts` using `withTransaction()`
 - [ ] Write `backend/src/modules/<module>/<module>.schema.ts` (Zod)
 - [ ] Write `backend/src/modules/<module>/<module>.routes.ts` (with auth + rbac middleware)
 - [ ] Add DTO types to `backend/src/contracts/<module>.contract.ts`
-- [ ] Write API tests in `backend/src/modules/<module>/<module>.test.ts`
+- [ ] Write `backend/src/modules/<module>/<module>.test.ts` (Supertest)
 - [ ] Add typed API call to `frontend/src/api/<module>.api.ts`
-- [ ] Add `useQuery` / `useMutation` hooks in `frontend/src/features/<module>/hooks/`
+- [ ] Add hooks in `frontend/src/features/<module>/hooks/`
 - [ ] Build component in `frontend/src/features/<module>/components/`
 - [ ] Export from `frontend/src/features/<module>/index.ts`
 - [ ] Import into the relevant `frontend/src/pages/` file
-- [ ] Open PR: title `CATMS-XXX feat(layer-module): description`, include REQ IDs, success case + failure case
+- [ ] Open PR with: CATMS-XXX key · REQ IDs · test commands · success case + failure case
 
 ---
 
 ## 11. Pull Request Rules
 
-Every PR must include in its description:
+Every PR description must contain:
 
-1. CATMS issue key (`CATMS-XXX`)
-2. SRS requirement IDs (`REQ-XX`, `BR-XX`)
-3. Exact test commands to verify
-4. One **success case** output
-5. One **failure case** output
+1. CATMS issue key (e.g. `CATMS-029`)
+2. SRS requirement IDs (e.g. `REQ-14`, `BR-03`)
+3. Exact commands to run to verify
+4. One **success case** (pasted output or screenshot)
+5. One **failure case** (pasted output or screenshot)
 
 Other rules:
-- One PR = one coherent thing (no formatting mixed with features)
+- One PR = one coherent thing — no formatting changes mixed with features
 - Cross-module PR requires both affected owners as reviewers
 - CI must pass before merge
 - Squash merge into `develop` only
 
 ---
 
-## 12. The 10 Rules Everyone Must Know
+## 12. The Rules Everyone Must Know
 
 1. **Database first.** Write the SQL rule before the API route.
 2. **No business logic in React.** If it can be wrong, it belongs in PostgreSQL.
-3. **Never edit a merged migration.** Add a new corrective one.
+3. **Never edit a merged migration.** Add a corrective one instead.
 4. **Claim your migration number** before creating the file.
-5. **Publish your contract before the consumer merges** dependent work.
+5. **Publish your fixture and contract before the consumer merges** dependent work.
 6. **One PR = one coherent thing.** No formatting mixed with features.
 7. **Both success and failure cases in every PR description.**
-8. **Rebase feature branches onto `develop`.** Never merge develop into your branch.
+8. **Rebase feature branches onto `develop`** — never merge `develop` into your branch.
 9. **Squash merge into `develop`** only — keeps history clean.
 10. **No real patient data.** Ever. Fictional data only in this repository.
 
 ---
 
-*Based on: `member_plan.md` · `CATMS_Complete_GitHub_Issue_Backlog.md` · `CATMS_Design_System.md`*
+*Synced with: `docs/README.md` · `docs/member_plan.md` · `docs/CATMS_Complete_GitHub_Issue_Backlog.md` · `docs/CATMS_Design_System.md`*
