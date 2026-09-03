@@ -208,13 +208,6 @@ Shared bootstrap files are owned by Dev1. Module owners work inside their direct
 
 The workload is intentionally unequal as requested: Dev1 carries the critical path and most integration responsibility; Dev5 receives a smaller, lower-risk package. Dev2–Dev4 have comparable, substantial modules.
 
-| Developer | Approx. load | Primary ownership | Cross-cutting ownership |
-|---|---:|---|---|
-| **Dev1** | **30%** | Appointment/scheduling database and API | Technical lead, migrations, Docker, shared API platform, integration, CI and release |
-| **Dev2** | **20%** | Branch, staff, doctor/specialty and access | Authentication, RBAC, database grants and administration UI integration |
-| **Dev3** | **20%** | Patient, identity, insurance terms and claims | Claim eligibility/allocation, patient/insurance UI integration and privacy checks |
-| **Dev4** | **20%** | Clinical care, treatment catalogue, invoices and payments | Financial transactions, rollback tests and clinical/billing UI integration |
-| **Dev5** | **10%** | Reports, controlled import and demo data | Report reconciliation, evidence index, demo checklist and documentation support |
 
 ### Important contribution rule
 
