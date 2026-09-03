@@ -60,20 +60,21 @@ CATMS/
 │   └── README.md
 │
 ├── backend/
-│   └── src/
-│       ├── app/             ← Express bootstrap + shared middleware   (Dev1)
-│       │   └── middleware/  ← auth, rbac, csrf, errorHandler, correlationId
-│       ├── db/              ← Pool, transaction helper, role switcher (Dev1)
-│       ├── modules/         ← One folder per domain module
-│       │   ├── auth-staff/            (Dev2)
-│       │   ├── patients-insurance/    (Dev3)
-│       │   ├── appointments/          (Dev1)
-│       │   ├── clinical-billing/      (Dev4)
-│       │   ├── claims/                (Dev3)
-│       │   ├── payments/              (Dev4)
-│       │   └── reports-import/        (Dev5)
-│       ├── contracts/       ← TypeScript DTOs, one file per module
-│       └── shared/          ← Errors, logger, utility functions
+│   ├── src/
+│   │   ├── app/             ← Express bootstrap + shared middleware   (Dev1)
+│   │   │   └── middleware/  ← auth, rbac, csrf, errorHandler, correlationId
+│   │   ├── db/              ← Pool, transaction helper, role switcher (Dev1)
+│   │   ├── modules/         ← One folder per domain module
+│   │   │   ├── auth-staff/            (Dev2)
+│   │   │   ├── patients-insurance/    (Dev3)
+│   │   │   ├── appointments/          (Dev1)
+│   │   │   ├── clinical-billing/      (Dev4)
+│   │   │   ├── claims/                (Dev3)
+│   │   │   ├── payments/              (Dev4)
+│   │   │   └── reports-import/        (Dev5)
+│   │   ├── contracts/       ← TypeScript DTOs, one file per module
+│   │   └── shared/          ← Errors, logger, utility functions
+│   └── tests/               ← Supertest integration tests (one file per module)
 │
 ├── frontend/
 │   └── src/
@@ -126,12 +127,13 @@ CATMS/
 │       └── api/
 │
 ├── scripts/                 ← Dev1 owns all scripts
-│   ├── start.sh
-│   ├── reset.sh
-│   ├── backup.sh
-│   ├── restore.sh
-│   ├── test.sh
-│   └── import.sh
+│   ├── start.sh             ← Start all services
+│   ├── reset.sh             ← Wipe DB and reload tiny fixture
+│   ├── test.sh              ← Run all test layers
+│   ├── backup.sh            ← Dump DB to encrypted local file
+│   ├── restore.sh           ← Restore from dump
+│   ├── import.sh            ← Controlled CSV bulk import
+│   └── verify.sh            ← Smoke-test a running environment
 │
 ├── docs/
 │   ├── README.md                                ← START HERE (team navigation hub)
@@ -214,8 +216,9 @@ COMMIT;
 <module>.routes.ts    ← Express router, auth/rbac guards, request/response
 <module>.service.ts   ← DB calls via withTransaction(), business orchestration
 <module>.schema.ts    ← Zod input validation schemas
-<module>.test.ts      ← Supertest integration tests
 ```
+
+> **Note on test placement:** Supertest integration tests live in `backend/tests/<module>.test.ts` — a single flat `tests/` folder that is a sibling to `src/`, not inside the module folder. This matches the `backend/` folder tree above and `member_plan.md §4`.
 
 **Frontend** — `frontend/src/features/<module>/` must contain:
 
@@ -345,7 +348,7 @@ Do these in order for every feature branch:
 - [ ] Write `backend/src/modules/<module>/<module>.schema.ts` (Zod)
 - [ ] Write `backend/src/modules/<module>/<module>.routes.ts` (with auth + rbac middleware)
 - [ ] Add DTO types to `backend/src/contracts/<module>.contract.ts`
-- [ ] Write `backend/src/modules/<module>/<module>.test.ts` (Supertest)
+- [ ] Write `backend/tests/<module>.test.ts` (Supertest integration tests)
 - [ ] Add typed API call to `frontend/src/api/<module>.api.ts`
 - [ ] Add hooks in `frontend/src/features/<module>/hooks/`
 - [ ] Build component in `frontend/src/features/<module>/components/`
