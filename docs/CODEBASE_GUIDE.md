@@ -60,6 +60,7 @@ CATMS/
 │   └── README.md
 │
 ├── backend/
+│   ├── tests/               ← Supertest integration tests (cross-module)
 │   └── src/
 │       ├── app/             ← Express bootstrap + shared middleware   (Dev1)
 │       │   └── middleware/  ← auth, rbac, csrf, errorHandler, correlationId
@@ -131,7 +132,8 @@ CATMS/
 │   ├── backup.sh
 │   ├── restore.sh
 │   ├── test.sh
-│   └── import.sh
+│   ├── import.sh
+│   └── verify.sh
 │
 ├── docs/
 │   ├── README.md                                ← START HERE (team navigation hub)

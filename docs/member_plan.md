@@ -334,7 +334,7 @@ The plan assumes approximately 32 working days, or about six to seven calendar w
    - Add PostgreSQL/API/web Compose services and health checks.
    - Provide development, test and frozen-demo profiles.
    - Add `.env.example` files and strict startup validation.
-   - Implement `scripts/start`, `reset`, `test`, `backup`, `restore` and `verify` commands.
+   - Implement `scripts/start.sh`, `scripts/reset.sh`, `scripts/test.sh`, `scripts/backup.sh`, `scripts/restore.sh`, `scripts/import.sh` and `scripts/verify.sh` commands.
 
 3. **Create database foundation**
    - Add extensions, schemas, base database roles and migration metadata.
