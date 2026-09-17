@@ -31,7 +31,7 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 |:---:|:---:|---|:---:|
 | 1 | CATMS-006 | Freeze eligibility and claim rules | ✅ Done |
 | 2 | CATMS-008 | Golden financial worked example | ✅ Done |
-| 3 | CATMS-018 | Patient identity schema | ⬜ Not started |
+| 3 | CATMS-018 | Patient identity schema | 🟡 In progress |
 | 4 | CATMS-019 | Provider, policy, coverage schema | ⬜ Not started |
 | 5 | CATMS-025 | Atomic registration procedure | ⬜ Not started |
 | 6 | CATMS-026 | Policy/coverage lifecycle procedures | ⬜ Not started |
@@ -100,10 +100,10 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 
 ---
 
-### Step 3 â€” CATMS-018: Patient, identity and emergency-contact schema
-- [ ] `patient`, `patient_identity`, `emergency_contact` tables created
-- [ ] Clinic-wide NIC/passport uniqueness enforced (not per-branch)
-- [ ] Primary-identity and at-least-one-contact constraints verified
+### Step 3 — CATMS-018: Patient, identity and emergency-contact schema
+- [x] `patient`, `patient_identity`, `emergency_contact` tables created (`database/migrations/040_create_patient_identity_schema.sql`)
+- [x] Clinic-wide NIC/passport uniqueness enforced (not per-branch)
+- [x] Primary-identity and at-least-one-contact constraints verified (`database/tests/schema/040_patient_identity_schema.test.sql`)
 
 **What:** Tables: `patient`, `patient_identity`, `emergency_contact`. Enforce clinic-wide (not per-branch) uniqueness of normalized NIC/passport. A patient must have exactly one primary identity and at least one emergency contact.
 
