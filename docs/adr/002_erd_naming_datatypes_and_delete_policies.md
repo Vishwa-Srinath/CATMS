@@ -58,7 +58,7 @@ The CATMS physical relational schema consists of 34 base tables and 2 pure junct
 #### Module B: Patient & Insurance (6 tables — Dev3)
 12. `patient` — Master patient record (clinic-wide visibility)
 13. `patient_identity` — Patient NIC/Passport identification records
-14. `emergency_contact` — Patient emergency contact contacts
+14. `emergency_contact` — Patient emergency contact
 15. `insurance_provider` — Insurance company catalogue
 16. `insurance_policy` — Patient policy instances and status
 17. `policy_coverage` — Treatment-specific policy coverage percentages & caps
