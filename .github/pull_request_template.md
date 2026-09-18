@@ -1,7 +1,4 @@
----
-name: CATMS Pull Request
-about: Submit changes for review and integration
----
+<!-- CATMS Pull Request Template -->
 
 ## CATMS Issue Reference
 
