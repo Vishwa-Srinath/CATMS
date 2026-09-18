@@ -74,6 +74,17 @@ The **database is the authority** for every business rule. PostgreSQL constraint
 | [`ADR-004`](./adr/004_appointment_and_scheduling_semantics.md) | Scheduling & Overlap Semantics | Defines GiST `[start_at, end_at)` half-open interval overlap exclusion, 15-min slot alignment, and UTC/Asia:Colombo rules. |
 | [`ADR-009`](./adr/009_project_governance_and_migration_registry.md) | Project Governance & Migration Ranges | Reserves migration ranges `001–159` by developer, Conventional Commit standards, and mandatory PR test evidence rules. |
 
+### Core planning and governance references
+
+| Document | When to use it |
+|---|---|
+| [`docs/CATMS-003_User_Roles_Branch_Scope_and_Permission_Matrix.md`](./CATMS-003_User_Roles_Branch_Scope_and_Permission_Matrix.md) | Canonical user roles, branch scope rules, and 3-layer permission matrix (Dev2) |
+| [`docs/CATMS-006_Insurance_Eligibility_and_Claim_Rules.md`](./CATMS-006_Insurance_Eligibility_and_Claim_Rules.md) | Insurance eligibility, multi-policy allocation, and claim state machine (Dev3) |
+| [`docs/CATMS-008_Golden_Financial_Worked_Example.md`](./CATMS-008_Golden_Financial_Worked_Example.md) | Hand-calculated financial baseline and expected balances (Dev3 & Dev4) |
+| `docs/CATMS_Production_Implementation_ERD.drawio` | Before writing any SQL — approve naming and relationships at Gate G0 |
+| `docs/CATMS_Delivery_Plan.html` | Timeline, sprint structure, and milestone gates |
+| `docs/CATMS_GitHub_Issue_Register.csv` | Quick lookup of all issue keys and ownership |
+
 ---
 
 
@@ -83,7 +94,7 @@ The **database is the authority** for every business rule. PostgreSQL constraint
 `CODEBASE_GUIDE.md` → `member_plan.md §8` → Issues: CATMS-001, 004, 009, 010, 011, 012, 013, 014, 027, 028, 029, 030, 031, 043, 044, 050, 051, 056, 061, 065, 069
 
 ### Dev2 — Read first
-`CODEBASE_GUIDE.md` → `member_plan.md §9` → Issues: CATMS-003, 015, 016, 017, 023, 024, 045, 046, 047, 058, 066
+`CODEBASE_GUIDE.md` → `member_plan.md §9` → `Dev2_Plan.md` → [`CATMS-003`](./CATMS-003_User_Roles_Branch_Scope_and_Permission_Matrix.md) → Issues: CATMS-003, 015, 016, 017, 023, 024, 045, 046, 047, 058, 066
 
 ### Dev3 — Read first
 `CODEBASE_GUIDE.md` → `member_plan.md §10` → Issues: CATMS-006, 008, 018, 019, 025, 026, 037, 038, 039, 040, 048, 049, 059, 060, 067
