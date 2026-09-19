@@ -1,0 +1,180 @@
+# =============================================================================
+# CATMS — Docker Compose — Development Environment
+# Owner: Dev1  |  Issue: CATMS-011
+#
+# Services:
+#   postgres   PostgreSQL 16 — persistent dev volume, localhost:5432
+#   api        Express/TypeScript backend (added in CATMS-013)
+#   web        Vite dev server / frontend (added in CATMS-013)
+#
+# Profiles:
+#   (default)   postgres only — use during CATMS-011/CATMS-012 phase
+#   app         postgres + api + web — full stack (enabled after CATMS-013)
+#   pgadmin     optional pgAdmin 4 browser tool
+#
+# Usage:
+#   # Start just the database (current phase):
+#   docker compose -f infra/compose.yaml up postgres
+#
+#   # Start full stack when API is implemented (CATMS-013+):
+#   docker compose -f infra/compose.yaml --profile app up
+#
+#   # Stop and remove containers (data volume preserved):
+#   docker compose -f infra/compose.yaml down
+#
+#   # Destroy everything including dev volume:
+#   docker compose -f infra/compose.yaml down -v
+#
+# Environment:
+#   All variables come from .env at the repo root.
+#   Copy infra/.env.example to .env and fill values before first run.
+# =============================================================================
+
+name: catms
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 — development database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: catms_postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-catms_dev}
+      POSTGRES_USER:     ${POSTGRES_SUPERUSER:-catms_super}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:-change_me_super}
+
+    ports:
+      # Bind to localhost only — never expose to the network
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+
+    volumes:
+      # Named volume — survives container restart; wiped only with `down -v`
+      - catms_pgdata:/var/lib/postgresql/data
+      # Init scripts run once on first volume creation (alphabetical order)
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_SUPERUSER:-catms_super} -d ${POSTGRES_DB:-catms_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+    networks:
+      - catms_net
+
+  # ---------------------------------------------------------------------------
+  # Express API — placeholder; implemented in CATMS-013
+  # ---------------------------------------------------------------------------
+  api:
+    profiles: [app]
+    image: node:20-alpine
+    container_name: catms_api
+    restart: unless-stopped
+    working_dir: /app
+    command: sh -c "echo 'API not yet implemented. See CATMS-013.' && sleep infinity"
+
+    environment:
+      NODE_ENV:          ${NODE_ENV:-development}
+      API_PORT:          ${API_PORT:-3000}
+      POSTGRES_HOST:     postgres
+      POSTGRES_PORT:     5432
+      POSTGRES_DB:       ${POSTGRES_DB:-catms_dev}
+      POSTGRES_USER:     ${POSTGRES_USER:-catms_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_dev}
+      JWT_SECRET:        ${JWT_SECRET}
+      COOKIE_SECURE:     ${COOKIE_SECURE:-false}
+      COOKIE_SAME_SITE:  ${COOKIE_SAME_SITE:-lax}
+      COOKIE_MAX_AGE_SECONDS: ${COOKIE_MAX_AGE_SECONDS:-3600}
+      CSRF_SECRET:       ${CSRF_SECRET}
+      ALLOWED_ORIGINS:   ${ALLOWED_ORIGINS:-http://localhost:5173}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      RATE_LIMIT_MAX:    ${RATE_LIMIT_MAX:-200}
+      LOG_LEVEL:         ${LOG_LEVEL:-info}
+
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+
+    volumes:
+      - ../backend:/app:ro
+      - /app/node_modules
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - catms_net
+
+  # ---------------------------------------------------------------------------
+  # Vite frontend dev server — placeholder; implemented in CATMS-013
+  # ---------------------------------------------------------------------------
+  web:
+    profiles: [app]
+    image: node:20-alpine
+    container_name: catms_web
+    restart: unless-stopped
+    working_dir: /app
+    command: sh -c "echo 'Web not yet implemented. See CATMS-013.' && sleep infinity"
+
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000/api/v1}
+
+    ports:
+      - "127.0.0.1:5173:5173"
+
+    volumes:
+      - ../frontend:/app:ro
+      - /app/node_modules
+
+    depends_on:
+      - api
+
+    networks:
+      - catms_net
+
+  # ---------------------------------------------------------------------------
+  # pgAdmin 4 — optional browser-based database viewer
+  # Activate with: docker compose --profile pgadmin up
+  # ---------------------------------------------------------------------------
+  pgadmin:
+    profiles: [pgadmin]
+    image: dpage/pgadmin4:latest
+    container_name: catms_pgadmin
+    restart: unless-stopped
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL:    ${PGADMIN_DEFAULT_EMAIL:-admin@catms.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-change_me_pgadmin}
+
+    ports:
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - catms_net
+
+# -----------------------------------------------------------------------------
+# Volumes
+# -----------------------------------------------------------------------------
+volumes:
+  catms_pgdata:
+    driver: local
+    labels:
+      com.catms.description: "PostgreSQL 16 development data — persistent across restarts"
+
+# -----------------------------------------------------------------------------
+# Networks
+# -----------------------------------------------------------------------------
+networks:
+  catms_net:
+    driver: bridge
+    labels:
+      com.catms.description: "Internal CATMS service network"
