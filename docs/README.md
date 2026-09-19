@@ -65,7 +65,16 @@ The **database is the authority** for every business rule. PostgreSQL constraint
 | 5 | [`docs/CATMS_Design_System.md`](./CATMS_Design_System.md) | Every UI color, typography, spacing, animation, and accessibility rule — read before any UI work |
 | 6 | `docs/CATMS_SRS_new.pdf` | Full software requirements specification — the requirements authority |
 
-### Reference documents (use when needed)
+### Signed Gate G0 Architecture Decision Records (`docs/adr/`)
+
+| ADR | Title | Key Decision |
+|---|---|---|
+| [`ADR-001`](./adr/001_phase1_scope_and_precedence.md) | Phase 1 Scope & Document Precedence | Freezes operational scope boundaries and establishes the 6-level document precedence hierarchy. |
+| [`ADR-002`](./adr/002_erd_naming_datatypes_and_delete_policies.md) | ERD Naming, Datatypes & Delete Policies | Standardizes `snake_case` naming, 34 base table inventory, `BIGINT` PKs, `NUMERIC(12,2)` money, and `RESTRICT` FK delete rules. |
+| [`ADR-004`](./adr/004_appointment_and_scheduling_semantics.md) | Scheduling & Overlap Semantics | Defines GiST `[start_at, end_at)` half-open interval overlap exclusion, 15-min slot alignment, and UTC/Asia:Colombo rules. |
+| [`ADR-009`](./adr/009_project_governance_and_migration_registry.md) | Project Governance & Migration Ranges | Reserves migration ranges `001–159` by developer, Conventional Commit standards, and mandatory PR test evidence rules. |
+
+### Core planning and governance references
 
 | Document | When to use it |
 |---|---|
@@ -77,6 +86,7 @@ The **database is the authority** for every business rule. PostgreSQL constraint
 | `docs/CATMS_GitHub_Issue_Register.csv` | Quick lookup of all issue keys and ownership |
 
 ---
+
 
 ## Quick Reference by Developer
 
