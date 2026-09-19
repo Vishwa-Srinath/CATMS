@@ -157,10 +157,12 @@ jobs:
       #   user=catms_super (default) BUT compose.test.yaml sets user=catms_super_test
       # We override POSTGRES_SUPERUSER to match the test compose user.
       - name: Run migrations (--test mode)
-        run: bash scripts/migrate.sh --test
+        run: bash -x scripts/migrate.sh --test
         env:
-          POSTGRES_HOST:             localhost
-          POSTGRES_SUPERUSER:        catms_super_test
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5433"
+          POSTGRES_DB: catms_test
+          POSTGRES_SUPERUSER: catms_super_test
           POSTGRES_SUPERUSER_PASSWORD: catms_test_password
 
       # ── Verify schema_migrations has exactly the expected rows ─────────────
@@ -237,10 +239,12 @@ jobs:
       # A second run must produce 0 new migrations (all versions already applied).
       # Any failure here means the runner is not idempotent — critical bug.
       - name: Verify migration idempotency (second run)
-        run: bash scripts/migrate.sh --test
+        run: bash -x scripts/migrate.sh --test
         env:
-          POSTGRES_HOST:             localhost
-          POSTGRES_SUPERUSER:        catms_super_test
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5433"
+          POSTGRES_DB: catms_test
+          POSTGRES_SUPERUSER: catms_super_test
           POSTGRES_SUPERUSER_PASSWORD: catms_test_password
 
       # ── Tear down disposable container ────────────────────────────────────

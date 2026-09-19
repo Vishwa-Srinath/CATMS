@@ -35,6 +35,18 @@ COMMENT ON SCHEMA catms IS
   'CATMS application schema. Contains all tables, views, functions and procedures. '
   'Use fully-qualified names (catms.table_name) in all queries.';
 
+-- Ensure application roles exist before granting privileges.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'catms_app') THEN
+    CREATE ROLE catms_app WITH LOGIN PASSWORD 'change_me_dev';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'catms_readonly') THEN
+    CREATE ROLE catms_readonly WITH LOGIN PASSWORD 'change_me_readonly';
+  END IF;
+END;
+$$;
+
 -- Grant schema usage to runtime roles.
 -- Object-level privileges are added per migration as tables/functions are created.
 GRANT USAGE ON SCHEMA catms TO catms_app;
