@@ -1,0 +1,57 @@
+# =============================================================================
+# CATMS — Docker Compose — Disposable Test Environment
+# Owner: Dev1  |  Issue: CATMS-011
+#
+# This file extends compose.yaml for fully isolated, disposable test runs.
+# It overrides the postgres service to use tmpfs (no disk writes) so that:
+#   - Tests start from an empty, known-good state on every run
+#   - No persistent volume is left between test runs
+#   - CI machines do not accumulate stale data
+#
+# Usage:
+#   # Run migrations against a clean in-memory database, then run tests:
+#   docker compose -f infra/compose.yaml -f infra/compose.test.yaml up postgres
+#
+#   # Tear down the disposable container (tmpfs data already gone):
+#   docker compose -f infra/compose.yaml -f infra/compose.test.yaml down
+#
+# This is the profile used by GitHub Actions CI (see .github/workflows/ci.yml,
+# implemented in CATMS-014).
+# =============================================================================
+
+name: catms-test
+
+services:
+
+  postgres:
+    container_name: catms_postgres_test
+    restart: "no"
+
+    environment:
+      POSTGRES_DB:       catms_test
+      POSTGRES_USER:     catms_super_test
+      POSTGRES_PASSWORD: catms_test_password
+      # Hint Postgres to use tmpfs for logging too
+      POSTGRES_INITDB_ARGS: "--no-sync"
+
+    ports:
+      - "127.0.0.1:5433:5432"   # separate port so it does not conflict with dev
+
+    volumes:
+      # tmpfs — data lives only in RAM; dies with the container
+      - type: tmpfs
+        target: /var/lib/postgresql/data
+        tmpfs:
+          size: 512m
+      # Init scripts still apply (creates catms_app role, etc.)
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catms_super_test -d catms_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
+
+    # Disable all profiles so this service always starts without --profile
+    profiles: []

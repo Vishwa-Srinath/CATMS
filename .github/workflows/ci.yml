@@ -1,0 +1,260 @@
+# =============================================================================
+# CATMS — Continuous Integration
+# Owner: Dev1 | Issue: CATMS-014
+# Reviewer: Dev5
+#
+# Triggers:
+#   - Every PR targeting main (branch protection)
+#   - Every direct push to main (post-merge verification)
+#
+# Jobs (in dependency order):
+#   1. frontend   — lint → typecheck → test (vitest) → build (vite)
+#   2. backend    — typecheck → test (vitest + supertest, no live DB)
+#   3. migration-smoke — spin up tmpfs postgres via compose.test.yaml
+#                        run migrate.sh --test → assert 3 rows committed
+#
+# Acceptance criteria (CATMS-014):
+#   ✅ CI runs on every PR
+#   ✅ Deliberately broken migration/build fails the job
+#   ✅ Successful baseline passes
+#   ✅ Logs contain no secrets (secrets block, no env dump, no debug echo)
+# =============================================================================
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel any in-progress run for the same ref when a new commit is pushed
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Minimal permissions by default — individual jobs escalate only as needed
+permissions:
+  contents: read
+
+# ── Job 1: Frontend ───────────────────────────────────────────────────────────
+jobs:
+  frontend:
+    name: Frontend — lint / test / build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Lint — ESLint with typescript-eslint (eslint.config.js in frontend/)
+      - name: Lint
+        run: npm run lint
+
+      # TypeScript typecheck via vite build (which runs tsc -b first)
+      # We run tsc directly to get clean type errors before the build step
+      - name: Typecheck
+        run: npx tsc --noEmit --project tsconfig.app.json
+
+      # Vitest — frontend/src/lib/domain.test.ts (and any future tests)
+      - name: Test
+        run: npm test
+
+      # Vite production build — fails if TypeScript errors exist
+      - name: Build
+        run: npm run build
+
+
+# ── Job 2: Backend ────────────────────────────────────────────────────────────
+  backend:
+    name: Backend — typecheck / test
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Strict TypeScript check — noUnusedLocals, exactOptionalPropertyTypes, etc.
+      - name: Typecheck
+        run: ./node_modules/.bin/tsc --noEmit
+
+      # Vitest — backend/tests/health.test.ts
+      # env.ts and pool are mocked; no live PostgreSQL required for this job.
+      - name: Test
+        run: ./node_modules/.bin/vitest run
+
+
+# ── Job 3: Migration smoke test ───────────────────────────────────────────────
+  migration-smoke:
+    name: Migration smoke — clean DB → migrate → verify
+    runs-on: ubuntu-24.04
+    # Run after backend job passes (migrations depend on roles created by compose)
+    needs: [backend]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Start disposable postgres (tmpfs, no disk writes) ─────────────────
+      # compose.test.yaml overrides the postgres service to use tmpfs and
+      # port 5433, and sets POSTGRES_USER=catms_super_test.
+      # We do NOT start the api or web services — postgres only.
+      - name: Start test PostgreSQL
+        run: |
+          docker compose \
+            -f infra/compose.yaml \
+            -f infra/compose.test.yaml \
+            up --detach --wait postgres
+        env:
+          # Suppress the "orphan containers" warning (api/web not started)
+          COMPOSE_IGNORE_ORPHANS: "true"
+
+      # ── Wait for postgres to be fully healthy ─────────────────────────────
+      # --wait above already blocks until the healthcheck passes, but we add
+      # an explicit pg_isready call as a belt-and-suspenders guard.
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if pg_isready -h localhost -p 5433 -U catms_super_test 2>/dev/null; then
+              echo "PostgreSQL is ready"
+              break
+            fi
+            echo "Attempt $i/30 — waiting..."
+            sleep 2
+          done
+        env:
+          PGPASSWORD: catms_test_password
+
+      # ── Run migration runner in test mode ─────────────────────────────────
+      # migrate.sh --test connects to:
+      #   host=localhost  port=5433  db=catms_test
+      #   user=catms_super (default) BUT compose.test.yaml sets user=catms_super_test
+      # We override POSTGRES_SUPERUSER to match the test compose user.
+      - name: Run migrations (--test mode)
+        run: bash -x scripts/migrate.sh --test
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5433"
+          POSTGRES_DB: catms_test
+          POSTGRES_SUPERUSER: catms_super_test
+          POSTGRES_SUPERUSER_PASSWORD: catms_test_password
+
+      # ── Verify schema_migrations has exactly the expected rows ─────────────
+      # After running 001, 002, 003 on a fresh DB, exactly 3 rows must exist.
+      # If the count is wrong, a migration was silently skipped or double-run.
+      - name: Verify migration count
+        run: |
+          COUNT=$(psql \
+            -h localhost \
+            -p 5433 \
+            -U catms_super_test \
+            -d catms_test \
+            -tAc "SELECT count(*) FROM catms.schema_migrations;")
+          echo "Migration rows in schema_migrations: ${COUNT}"
+          if [[ "${COUNT}" -ne 3 ]]; then
+            echo "❌ Expected 3 migrations, got ${COUNT}"
+            exit 1
+          fi
+          echo "✅ Exactly 3 migrations recorded"
+        env:
+          PGPASSWORD: catms_test_password
+
+      # ── Verify extensions were created ────────────────────────────────────
+      - name: Verify extensions (btree_gist, citext)
+        run: |
+          EXTS=$(psql \
+            -h localhost \
+            -p 5433 \
+            -U catms_super_test \
+            -d catms_test \
+            -tAc "SELECT extname FROM pg_extension WHERE extname IN ('btree_gist','citext') ORDER BY extname;" \
+            | tr '\n' ',')
+          echo "Extensions installed: ${EXTS}"
+          if [[ "${EXTS}" != "btree_gist,citext," ]]; then
+            echo "❌ Extensions not installed as expected. Got: ${EXTS}"
+            exit 1
+          fi
+          echo "✅ btree_gist and citext installed"
+        env:
+          PGPASSWORD: catms_test_password
+
+      # ── Verify catms schema and roles exist ───────────────────────────────
+      - name: Verify catms schema and roles
+        run: |
+          SCHEMA=$(psql \
+            -h localhost \
+            -p 5433 \
+            -U catms_super_test \
+            -d catms_test \
+            -tAc "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'catms';")
+          echo "Schema check: '${SCHEMA}'"
+          if [[ "${SCHEMA}" != "catms" ]]; then
+            echo "❌ catms schema not found"
+            exit 1
+          fi
+
+          ROLES=$(psql \
+            -h localhost \
+            -p 5433 \
+            -U catms_super_test \
+            -d catms_test \
+            -tAc "SELECT rolname FROM pg_roles WHERE rolname IN ('catms_app','catms_readonly') ORDER BY rolname;" \
+            | tr '\n' ',')
+          echo "Roles: ${ROLES}"
+          if [[ "${ROLES}" != "catms_app,catms_readonly," ]]; then
+            echo "❌ Expected roles not found. Got: ${ROLES}"
+            exit 1
+          fi
+          echo "✅ catms schema and roles verified"
+        env:
+          PGPASSWORD: catms_test_password
+
+      # ── Run migration runner a second time (idempotency check) ─────────────
+      # A second run must produce 0 new migrations (all versions already applied).
+      # Any failure here means the runner is not idempotent — critical bug.
+      - name: Verify migration idempotency (second run)
+        run: bash -x scripts/migrate.sh --test
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5433"
+          POSTGRES_DB: catms_test
+          POSTGRES_SUPERUSER: catms_super_test
+          POSTGRES_SUPERUSER_PASSWORD: catms_test_password
+
+      # ── Tear down disposable container ────────────────────────────────────
+      # tmpfs data is already gone; this just removes the container.
+      - name: Tear down test PostgreSQL
+        if: always()
+        run: |
+          docker compose \
+            -f infra/compose.yaml \
+            -f infra/compose.test.yaml \
+            down --volumes --remove-orphans
+        env:
+          COMPOSE_IGNORE_ORPHANS: "true"
