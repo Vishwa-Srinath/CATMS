@@ -84,13 +84,13 @@ The **database is the authority** for every business rule. PostgreSQL constraint
 `CODEBASE_GUIDE.md` → `member_plan.md §8` → Issues: CATMS-001, 004, 009, 010, 011, 012, 013, 014, 027, 028, 029, 030, 031, 043, 044, 050, 051, 056, 061, 065, 069
 
 ### Dev2 — Read first
-`CODEBASE_GUIDE.md` → `member_plan.md §9` → `Dev2_Plan.md` → [`CATMS-003`](./CATMS-003_User_Roles_Branch_Scope_and_Permission_Matrix.md) → Issues: CATMS-003, 015, 016, 017, 023, 024, 045, 046, 047, 058, 066
+`CODEBASE_GUIDE.md` → `member_plan.md §9` → [`Dev2_Plan.md`](./Dev2_Plan.md) → [`CATMS-003`](./CATMS-003_User_Roles_Branch_Scope_and_Permission_Matrix.md) → Issues: CATMS-003, 015, 016, 017, 023, 024, 045, 046, 047, 058, 066
 
 ### Dev3 — Read first
-`CODEBASE_GUIDE.md` → `member_plan.md §10` → Issues: CATMS-006, 008, 018, 019, 025, 026, 037, 038, 039, 040, 048, 049, 059, 060, 067
+`CODEBASE_GUIDE.md` → `member_plan.md §10` → [`Dev3_Plan.md`](./Dev3_Plan.md) → [`CATMS-006`](./CATMS-006_Insurance_Eligibility_and_Claim_Rules.md) → Issues: CATMS-006, 008, 018, 019, 025, 026, 037, 038, 039, 040, 048, 049, 059, 060, 067
 
 ### Dev4 — Read first
-`CODEBASE_GUIDE.md` → `member_plan.md §11` → Issues: CATMS-005, 008, 020, 032, 033, 034, 035, 036, 052, 053, 054, 062, 063, 068
+`CODEBASE_GUIDE.md` → `member_plan.md §11` → [`CATMS-005`](./CATMS-005_Clinical_Price_and_Invoice_Rules.md) → Issues: CATMS-005, 008, 020, 032, 033, 034, 035, 036, 052, 053, 054, 062, 063, 068
 
 ### Dev5 — Read first
 `CODEBASE_GUIDE.md` → `member_plan.md §12` → Issues: CATMS-007, 021, 041, 042, 055, 064, 070
