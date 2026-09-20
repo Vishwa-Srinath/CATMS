@@ -146,7 +146,7 @@ if [[ "${VERIFY_ONLY}" == "true" ]]; then
       echo "  ✅ ${filename}: checksum OK"
     else
       echo "  ❌ ${filename}: CHECKSUM MISMATCH (stored: ${stored}, current: ${current})" >&2
-      ((VERIFY_ERRORS++))
+      VERIFY_ERRORS=$(( VERIFY_ERRORS + 1 ))
     fi
   done
   if [[ "${VERIFY_ERRORS}" -gt 0 ]]; then
@@ -176,13 +176,13 @@ for file in "${MIGRATION_FILES[@]}"; do
   is_applied=$("${PSQL[@]}" --tuples-only --command="SELECT 1 FROM catms.schema_migrations WHERE version = ${version_int};" 2>/dev/null | tr -d '[:space:]' || echo "")
   if [[ "${is_applied}" == "1" ]]; then
     echo "⏭️  Skipping ${filename} — already applied"
-    ((SKIPPED++))
+    SKIPPED=$(( SKIPPED + 1 ))
     continue
   fi
 
   if [[ "${DRY_RUN}" == "true" ]]; then
     echo "[DRY RUN] Would apply: ${filename}"
-    ((APPLIED++))
+    APPLIED=$(( APPLIED + 1 ))
     continue
   fi
 
@@ -208,7 +208,7 @@ for file in "${MIGRATION_FILES[@]}"; do
   " >/dev/null
 
   echo "✅ ${filename} (${ELAPSED_MS}ms)"
-  ((APPLIED++))
+  APPLIED=$(( APPLIED + 1 ))
 done
 
 echo ""
