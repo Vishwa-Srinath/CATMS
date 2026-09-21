@@ -30,7 +30,7 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 | Step | Issue | Name | Gate | Status |
 |:---:|:---:|---|:---:|:---:|
 | 1 | CATMS-003 | Freeze user roles, branch scope & permission matrix | G0 | ✅ Done |
-| 2 | CATMS-015 | Implement Branch and Employee schema | G1 | ⬜ Not started |
+| 2 | CATMS-015 | Implement Branch and Employee schema | G1 | ✅ Done |
 | 3 | CATMS-016 | Implement staff/manager assignment history schema | G1 | ⬜ Not started |
 | 4 | CATMS-017 | Implement doctor, specialty, user-account and role schema | G1 | ⬜ Not started |
 | 5 | CATMS-023 | Implement staff registration, assignment & deactivation procedures | G2 | ⬜ Not started |
@@ -79,11 +79,11 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 2 — CATMS-015: Implement Branch and Employee schema
-- [ ] Migration file created in range `020–039` (e.g., `020_create_branch_and_employee.sql`)
-- [ ] Tables: `branch`, `employee`
-- [ ] Columns, PKs (`BIGINT GENERATED ALWAYS AS IDENTITY`), FKs, and `COMMENT ON` statements
-- [ ] Normalized unique constraints: `branch.code`, `branch.name`, `employee.nic`, `employee.employee_number`
-- [ ] Deletion policy: `ON DELETE RESTRICT` on historical employee references
+- [x] Migration file created in range `020–039` (e.g., `020_branch_and_employee.sql`)
+- [x] Tables: `branch`, `employee`
+- [x] Columns, PKs (`BIGINT GENERATED ALWAYS AS IDENTITY`), FKs, and `COMMENT ON` statements
+- [x] Normalized unique constraints: `branch.code`, `branch.name`, `employee.nic`, `employee.employee_number`
+- [x] Deletion policy: `ON DELETE RESTRICT` on historical employee references
 
 **What:** Physical tables for branches (Colombo, Kandy, Galle) and clinic staff with strict uniqueness on NIC and employee numbers.
 
