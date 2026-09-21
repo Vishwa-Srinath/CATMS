@@ -32,7 +32,7 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 | 1 | CATMS-003 | Freeze user roles, branch scope & permission matrix | G0 | ✅ Done |
 | 2 | CATMS-015 | Implement Branch and Employee schema | G1 | ✅ Done |
 | 3 | CATMS-016 | Implement staff/manager assignment history schema | G1 | ✅ Done |
-| 4 | CATMS-017 | Implement doctor, specialty, user-account and role schema | G1 | ⬜ Not started |
+| 4 | CATMS-017 | Implement doctor, specialty, user-account and role schema | G1 | ✅ Done |
 | 5 | CATMS-023 | Implement staff registration, assignment & deactivation procedures | G2 | ⬜ Not started |
 | 6 | CATMS-024 | Implement manager/specialty integrity & database grants | G2 | ⬜ Not started |
 | 7 | CATMS-045 | Implement authentication, session & password security API | G3 | ⬜ Not started |
@@ -122,11 +122,11 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 4 — CATMS-017: Implement doctor, specialty, user-account and role schema
-- [ ] Tables: `doctor_profile`, `specialty`, `doctor_specialty`, `user_account`, `app_role`, `user_account_role`, `audit_event`
-- [ ] Shared PK between `doctor_profile.id` and `employee.id` (1-to-1 subtype)
-- [ ] Medical licence unique constraint (`citext` / case-insensitive)
-- [ ] `user_account` stores `password_hash` (bcrypt), `status` (`ACTIVE`, `LOCKED`, `DISABLED`)
-- [ ] `audit_event` append-only audit trail table
+- [x] Tables: `doctor_profile`, `specialty`, `doctor_specialty`, `user_account`, `app_role`, `user_account_role`, `audit_event`
+- [x] Shared PK between `doctor_profile.id` and `employee.id` (1-to-1 subtype)
+- [x] Medical licence unique constraint (`citext` / case-insensitive)
+- [x] `user_account` stores `password_hash` (bcrypt), `status` (`ACTIVE`, `LOCKED`, `DISABLED`)
+- [x] `audit_event` append-only audit trail table
 
 **What:** Doctor specialization models, credentials storage, role assignments, and security audit log schema.
 
