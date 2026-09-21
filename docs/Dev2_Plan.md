@@ -31,7 +31,7 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 |:---:|:---:|---|:---:|:---:|
 | 1 | CATMS-003 | Freeze user roles, branch scope & permission matrix | G0 | ✅ Done |
 | 2 | CATMS-015 | Implement Branch and Employee schema | G1 | ✅ Done |
-| 3 | CATMS-016 | Implement staff/manager assignment history schema | G1 | ⬜ Not started |
+| 3 | CATMS-016 | Implement staff/manager assignment history schema | G1 | ✅ Done |
 | 4 | CATMS-017 | Implement doctor, specialty, user-account and role schema | G1 | ⬜ Not started |
 | 5 | CATMS-023 | Implement staff registration, assignment & deactivation procedures | G2 | ⬜ Not started |
 | 6 | CATMS-024 | Implement manager/specialty integrity & database grants | G2 | ⬜ Not started |
@@ -101,10 +101,10 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 3 — CATMS-016: Implement staff/manager assignment history schema
-- [ ] Tables: `employee_branch_assignment`, `branch_manager_assignment`
-- [ ] Temporal ranges (`valid_from`, `valid_to`) with `CHECK (valid_to >= valid_from)`
-- [ ] Partial unique constraint: At most one active `PRIMARY` branch assignment per employee (`WHERE is_active = TRUE AND assignment_type = 'PRIMARY'`)
-- [ ] Partial unique constraint: At most one active manager per branch (`WHERE is_active = TRUE`)
+- [x] Tables: `employee_branch_assignment`, `branch_manager_assignment`
+- [x] Temporal ranges (`valid_from`, `valid_to`) with `CHECK (valid_to >= valid_from)`
+- [x] Partial unique constraint: At most one active `PRIMARY` branch assignment per employee (`WHERE is_active = TRUE AND assignment_type = 'PRIMARY'`)
+- [x] Partial unique constraint: At most one active manager per branch (`WHERE is_active = TRUE`)
 
 **What:** Historical and active staff assignments to physical clinic branches and branch manager appointments.
 
