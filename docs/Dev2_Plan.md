@@ -34,7 +34,7 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 | 3 | CATMS-016 | Implement staff/manager assignment history schema | G1 | ✅ Done |
 | 4 | CATMS-017 | Implement doctor, specialty, user-account and role schema | G1 | ✅ Done |
 | 5 | CATMS-023 | Implement staff registration, assignment & deactivation procedures | G2 | ✅ Done |
-| 6 | CATMS-024 | Implement manager/specialty integrity & database grants | G2 | ⬜ Not started |
+| 6 | CATMS-024 | Implement manager/specialty integrity & database grants | G2 | ✅ Done |
 | 7 | CATMS-045 | Implement authentication, session & password security API | G3 | ⬜ Not started |
 | 8 | CATMS-046 | Implement Branch, Staff & Access API | G3 | ⬜ Not started |
 | 9 | CATMS-047 | Add authentication & administration API tests | G3 | ⬜ Not started |
@@ -172,10 +172,10 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 6 — CATMS-024: Implement manager/specialty integrity and database grants
-- [ ] Procedure: `assign_branch_manager(p_branch_id, p_employee_id)` with manager validation
-- [ ] Database roles created: `catms_reception`, `catms_clinician`, `catms_manager`, `catms_admin`, `catms_qa`
-- [ ] Object privileges configured (`GRANT` / `REVOKE`) per CATMS-003 matrix
-- [ ] SQL test suite in `database/tests/rules/` verifying direct database permission denials
+- [x] Procedure: `assign_branch_manager(p_branch_id, p_employee_id)` with manager validation
+- [x] Database roles created: `catms_reception`, `catms_clinician`, `catms_manager`, `catms_admin`, `catms_qa`
+- [x] Object privileges configured (`GRANT` / `REVOKE`) per CATMS-003 matrix
+- [x] SQL test suite in `database/tests/rules/` verifying direct database permission denials
 
 **What:** Integrity checks ensuring active managers belong to the branch and have position `Manager`, plus creation of PostgreSQL security roles.
 
