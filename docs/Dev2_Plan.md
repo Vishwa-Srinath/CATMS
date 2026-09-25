@@ -33,7 +33,7 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 | 2 | CATMS-015 | Implement Branch and Employee schema | G1 | ✅ Done |
 | 3 | CATMS-016 | Implement staff/manager assignment history schema | G1 | ✅ Done |
 | 4 | CATMS-017 | Implement doctor, specialty, user-account and role schema | G1 | ✅ Done |
-| 5 | CATMS-023 | Implement staff registration, assignment & deactivation procedures | G2 | ⬜ Not started |
+| 5 | CATMS-023 | Implement staff registration, assignment & deactivation procedures | G2 | ✅ Done |
 | 6 | CATMS-024 | Implement manager/specialty integrity & database grants | G2 | ⬜ Not started |
 | 7 | CATMS-045 | Implement authentication, session & password security API | G3 | ⬜ Not started |
 | 8 | CATMS-046 | Implement Branch, Staff & Access API | G3 | ⬜ Not started |
@@ -150,11 +150,11 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 5 — CATMS-023: Implement staff registration, assignment and deactivation procedures
-- [ ] Procedure: `register_employee(p_name, p_nic, p_role, p_branch_id, ...)`
-- [ ] Procedure: `register_doctor_profile(p_employee_id, p_license_no, p_fee, p_specialty_ids)`
-- [ ] Procedure: `transfer_employee_branch(p_employee_id, p_new_branch_id, p_type)`
-- [ ] Procedure: `deactivate_employee(p_employee_id, p_reason)`
-- [ ] Invariant checks: Doctor profile requires employee position = `Doctor`. Soft-deactivation closes active assignments.
+- [x] Procedure: `register_employee(p_name, p_nic, p_role, p_branch_id, ...)`
+- [x] Procedure: `register_doctor_profile(p_employee_id, p_license_no, p_fee, p_specialty_ids)`
+- [x] Procedure: `transfer_employee_branch(p_employee_id, p_new_branch_id, p_type)`
+- [x] Procedure: `deactivate_employee(p_employee_id, p_reason)`
+- [x] Invariant checks: Doctor profile requires employee position = `Doctor`. Soft-deactivation closes active assignments.
 
 **What:** Atomic transactional procedures for employee lifecycle management.
 
