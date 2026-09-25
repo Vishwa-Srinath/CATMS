@@ -218,13 +218,14 @@ BEGIN
     -- -------------------------------------------------------------------------
     -- 12. Deletion Policy: Historical References Protected with ON DELETE RESTRICT
     -- -------------------------------------------------------------------------
-    -- Create temporary dependent table simulating historical records
-    CREATE TEMP TABLE test_dependent_record (
+    -- Use a regular table because PostgreSQL does not allow a temporary table
+    -- to reference a permanent table. The surrounding transaction rolls it back.
+    CREATE TABLE catms.test_dependent_record (
         record_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         employee_id BIGINT NOT NULL REFERENCES catms.employee(employee_id) ON DELETE RESTRICT
-    ) ON COMMIT DROP;
+    );
 
-    INSERT INTO test_dependent_record (employee_id) VALUES (v_employee_id);
+    INSERT INTO catms.test_dependent_record (employee_id) VALUES (v_employee_id);
 
     -- Attempting physical hard deletion must fail with foreign_key_violation
     v_caught := FALSE;
