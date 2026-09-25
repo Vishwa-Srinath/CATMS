@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS catms.doctor_specialty (
 -- At most one active primary specialty per doctor
 CREATE UNIQUE INDEX IF NOT EXISTS uq_active_primary_doctor_specialty
     ON catms.doctor_specialty (doctor_id)
-    WHERE (is_primary = TRUE AND (valid_to IS NULL OR valid_to >= CURRENT_DATE));
+    WHERE (is_primary = TRUE AND valid_to IS NULL);
 
 -- =============================================================================
 -- Table: catms.user_account
