@@ -220,7 +220,27 @@ BEGIN
     -- -------------------------------------------------------------------------
     -- 2. Doctor Specialty Integrity Rules (active doctor has specialty)
     -- -------------------------------------------------------------------------
-    -- Register doctor profile with specialty
+    -- 2a. NEGATIVE: Active doctor without specialty fails when constraints checked
+    v_caught := FALSE;
+    BEGIN
+        INSERT INTO catms.doctor_profile (
+            doctor_id, medical_license_no, practice_start_date, is_accepting_appointments
+        ) VALUES (
+            v_doc_emp_id, 'SLMC-SEC-01', '2010-01-01', TRUE
+        );
+
+        SET CONSTRAINTS ALL IMMEDIATE;
+    EXCEPTION
+        WHEN check_violation THEN
+            v_caught := TRUE;
+            SET CONSTRAINTS ALL DEFERRED;
+    END;
+
+    IF NOT v_caught THEN
+        RAISE EXCEPTION 'Rule assertion failed: active doctor without specialty must fail constraint check';
+    END IF;
+
+    -- 2b. POSITIVE: Active doctor with specialty succeeds
     INSERT INTO catms.doctor_profile (
         doctor_id, medical_license_no, practice_start_date, is_accepting_appointments
     ) VALUES (
@@ -232,6 +252,9 @@ BEGIN
     ) VALUES (
         v_doc_emp_id, v_spec_id, TRUE, CURRENT_DATE
     );
+
+    SET CONSTRAINTS ALL IMMEDIATE;
+    SET CONSTRAINTS ALL DEFERRED;
 
     -- -------------------------------------------------------------------------
     -- 3. Base Financial Tables & Seed Data for Permission Checks

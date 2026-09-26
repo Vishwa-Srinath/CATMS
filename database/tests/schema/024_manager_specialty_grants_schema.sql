@@ -49,7 +49,7 @@ BEGIN
     END IF;
 
     -- 4. Verify triggers exist
-    SELECT count(*) INTO v_count
+    SELECT count(DISTINCT trigger_name) INTO v_count
     FROM information_schema.triggers
     WHERE trigger_schema = 'catms'
       AND trigger_name IN (

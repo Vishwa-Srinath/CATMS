@@ -307,7 +307,11 @@ DECLARE
     v_is_emp_active BOOLEAN;
     v_specialty_count INTEGER;
 BEGIN
-    v_doc_id := coalesce(NEW.doctor_id, OLD.doctor_id);
+    IF TG_OP = 'DELETE' THEN
+        v_doc_id := OLD.doctor_id;
+    ELSE
+        v_doc_id := NEW.doctor_id;
+    END IF;
 
     SELECT dp.is_accepting_appointments, e.is_active
     INTO v_is_accepting, v_is_emp_active
