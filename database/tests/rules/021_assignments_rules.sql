@@ -37,7 +37,7 @@ BEGIN
         position_code, phone, hire_date
     ) VALUES (
         'EMP-ASGN-1', '850010001V', 'Staff Member One', 'Female', '1985-01-10',
-        'Nurse', '077 300 0001', '2020-01-01'
+        'Manager', '077 300 0001', '2020-01-01'
     ) RETURNING employee_id INTO v_employee_id_1;
 
     INSERT INTO catms.employee (
@@ -95,6 +95,13 @@ BEGIN
         employee_id, branch_id, assignment_type, valid_from, valid_to, is_active
     ) VALUES (
         v_employee_id_1, v_branch_id_2, 'PRIMARY', '2018-01-01', '2019-12-31', FALSE
+    );
+
+    -- Ensure employee_id_2 is actively assigned to branch_id_1 as a staff member
+    INSERT INTO catms.employee_branch_assignment (
+        employee_id, branch_id, assignment_type, valid_from, is_active
+    ) VALUES (
+        v_employee_id_2, v_branch_id_1, 'PRIMARY', '2020-01-01', TRUE
     );
 
     -- -------------------------------------------------------------------------
@@ -174,7 +181,7 @@ BEGIN
         INSERT INTO catms.branch_manager_assignment (
             branch_id, employee_id, valid_from, valid_to
         ) VALUES (
-            v_branch_id_2, v_employee_id_2, '2023-05-01', '2023-04-01'
+            v_branch_id_1, v_employee_id_2, '2023-05-01', '2023-04-01'
         );
     EXCEPTION
         WHEN check_violation THEN
