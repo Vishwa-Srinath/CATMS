@@ -30,11 +30,11 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 | Step | Issue | Name | Gate | Status |
 |:---:|:---:|---|:---:|:---:|
 | 1 | CATMS-003 | Freeze user roles, branch scope & permission matrix | G0 | ✅ Done |
-| 2 | CATMS-015 | Implement Branch and Employee schema | G1 | ⬜ Not started |
-| 3 | CATMS-016 | Implement staff/manager assignment history schema | G1 | ⬜ Not started |
-| 4 | CATMS-017 | Implement doctor, specialty, user-account and role schema | G1 | ⬜ Not started |
-| 5 | CATMS-023 | Implement staff registration, assignment & deactivation procedures | G2 | ⬜ Not started |
-| 6 | CATMS-024 | Implement manager/specialty integrity & database grants | G2 | ⬜ Not started |
+| 2 | CATMS-015 | Implement Branch and Employee schema | G1 | ✅ Done |
+| 3 | CATMS-016 | Implement staff/manager assignment history schema | G1 | ✅ Done |
+| 4 | CATMS-017 | Implement doctor, specialty, user-account and role schema | G1 | ✅ Done |
+| 5 | CATMS-023 | Implement staff registration, assignment & deactivation procedures | G2 | ✅ Done |
+| 6 | CATMS-024 | Implement manager/specialty integrity & database grants | G2 | ✅ Done |
 | 7 | CATMS-045 | Implement authentication, session & password security API | G3 | ⬜ Not started |
 | 8 | CATMS-046 | Implement Branch, Staff & Access API | G3 | ⬜ Not started |
 | 9 | CATMS-047 | Add authentication & administration API tests | G3 | ⬜ Not started |
@@ -79,11 +79,11 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 2 — CATMS-015: Implement Branch and Employee schema
-- [ ] Migration file created in range `020–039` (e.g., `020_create_branch_and_employee.sql`)
-- [ ] Tables: `branch`, `employee`
-- [ ] Columns, PKs (`BIGINT GENERATED ALWAYS AS IDENTITY`), FKs, and `COMMENT ON` statements
-- [ ] Normalized unique constraints: `branch.code`, `branch.name`, `employee.nic`, `employee.employee_number`
-- [ ] Deletion policy: `ON DELETE RESTRICT` on historical employee references
+- [x] Migration file created in range `020–039` (e.g., `020_branch_and_employee.sql`)
+- [x] Tables: `branch`, `employee`
+- [x] Columns, PKs (`BIGINT GENERATED ALWAYS AS IDENTITY`), FKs, and `COMMENT ON` statements
+- [x] Normalized unique constraints: `branch.code`, `branch.name`, `employee.nic`, `employee.employee_number`
+- [x] Deletion policy: `ON DELETE RESTRICT` on historical employee references
 
 **What:** Physical tables for branches (Colombo, Kandy, Galle) and clinic staff with strict uniqueness on NIC and employee numbers.
 
@@ -101,10 +101,10 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 3 — CATMS-016: Implement staff/manager assignment history schema
-- [ ] Tables: `employee_branch_assignment`, `branch_manager_assignment`
-- [ ] Temporal ranges (`valid_from`, `valid_to`) with `CHECK (valid_to >= valid_from)`
-- [ ] Partial unique constraint: At most one active `PRIMARY` branch assignment per employee (`WHERE is_active = TRUE AND assignment_type = 'PRIMARY'`)
-- [ ] Partial unique constraint: At most one active manager per branch (`WHERE is_active = TRUE`)
+- [x] Tables: `employee_branch_assignment`, `branch_manager_assignment`
+- [x] Temporal ranges (`valid_from`, `valid_to`) with `CHECK (valid_to >= valid_from)`
+- [x] Partial unique constraint: At most one active `PRIMARY` branch assignment per employee (`WHERE is_active = TRUE AND assignment_type = 'PRIMARY'`)
+- [x] Partial unique constraint: At most one active manager per branch (`WHERE is_active = TRUE`)
 
 **What:** Historical and active staff assignments to physical clinic branches and branch manager appointments.
 
@@ -122,11 +122,11 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 4 — CATMS-017: Implement doctor, specialty, user-account and role schema
-- [ ] Tables: `doctor_profile`, `specialty`, `doctor_specialty`, `user_account`, `app_role`, `user_account_role`, `audit_event`
-- [ ] Shared PK between `doctor_profile.id` and `employee.id` (1-to-1 subtype)
-- [ ] Medical licence unique constraint (`citext` / case-insensitive)
-- [ ] `user_account` stores `password_hash` (bcrypt), `status` (`ACTIVE`, `LOCKED`, `DISABLED`)
-- [ ] `audit_event` append-only audit trail table
+- [x] Tables: `doctor_profile`, `specialty`, `doctor_specialty`, `user_account`, `app_role`, `user_account_role`, `audit_event`
+- [x] Shared PK between `doctor_profile.id` and `employee.id` (1-to-1 subtype)
+- [x] Medical licence unique constraint (`citext` / case-insensitive)
+- [x] `user_account` stores `password_hash` (bcrypt), `status` (`ACTIVE`, `LOCKED`, `DISABLED`)
+- [x] `audit_event` append-only audit trail table
 
 **What:** Doctor specialization models, credentials storage, role assignments, and security audit log schema.
 
@@ -150,11 +150,11 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 5 — CATMS-023: Implement staff registration, assignment and deactivation procedures
-- [ ] Procedure: `register_employee(p_name, p_nic, p_role, p_branch_id, ...)`
-- [ ] Procedure: `register_doctor_profile(p_employee_id, p_license_no, p_fee, p_specialty_ids)`
-- [ ] Procedure: `transfer_employee_branch(p_employee_id, p_new_branch_id, p_type)`
-- [ ] Procedure: `deactivate_employee(p_employee_id, p_reason)`
-- [ ] Invariant checks: Doctor profile requires employee position = `Doctor`. Soft-deactivation closes active assignments.
+- [x] Procedure: `register_employee(p_name, p_nic, p_role, p_branch_id, ...)`
+- [x] Procedure: `register_doctor_profile(p_employee_id, p_license_no, p_fee, p_specialty_ids)`
+- [x] Procedure: `transfer_employee_branch(p_employee_id, p_new_branch_id, p_type)`
+- [x] Procedure: `deactivate_employee(p_employee_id, p_reason)`
+- [x] Invariant checks: Doctor profile requires employee position = `Doctor`. Soft-deactivation closes active assignments.
 
 **What:** Atomic transactional procedures for employee lifecycle management.
 
@@ -172,10 +172,10 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 6 — CATMS-024: Implement manager/specialty integrity and database grants
-- [ ] Procedure: `assign_branch_manager(p_branch_id, p_employee_id)` with manager validation
-- [ ] Database roles created: `catms_reception`, `catms_clinician`, `catms_manager`, `catms_admin`, `catms_qa`
-- [ ] Object privileges configured (`GRANT` / `REVOKE`) per CATMS-003 matrix
-- [ ] SQL test suite in `database/tests/rules/` verifying direct database permission denials
+- [x] Procedure: `assign_branch_manager(p_branch_id, p_employee_id)` with manager validation
+- [x] Database roles created: `catms_reception`, `catms_clinician`, `catms_manager`, `catms_admin`, `catms_qa`
+- [x] Object privileges configured (`GRANT` / `REVOKE`) per CATMS-003 matrix
+- [x] SQL test suite in `database/tests/rules/` verifying direct database permission denials
 
 **What:** Integrity checks ensuring active managers belong to the branch and have position `Manager`, plus creation of PostgreSQL security roles.
 
