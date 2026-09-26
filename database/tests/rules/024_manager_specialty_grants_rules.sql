@@ -341,7 +341,7 @@ BEGIN
     EXCEPTION
         WHEN insufficient_privilege THEN
             v_caught := TRUE;
-    END IF;
+    END;
     IF NOT v_caught THEN
         RAISE EXCEPTION 'Security assertion failed: catms_manager MUST NOT be able to SELECT from invoice';
     END IF;
@@ -374,7 +374,7 @@ BEGIN
     EXCEPTION
         WHEN insufficient_privilege THEN
             v_caught := TRUE;
-    END IF;
+    END;
     IF NOT v_caught THEN
         RAISE EXCEPTION 'Security assertion failed: catms_clinician MUST NOT be able to SELECT from invoice';
     END IF;
