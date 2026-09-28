@@ -197,7 +197,7 @@ BEGIN
         ADD CONSTRAINT ex_doctor_exception_no_type_overlap
         EXCLUDE USING gist (
             doctor_id  WITH =,
-            exception_type::text  WITH =,
+            (exception_type::text)  WITH =,
             tstzrange(start_at, end_at, '[)') WITH &&
         );
     END IF;
