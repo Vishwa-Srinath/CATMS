@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS catms.doctor_availability_exception (
 
     -- Derived date column (UTC date of start_at) for fast date-level filters
     -- e.g. "show all exceptions for this doctor on 2026-10-01"
-    exception_date   DATE GENERATED ALWAYS AS (start_at::DATE) STORED,
+    exception_date   DATE GENERATED ALWAYS AS ((start_at AT TIME ZONE 'UTC')::DATE) STORED,
 
     reason           VARCHAR(255),
 
