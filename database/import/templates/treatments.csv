@@ -1,0 +1,4 @@
+category_name,treatment_code,treatment_name,default_price,duration_minutes,is_active
+Consultation,CONS-01,Standard GP Consultation,1500.00,15,true
+Diagnostic,DIAG-01,Full Blood Count,800.00,10,true
+Procedure,PROC-01,Wound Dressing,1200.00,20,true
