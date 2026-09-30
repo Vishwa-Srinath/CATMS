@@ -31,7 +31,7 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 |:---:|:---:|---|:---:|
 | 1 | CATMS-006 | Freeze eligibility and claim rules | ✅ Done |
 | 2 | CATMS-008 | Golden financial worked example | ✅ Done |
-| 3 | CATMS-018 | Patient identity schema | 🟡 In progress |
+| 3 | CATMS-018 | Patient identity schema | ✅ Done |
 | 4 | CATMS-019 | Provider, policy, coverage schema | ⬜ Not started |
 | 5 | CATMS-025 | Atomic registration procedure | ⬜ Not started |
 | 6 | CATMS-026 | Policy/coverage lifecycle procedures | ⬜ Not started |
