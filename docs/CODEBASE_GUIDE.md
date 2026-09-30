@@ -216,8 +216,9 @@ COMMIT;
 <module>.routes.ts    ← Express router, auth/rbac guards, request/response
 <module>.service.ts   ← DB calls via withTransaction(), business orchestration
 <module>.schema.ts    ← Zod input validation schemas
-<module>.test.ts      ← Supertest integration tests
 ```
+
+> **Note on test placement:** Supertest integration tests live in `backend/tests/<module>.test.ts` — a single flat `tests/` folder that is a sibling to `src/`, not inside the module folder. This matches the `backend/` folder tree above and `member_plan.md §4`.
 
 **Frontend** — `frontend/src/features/<module>/` must contain:
 
@@ -347,7 +348,7 @@ Do these in order for every feature branch:
 - [ ] Write `backend/src/modules/<module>/<module>.schema.ts` (Zod)
 - [ ] Write `backend/src/modules/<module>/<module>.routes.ts` (with auth + rbac middleware)
 - [ ] Add DTO types to `backend/src/contracts/<module>.contract.ts`
-- [ ] Write `backend/src/modules/<module>/<module>.test.ts` (Supertest)
+- [ ] Write `backend/tests/<module>.test.ts` (Supertest integration tests)
 - [ ] Add typed API call to `frontend/src/api/<module>.api.ts`
 - [ ] Add hooks in `frontend/src/features/<module>/hooks/`
 - [ ] Build component in `frontend/src/features/<module>/components/`

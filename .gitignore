@@ -4,9 +4,27 @@ dist
 .env
 .env.*
 !.env.example
+!infra/.env.example
 *.local
 coverage
 .DS_Store
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+
+# Backend build output
+backend/dist/
+
+# Database backup dumps — never commit, may contain demo patient data
+backups/
+*.dump
+*.sql.gz
+
+# Evidence files — generated locally, excluded from repo
+docs/evidence/*
+!docs/evidence/.gitkeep
+
+# OS / editor
+.idea/
+.vscode/settings.json
+Thumbs.db

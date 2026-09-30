@@ -1036,10 +1036,10 @@ Issue count does not equal workload. Dev5’s issues are intentionally smaller/r
 ### Branch naming
 
 ```text
-feature/catms-028-appointment-exclusion
-feature/catms-048-patient-insurance-api
-test/catms-073-scheduling-performance
-fix/catms-xxx-short-description
+feature/c-appointment-exclusion
+feature/b-claim-allocation
+test/c-scheduling-performance
+fix/c-walk-in-status-bug
 ```
 
 ### Conflict prevention
