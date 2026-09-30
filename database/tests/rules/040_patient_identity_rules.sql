@@ -24,12 +24,12 @@ BEGIN
     RETURNING branch_id INTO v_branch_id;
 
     INSERT INTO catms.employee (
-        employee_number, nic, first_name, last_name, gender_code, date_of_birth,
+        employee_number, nic, full_name, gender_code, date_of_birth,
         position_code, phone, email, hire_date
     ) VALUES (
-        'EMP-PAT-TEST', '198000000001', 'Test', 'Registrar', 'Male', '1980-01-01',
+        'EMP-PAT-TEST', '198000000001', 'Test Registrar', 'Male', '1980-01-01',
         'Receptionist', '+94 77 100 0001', 'reg@test.catms.lk', CURRENT_DATE
-    ) ON CONFLICT (employee_number) DO UPDATE SET first_name = EXCLUDED.first_name
+    ) ON CONFLICT (employee_number) DO UPDATE SET full_name = EXCLUDED.full_name
     RETURNING employee_id INTO v_employee_id;
 
     -- -------------------------------------------------------------------------
