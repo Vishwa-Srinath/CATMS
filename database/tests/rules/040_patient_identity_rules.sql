@@ -82,6 +82,9 @@ BEGIN
         RAISE EXCEPTION 'Rule assertion failed: duplicate NIC was not rejected clinic-wide';
     END IF;
 
+    -- Clean up temporary duplicate patient
+    DELETE FROM catms.patient WHERE patient_id = v_patient_id2;
+
     -- -------------------------------------------------------------------------
     -- 3. At Most One Primary Identity Invariant
     -- -------------------------------------------------------------------------
@@ -112,12 +115,14 @@ BEGIN
     -- 4. Guard against Deleting All Emergency Contacts
     -- -------------------------------------------------------------------------
     v_caught := FALSE;
+    SET CONSTRAINTS trg_emergency_contact_delete_guard IMMEDIATE;
     BEGIN
         DELETE FROM catms.emergency_contact WHERE patient_id = v_patient_id;
     EXCEPTION
         WHEN check_violation THEN
             v_caught := TRUE;
     END;
+    SET CONSTRAINTS trg_emergency_contact_delete_guard DEFERRED;
 
     IF NOT v_caught THEN
         RAISE EXCEPTION 'Rule assertion failed: deleting all emergency contacts was not blocked';
