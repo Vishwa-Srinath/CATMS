@@ -196,9 +196,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_emergency_contact_delete_guard ON catms.emergency_contact;
-CREATE CONSTRAINT TRIGGER trg_emergency_contact_delete_guard
-AFTER DELETE ON catms.emergency_contact
-DEFERRABLE INITIALLY DEFERRED
+CREATE TRIGGER trg_emergency_contact_delete_guard
+BEFORE DELETE ON catms.emergency_contact
 FOR EACH ROW
 EXECUTE FUNCTION catms.trg_check_emergency_contact_delete();
 
