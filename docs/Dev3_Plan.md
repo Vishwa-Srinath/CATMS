@@ -33,7 +33,7 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 | 2 | CATMS-008 | Golden financial worked example | ✅ Done |
 | 3 | CATMS-018 | Patient identity schema | ✅ Done |
 | 4 | CATMS-019 | Provider, policy, coverage schema | ⬜ Not started |
-| 5 | CATMS-025 | Atomic registration procedure | ⬜ Not started |
+| 5 | CATMS-025 | Atomic registration procedure | ✅ Done |
 | 6 | CATMS-026 | Policy/coverage lifecycle procedures | ⬜ Not started |
 | 7 | CATMS-037 | Claim, claim-line, status-history schema | ⬜ Not started |
 | 8 | CATMS-038 | Claim eligibility and submission procedure | ⬜ Not started |
@@ -147,9 +147,9 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 ---
 
 ### Step 5 â€” CATMS-025: Atomic patient-registration procedure
-- [ ] Single procedure creates patient + identity + contact in one transaction
-- [ ] Duplicate-identity attempt leaves zero rows behind (confirmed)
-- [ ] Missing-contact attempt leaves zero rows behind (confirmed)
+- [x] Single procedure creates patient + identity + contact in one transaction
+- [x] Duplicate-identity attempt leaves zero rows behind (confirmed)
+- [x] Missing-contact attempt leaves zero rows behind (confirmed)
 
 **What:** A single database procedure that creates `patient` + `patient_identity` + at least one `emergency_contact` together in one transaction.
 
