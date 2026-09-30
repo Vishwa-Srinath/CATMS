@@ -100,7 +100,7 @@ BEGIN
     END IF;
 
     -- 8. Mandatory integrity triggers
-    SELECT count(*) INTO v_count
+    SELECT count(DISTINCT trigger_name) INTO v_count
     FROM information_schema.triggers
     WHERE trigger_schema = 'catms'
       AND trigger_name IN (
