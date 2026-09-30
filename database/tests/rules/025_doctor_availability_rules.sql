@@ -44,23 +44,23 @@ BEGIN
     --    Minimal rows to satisfy FKs: branch → employee → doctor_profile
     -- =========================================================================
 
-    INSERT INTO catms.branch (branch_code, name, address, phone, email)
-    VALUES ('TST27A', 'Avail Test Branch A', '1 Test Rd', '+94111111111', 'avail_a@test.local')
+    INSERT INTO catms.branch (branch_code, name, address_line_1, city, contact_phone)
+    VALUES ('TST27A', 'Avail Test Branch A', '1 Test Road', 'Colombo', '+94111111111')
     RETURNING branch_id INTO v_branch_id;
 
-    INSERT INTO catms.branch (branch_code, name, address, phone, email)
-    VALUES ('TST27B', 'Avail Test Branch B', '2 Test Rd', '+94222222222', 'avail_b@test.local')
+    INSERT INTO catms.branch (branch_code, name, address_line_1, city, contact_phone)
+    VALUES ('TST27B', 'Avail Test Branch B', '2 Test Road', 'Kandy', '+94222222222')
     RETURNING branch_id INTO v_branch2_id;
 
     INSERT INTO catms.employee (
-        employee_number, first_name, last_name, nic,
-        date_of_birth, gender, employment_type, position,
-        hire_date, employment_status
+        employee_number, full_name, nic,
+        date_of_birth, gender_code, position_code,
+        hire_date, employment_status, phone
     )
     VALUES (
-        'EMP027TST', 'Avail', 'Doctor', '200012345679V',
-        '2000-01-01', 'Male', 'Full-Time', 'Doctor',
-        CURRENT_DATE, 'Active'
+        'EMP027TST', 'Avail Doctor', '200012345679V',
+        '2000-01-01', 'Male', 'Doctor',
+        CURRENT_DATE, 'Active', '+94300000000'
     )
     RETURNING employee_id INTO v_emp_id;
 
