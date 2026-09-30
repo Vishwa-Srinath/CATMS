@@ -178,27 +178,41 @@ CREATE TABLE IF NOT EXISTS catms.doctor_availability_exception (
         CHECK (end_at - start_at >= INTERVAL '15 minutes')
 );
 
--- ── GiST exclusion: no two exceptions of the SAME TYPE may overlap for the
--- same doctor.  (An ExtraHours and an Unavailable can coexist on the same
--- window because the Unavailable takes precedence at booking time.)
--- Requires the btree_gist extension installed in migration 001.
-CREATE UNIQUE INDEX IF NOT EXISTS idx_doctor_exception_no_same_type_overlap
-    ON catms.doctor_availability_exception (doctor_id, branch_id, exception_type, start_at);
+-- IMMUTABLE helper: converts the exception_type ENUM to SMALLINT.
+-- Rationale: PostgreSQL requires every expression in an EXCLUDE USING GIST
+-- constraint to be backed by an IMMUTABLE function.  Casting a user-defined
+-- ENUM to text via ::text uses enum_out() which PostgreSQL does NOT propagate
+-- as IMMUTABLE in index-expression contexts, causing:
+--   ERROR: functions in index expression must be marked IMMUTABLE
+-- An explicit SQL function declared IMMUTABLE with a CASE statement avoids
+-- this entirely.  The integer values here are stable; adding a new ENUM label
+-- requires both a migration and an update to this function.
+CREATE OR REPLACE FUNCTION catms.exception_type_to_int(
+    t catms.availability_exception_type
+)
+RETURNS SMALLINT LANGUAGE SQL IMMUTABLE STRICT PARALLEL SAFE AS $$
+    SELECT CASE t
+        WHEN 'ExtraHours' THEN 1::SMALLINT
+        WHEN 'Unavailable' THEN 2::SMALLINT
+    END;
+$$;
 
--- GiST exclusion index prevents same-type overlapping exceptions per doctor
+-- GiST exclusion: no two same-type exceptions may overlap per doctor per branch.
+-- Uses the IMMUTABLE helper above for the ENUM column so PostgreSQL accepts
+-- it as an index expression.
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint
-        WHERE conname = 'ex_doctor_exception_no_type_overlap'
-          AND conrelid = 'catms.doctor_availability_exception'::regclass
+        WHERE conname   = 'ex_doctor_exception_no_type_overlap'
+          AND conrelid  = 'catms.doctor_availability_exception'::regclass
     ) THEN
         ALTER TABLE catms.doctor_availability_exception
         ADD CONSTRAINT ex_doctor_exception_no_type_overlap
         EXCLUDE USING gist (
-            doctor_id  WITH =,
-            (exception_type::text)  WITH =,
-            tstzrange(start_at, end_at, '[)') WITH &&
+            doctor_id                                          WITH =,
+            catms.exception_type_to_int(exception_type)       WITH =,
+            tstzrange(start_at, end_at, '[)')                 WITH &&
         );
     END IF;
 END;
@@ -207,6 +221,7 @@ $$;
 -- Fast lookup by doctor and date
 CREATE INDEX IF NOT EXISTS idx_doctor_availability_exception_lookup
     ON catms.doctor_availability_exception (doctor_id, exception_date, exception_type);
+
 
 -- =============================================================================
 -- Trigger: auto-update updated_at on doctor_availability

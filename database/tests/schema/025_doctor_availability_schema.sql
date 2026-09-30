@@ -6,11 +6,12 @@
 -- Verifies the structural DDL created by CATMS-027:
 --   - ENUM types exist
 --   - Tables, primary keys, foreign keys, check constraints
---   - Partial unique indexes and GiST exclusion constraint
+--   - Partial unique index and GiST exclusion constraint
+--   - IMMUTABLE helper function catms.exception_type_to_int
 --   - Generated column exception_date
 --   - Triggers for updated_at and immutability
 --   - COMMENT ON tables and key columns
---   - GRANT presence for catms_app and catms_readonly
+--   - Migration registry entry
 -- =============================================================================
 
 BEGIN;
@@ -151,14 +152,30 @@ BEGIN
 
 
     -- ─────────────────────────────────────────────────────────────────────────
-    -- 7. GiST exclusion constraint on doctor_availability_exception
+    -- 7. IMMUTABLE helper function catms.exception_type_to_int
+    -- ─────────────────────────────────────────────────────────────────────────
+
+    SELECT count(*) INTO v_count
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname  = 'catms'
+      AND p.proname  = 'exception_type_to_int'
+      AND p.provolatile = 'i';   -- 'i' = IMMUTABLE
+
+    IF v_count <> 1 THEN
+        RAISE EXCEPTION 'IMMUTABLE function catms.exception_type_to_int not found';
+    END IF;
+
+
+    -- ─────────────────────────────────────────────────────────────────────────
+    -- 8. GiST exclusion constraint on doctor_availability_exception
     -- ─────────────────────────────────────────────────────────────────────────
 
     SELECT count(*) INTO v_count
     FROM pg_constraint
     WHERE conname   = 'ex_doctor_exception_no_type_overlap'
       AND conrelid  = 'catms.doctor_availability_exception'::regclass
-      AND contype   = 'x';  -- 'x' = exclusion constraint
+      AND contype   = 'x';   -- 'x' = exclusion constraint
 
     IF v_count <> 1 THEN
         RAISE EXCEPTION 'GiST exclusion constraint ex_doctor_exception_no_type_overlap not found on catms.doctor_availability_exception';
@@ -166,15 +183,15 @@ BEGIN
 
 
     -- ─────────────────────────────────────────────────────────────────────────
-    -- 8. Generated column exception_date exists and is stored
+    -- 9. Generated column exception_date exists and is stored
     -- ─────────────────────────────────────────────────────────────────────────
 
     SELECT count(*) INTO v_count
     FROM information_schema.columns
-    WHERE table_schema              = 'catms'
-      AND table_name                = 'doctor_availability_exception'
-      AND column_name               = 'exception_date'
-      AND is_generated              = 'ALWAYS';
+    WHERE table_schema  = 'catms'
+      AND table_name    = 'doctor_availability_exception'
+      AND column_name   = 'exception_date'
+      AND is_generated  = 'ALWAYS';
 
     IF v_count <> 1 THEN
         RAISE EXCEPTION 'Generated column exception_date not found or not GENERATED ALWAYS on catms.doctor_availability_exception';
@@ -182,7 +199,7 @@ BEGIN
 
 
     -- ─────────────────────────────────────────────────────────────────────────
-    -- 9. Triggers exist
+    -- 10. Triggers exist
     -- ─────────────────────────────────────────────────────────────────────────
 
     SELECT count(*) INTO v_count
@@ -199,7 +216,7 @@ BEGIN
 
 
     -- ─────────────────────────────────────────────────────────────────────────
-    -- 10. COMMENT ON tables
+    -- 11. COMMENT ON tables
     -- ─────────────────────────────────────────────────────────────────────────
 
     SELECT count(*) INTO v_count
@@ -228,7 +245,7 @@ BEGIN
     END IF;
 
 
-    RAISE NOTICE 'CATMS-027 availability schema assertions all passed OK';
+    RAISE NOTICE 'CATMS-027 availability schema assertions all passed OK (12 checks)';
 END;
 $$;
 
