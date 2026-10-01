@@ -127,10 +127,10 @@ run_step() {
   section "${label}"
   if "$@"; then
     ok "${label} PASSED"
-    ((PASS++))
+    PASS=$(( PASS + 1 ))
   else
     fail "${label} FAILED"
-    ((FAIL++))
+    FAIL=$(( FAIL + 1 ))
     # Do not exit immediately — run remaining layers so we get all failures
   fi
 }
@@ -149,9 +149,9 @@ run_schema() {
     if ! PGPASSWORD="${POSTGRES_SUPERUSER_PASSWORD}" psql \
          -h "${POSTGRES_HOST}" -p "${PG_PORT}" \
          -U "${POSTGRES_SUPERUSER}" -d "${PG_DB}" \
-         -v ON_ERROR_STOP=1 -f "${f}" >/dev/null 2>&1; then
+         -v ON_ERROR_STOP=1 -f "${f}"; then
       fail "$(basename "${f}") failed"
-      ((errors++))
+      errors=$(( errors + 1 ))
     fi
   done
   [[ "${errors}" -eq 0 ]]
@@ -171,9 +171,9 @@ run_rules() {
     if ! PGPASSWORD="${POSTGRES_SUPERUSER_PASSWORD}" psql \
          -h "${POSTGRES_HOST}" -p "${PG_PORT}" \
          -U "${POSTGRES_SUPERUSER}" -d "${PG_DB}" \
-         -v ON_ERROR_STOP=1 -f "${f}" >/dev/null 2>&1; then
+         -v ON_ERROR_STOP=1 -f "${f}"; then
       fail "$(basename "${f}") failed"
-      ((errors++))
+      errors=$(( errors + 1 ))
     fi
   done
   [[ "${errors}" -eq 0 ]]
