@@ -204,15 +204,15 @@ $$;
 -- Permissions
 GRANT SELECT ON catms.appointment_schedule_history TO catms_readonly;
 GRANT SELECT ON catms.appointment_status_log TO catms_readonly;
+GRANT INSERT, UPDATE ON catms.appointment_schedule_history TO catms_app;
+GRANT INSERT, UPDATE ON catms.appointment_status_log TO catms_app;
 GRANT EXECUTE ON PROCEDURE catms.reschedule_appointment TO catms_app;
 GRANT EXECUTE ON PROCEDURE catms.update_appointment_status TO catms_app;
 GRANT EXECUTE ON PROCEDURE catms.cancel_appointment TO catms_app;
 
 -- Record Migration
 INSERT INTO catms.schema_migrations (version, description, applied_by, checksum_sha256, execution_ms)
-VALUES (30, 'appointment lifecycle procedures', current_user, 'pending', 0)
+VALUES (62, 'appointment lifecycle procedures', current_user, 'pending', 0)
 ON CONFLICT (version) DO NOTHING;
 
 COMMIT;
-GRANT INSERT, UPDATE ON catms.appointment_schedule_history TO catms_app;
-GRANT INSERT, UPDATE ON catms.appointment_status_log TO catms_app;

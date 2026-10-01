@@ -113,7 +113,7 @@ GRANT SELECT ON catms.appointment TO catms_readonly;
 
 -- Record Migration
 INSERT INTO catms.schema_migrations (version, description, applied_by, checksum_sha256, execution_ms)
-VALUES (28, 'appointment schema', current_user, 'pending', 0)
+VALUES (60, 'appointment schema', current_user, 'pending', 0)
 ON CONFLICT (version) DO NOTHING;
 
 COMMIT;

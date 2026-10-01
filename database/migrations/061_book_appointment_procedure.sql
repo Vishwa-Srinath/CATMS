@@ -134,8 +134,8 @@ BEGIN
 
     -- 7. Insert Appointment
     -- Double-booking overlap is natively prevented by the GiST exclusion constraint on the table.
-    -- Generate an appointment number (e.g. APT-YYYYMMDD-XXXX)
-    
+    -- We insert with a temporary placeholder number, retrieve the generated ID,
+    -- then immediately update to the final formatted number in the same transaction.
     INSERT INTO catms.appointment (
         appointment_number,
         patient_id,
@@ -148,7 +148,7 @@ BEGIN
         notes,
         created_by
     ) VALUES (
-        'APT-PENDING-' || nextval('catms.appointment_appointment_id_seq'::regclass)::text,
+        'APT-TMP',  -- temporary; updated immediately below
         p_patient_id,
         p_doctor_id,
         p_branch_id,
@@ -161,11 +161,11 @@ BEGIN
     )
     RETURNING appointment_id INTO p_appointment_id;
 
-    -- Update to final number
+    -- Build final, permanent appointment number from the real generated ID
     p_appointment_number := 'APT-' || to_char(CURRENT_DATE, 'YYYYMMDD') || '-' || lpad(p_appointment_id::text, 4, '0');
-    
-    UPDATE catms.appointment 
-    SET appointment_number = p_appointment_number 
+
+    UPDATE catms.appointment
+    SET appointment_number = p_appointment_number
     WHERE appointment_id = p_appointment_id;
 
 END;
@@ -175,7 +175,7 @@ GRANT EXECUTE ON PROCEDURE catms.book_appointment TO catms_app;
 
 -- Record Migration
 INSERT INTO catms.schema_migrations (version, description, applied_by, checksum_sha256, execution_ms)
-VALUES (29, 'book appointment procedure', current_user, 'pending', 0)
+VALUES (61, 'book appointment procedure', current_user, 'pending', 0)
 ON CONFLICT (version) DO NOTHING;
 
 COMMIT;
