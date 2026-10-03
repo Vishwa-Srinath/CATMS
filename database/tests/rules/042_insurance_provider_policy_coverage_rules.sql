@@ -65,14 +65,58 @@ BEGIN
     INSERT INTO catms.emergency_contact (patient_id, contact_name, relationship, phone_number, is_primary)
     VALUES (v_patient_id, 'Insured EC', 'Spouse', '+94700042002', TRUE);
 
-    -- Treatment from treatment_catalogue (must already exist via migration 091)
-    -- Use the first available treatment
-    SELECT treatment_id INTO v_treatment_id FROM catms.treatment_catalogue LIMIT 1;
-    SELECT treatment_id INTO v_treatment2_id FROM catms.treatment_catalogue
-    WHERE treatment_id <> v_treatment_id LIMIT 1;
+    -- Treatment category + two treatments (self-contained — never rely on pre-existing data)
+    -- treatment_category is required by the FK in treatment_catalogue
+    INSERT INTO catms.treatment_catalogue (
+        treatment_category_id, service_code, name,
+        current_price, default_duration_minutes, is_active
+    )
+    SELECT
+        tc.treatment_category_id,
+        'TST42-SVC-A',
+        'Insurance Test Service A',
+        1500.00, 30, TRUE
+    FROM catms.treatment_category tc
+    LIMIT 1
+    RETURNING treatment_id INTO v_treatment_id;
 
+    -- If no category exists yet, create a minimal one first
     IF v_treatment_id IS NULL THEN
-        RAISE EXCEPTION 'Fixture A FAILED: no treatment_catalogue rows exist — run migration 091 first';
+        DECLARE
+            v_cat_id BIGINT;
+        BEGIN
+            INSERT INTO catms.treatment_category (category_code, name, is_active)
+            VALUES ('TST42CAT', 'Insurance Test Category', TRUE)
+            RETURNING treatment_category_id INTO v_cat_id;
+
+            INSERT INTO catms.treatment_catalogue (
+                treatment_category_id, service_code, name,
+                current_price, default_duration_minutes, is_active
+            )
+            VALUES (v_cat_id, 'TST42-SVC-A', 'Insurance Test Service A', 1500.00, 30, TRUE)
+            RETURNING treatment_id INTO v_treatment_id;
+
+            INSERT INTO catms.treatment_catalogue (
+                treatment_category_id, service_code, name,
+                current_price, default_duration_minutes, is_active
+            )
+            VALUES (v_cat_id, 'TST42-SVC-B', 'Insurance Test Service B', 2500.00, 45, TRUE)
+            RETURNING treatment_id INTO v_treatment2_id;
+        END;
+    ELSE
+        -- Category exists; insert second treatment using same category
+        INSERT INTO catms.treatment_catalogue (
+            treatment_category_id, service_code, name,
+            current_price, default_duration_minutes, is_active
+        )
+        SELECT
+            tc.treatment_category_id,
+            'TST42-SVC-B',
+            'Insurance Test Service B',
+            2500.00, 45, TRUE
+        FROM catms.treatment_category tc
+        LIMIT 1
+        RETURNING treatment_id INTO v_treatment2_id;
     END IF;
 
 
