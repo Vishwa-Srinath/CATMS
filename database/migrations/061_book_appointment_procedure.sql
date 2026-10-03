@@ -31,7 +31,7 @@ DECLARE
     
     v_start_time TIME;
     v_end_time TIME;
-    v_day_of_week VARCHAR(3);
+    v_day_of_week catms.day_of_week;
     v_date DATE;
     
     v_is_available BOOLEAN := FALSE;
@@ -49,7 +49,7 @@ BEGIN
     -- 2. Validate Doctor
     SELECT e.is_active INTO v_doctor_active 
     FROM catms.doctor_profile dp
-    JOIN catms.employee e ON dp.employee_id = e.employee_id
+    JOIN catms.employee e ON dp.doctor_id = e.employee_id
     WHERE dp.doctor_id = p_doctor_id;
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Doctor % not found', p_doctor_id USING ERRCODE = 'D0001';
@@ -89,7 +89,7 @@ BEGIN
     v_start_time := p_start_at::TIME;
     v_end_time := p_end_at::TIME;
     v_date := p_start_at::DATE;
-    v_day_of_week := trim(to_char(p_start_at, 'Dy')); -- e.g., 'Mon'
+    v_day_of_week := trim(to_char(p_start_at, 'Dy'))::catms.day_of_week; -- e.g., 'Mon'
 
     -- Check for Unavailable exception first (overrides everything)
     SELECT EXISTS (
@@ -98,7 +98,8 @@ BEGIN
           AND branch_id = p_branch_id
           AND exception_type = 'Unavailable'
           AND exception_date = v_date
-          AND (start_time IS NULL OR (start_time < v_end_time AND end_time > v_start_time))
+          AND start_at < p_end_at
+          AND end_at > p_start_at
     ) INTO v_is_unavailable;
 
     IF v_is_unavailable THEN
@@ -112,8 +113,8 @@ BEGIN
           AND branch_id = p_branch_id
           AND exception_type = 'ExtraHours'
           AND exception_date = v_date
-          AND start_time <= v_start_time
-          AND end_time >= v_end_time
+          AND start_at <= p_start_at
+          AND end_at >= p_end_at
     ) INTO v_is_available;
 
     -- If not covered by ExtraHours, check regular recurring availability

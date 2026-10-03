@@ -106,8 +106,8 @@ BEGIN
     UPDATE catms.patient SET is_active = FALSE WHERE patient_id = v_patient2_id;
 
     -- User account for created_by
-    INSERT INTO catms.user_account (employee_id, username, password_hash, is_active)
-    VALUES (v_emp_id, 'booktest061', 'x', TRUE)
+    INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
+    VALUES (v_emp_id, 'booktest061', '$2b$12$0123456789012345678901', 'ACTIVE')
     RETURNING user_account_id INTO v_user_id;
 
 
@@ -168,7 +168,7 @@ BEGIN
     )
     VALUES (
         'EMP061B', 'Receptionist', '199261345671V',
-        '1992-01-01', 'Female', 'Reception',
+        '1992-01-01', 'Female', 'Receptionist',
         CURRENT_DATE, 'Active', '+94300000062'
     )
     RETURNING employee_id INTO v_emp2_id;

@@ -86,8 +86,8 @@ BEGIN
     INSERT INTO catms.emergency_contact (patient_id, contact_name, relationship, phone_number, is_primary)
     VALUES (v_patient_id, 'Test EC', 'Sibling', '+94700000002', TRUE);
 
-    INSERT INTO catms.user_account (employee_id, username, password_hash, is_active)
-    VALUES (v_emp_id, 'appttest060', 'x', TRUE)
+    INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
+    VALUES (v_emp_id, 'appttest060', '$2b$12$0123456789012345678901', 'ACTIVE')
     RETURNING user_account_id INTO v_user_id;
 
 
