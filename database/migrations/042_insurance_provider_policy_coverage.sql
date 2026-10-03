@@ -4,7 +4,11 @@
 -- Owner: Dev1 (implementing on behalf of Dev3 to unblock Dev4)
 -- Issue: CATMS-019
 -- Dependencies: 040_create_patient_identity_schema.sql (catms.patient)
---               091_treatment_catalogue.sql (catms.treatment_catalogue)
+--
+-- NOTE: The FK from policy_coverage.treatment_id to treatment_catalogue is
+--       added in migration 063_policy_coverage_treatment_fk.sql which runs
+--       after 091_treatment_catalogue.sql. This respects ADR-009 ownership
+--       ranges (Dev3: 040-059, Dev4: 090-129) without renumbering either.
 --
 -- Deliverables:
 --   - catms.insurance_provider    — Insurance company catalogue
@@ -141,24 +145,10 @@ COMMENT ON COLUMN catms.policy_coverage.coverage_cap         IS 'Maximum LKR amo
 COMMENT ON COLUMN catms.policy_coverage.effective_from       IS 'Start of this coverage term. Used for service-date eligibility (Rule 3.5).';
 COMMENT ON COLUMN catms.policy_coverage.effective_to         IS 'End of this coverage term. NULL = still active. Closed when a new term is created (Rule 8.2).';
 
--- Add treatment FK only when treatment_catalogue exists in the current migration order.
-DO $$
-BEGIN
-    IF to_regclass('catms.treatment_catalogue') IS NOT NULL
-       AND NOT EXISTS (
-           SELECT 1
-           FROM pg_constraint
-           WHERE conname = 'fk_policy_coverage_treatment'
-             AND conrelid = 'catms.policy_coverage'::regclass
-       )
-    THEN
-        ALTER TABLE catms.policy_coverage
-            ADD CONSTRAINT fk_policy_coverage_treatment
-            FOREIGN KEY (treatment_id)
-            REFERENCES catms.treatment_catalogue(treatment_id) ON DELETE RESTRICT;
-    END IF;
-END;
-$$;
+-- NOTE: The FK constraint fk_policy_coverage_treatment is intentionally
+-- deferred to migration 063_policy_coverage_treatment_fk.sql which runs
+-- after 091_treatment_catalogue.sql (ADR-009 ownership boundary).
+-- treatment_id stores the FK value; referential integrity is enforced at 063.
 
 -- =============================================================================
 -- 5. GiST exclusion: no overlapping date ranges for same (policy_id, treatment_id)

@@ -108,11 +108,11 @@ BEGIN
       AND constraint_name IN (
           'fk_insurance_policy_patient',
           'fk_insurance_policy_provider',
-          'fk_policy_coverage_policy',
-          'fk_policy_coverage_treatment'
+          'fk_policy_coverage_policy'
+          -- NOTE: fk_policy_coverage_treatment is verified in 063 schema test
       );
-    IF v_count <> 4 THEN
-        RAISE EXCEPTION 'Expected 4 FOREIGN KEY constraints on insurance tables, found %', v_count;
+    IF v_count <> 3 THEN
+        RAISE EXCEPTION 'Expected 3 FOREIGN KEY constraints on insurance tables, found %', v_count;
     END IF;
 
 
