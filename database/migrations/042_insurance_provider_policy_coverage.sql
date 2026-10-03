@@ -124,8 +124,6 @@ CREATE TABLE IF NOT EXISTS catms.policy_coverage (
     CONSTRAINT pk_policy_coverage                PRIMARY KEY (coverage_id),
     CONSTRAINT fk_policy_coverage_policy         FOREIGN KEY (policy_id)
         REFERENCES catms.insurance_policy(policy_id) ON DELETE RESTRICT,
-    CONSTRAINT fk_policy_coverage_treatment      FOREIGN KEY (treatment_id)
-        REFERENCES catms.treatment_catalogue(treatment_id) ON DELETE RESTRICT,
 
     -- Rules 4.1: percentage must be in [0.00, 100.00]
     CONSTRAINT chk_policy_coverage_percentage    CHECK (coverage_percentage >= 0.00 AND coverage_percentage <= 100.00),
@@ -142,6 +140,25 @@ COMMENT ON COLUMN catms.policy_coverage.coverage_percentage  IS 'Percentage of i
 COMMENT ON COLUMN catms.policy_coverage.coverage_cap         IS 'Maximum LKR amount this policy will pay per line for this treatment. NULL = uncapped (Rule 4.1).';
 COMMENT ON COLUMN catms.policy_coverage.effective_from       IS 'Start of this coverage term. Used for service-date eligibility (Rule 3.5).';
 COMMENT ON COLUMN catms.policy_coverage.effective_to         IS 'End of this coverage term. NULL = still active. Closed when a new term is created (Rule 8.2).';
+
+-- Add treatment FK only when treatment_catalogue exists in the current migration order.
+DO $$
+BEGIN
+    IF to_regclass('catms.treatment_catalogue') IS NOT NULL
+       AND NOT EXISTS (
+           SELECT 1
+           FROM pg_constraint
+           WHERE conname = 'fk_policy_coverage_treatment'
+             AND conrelid = 'catms.policy_coverage'::regclass
+       )
+    THEN
+        ALTER TABLE catms.policy_coverage
+            ADD CONSTRAINT fk_policy_coverage_treatment
+            FOREIGN KEY (treatment_id)
+            REFERENCES catms.treatment_catalogue(treatment_id) ON DELETE RESTRICT;
+    END IF;
+END;
+$$;
 
 -- =============================================================================
 -- 5. GiST exclusion: no overlapping date ranges for same (policy_id, treatment_id)
