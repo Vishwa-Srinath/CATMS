@@ -52,7 +52,7 @@ BEGIN
 
     SELECT count(*) INTO v_count
     FROM catms.schema_migrations
-    WHERE version = 63;
+    WHERE version = 92;
 
     IF v_count <> 1 THEN
         RAISE EXCEPTION 'Migration version 63 not recorded in catms.schema_migrations';

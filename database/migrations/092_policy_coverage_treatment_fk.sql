@@ -31,7 +31,7 @@ COMMENT ON COLUMN catms.policy_coverage.treatment_id IS
 
 -- Record migration
 INSERT INTO catms.schema_migrations (version, description, applied_by, checksum_sha256, execution_ms)
-VALUES (63, 'policy_coverage treatment FK — cross-module constraint after 091', current_user, 'pending', 0)
+VALUES (92, 'policy_coverage treatment FK — cross-module constraint after 091', current_user, 'pending', 0)
 ON CONFLICT (version) DO NOTHING;
 
 COMMIT;
