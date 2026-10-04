@@ -1,0 +1,4 @@
+employee_number,first_name,last_name,nic,primary_branch_code,app_role_name,is_active
+EMP001,Kamal,Perera,198012345678,CMB,Branch Manager,true
+EMP002,Nimal,Fernando,199012345678,CMB,Reception,true
+EMP003,Sunil,Silva,197512345678,CMB,Clinician,true
