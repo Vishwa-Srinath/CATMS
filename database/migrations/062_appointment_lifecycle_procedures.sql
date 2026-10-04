@@ -54,7 +54,7 @@ DECLARE
     
     v_start_time TIME;
     v_end_time TIME;
-    v_day_of_week VARCHAR(3);
+    v_day_of_week catms.day_of_week;
     v_date DATE;
     v_is_available BOOLEAN := FALSE;
     v_is_unavailable BOOLEAN := FALSE;
@@ -79,7 +79,7 @@ BEGIN
     v_start_time := p_new_start_at::TIME;
     v_end_time := p_new_end_at::TIME;
     v_date := p_new_start_at::DATE;
-    v_day_of_week := trim(to_char(p_new_start_at, 'Dy'));
+    v_day_of_week := trim(to_char(p_new_start_at, 'Dy'))::catms.day_of_week;
 
     -- Check for Unavailable
     SELECT EXISTS (
@@ -88,7 +88,8 @@ BEGIN
           AND branch_id = v_branch_id
           AND exception_type = 'Unavailable'
           AND exception_date = v_date
-          AND (start_time IS NULL OR (start_time < v_end_time AND end_time > v_start_time))
+          AND start_at < p_new_end_at
+          AND end_at > p_new_start_at
     ) INTO v_is_unavailable;
 
     IF v_is_unavailable THEN
@@ -102,8 +103,8 @@ BEGIN
           AND branch_id = v_branch_id
           AND exception_type = 'ExtraHours'
           AND exception_date = v_date
-          AND start_time <= v_start_time
-          AND end_time >= v_end_time
+          AND start_at <= p_new_start_at
+          AND end_at >= p_new_end_at
     ) INTO v_is_available;
 
     IF NOT v_is_available THEN

@@ -43,6 +43,24 @@ create trigger trg_treatment_catalogue_updated_at
 before update on catms.treatment_catalogue
 for each row execute function catms.touch_treatment_catalogue_updated_at();
 
+do $$
+begin
+    if to_regclass('catms.policy_coverage') is not null
+       and not exists (
+           select 1
+           from pg_constraint
+           where conname = 'fk_policy_coverage_treatment'
+             and conrelid = 'catms.policy_coverage'::regclass
+       )
+    then
+        alter table catms.policy_coverage
+            add constraint fk_policy_coverage_treatment
+            foreign key (treatment_id)
+            references catms.treatment_catalogue (treatment_id) on delete restrict;
+    end if;
+end;
+$$;
+
 COMMENT ON TABLE catms.treatment_catalogue IS
     'Current treatment definitions and prices; delivered care stores separate snapshots.';
 COMMENT ON COLUMN catms.treatment_catalogue.treatment_id IS
