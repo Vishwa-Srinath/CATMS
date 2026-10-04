@@ -1,5 +1,6 @@
 -- 024_manager_specialty_grants_rules.sql
 -- Test Suite: Business rules and security permissions validation for CATMS-024
+-- Requires migrations through 092 for the clinical permission fixture.
 -- Asserts:
 --   - Manager integrity: wrong-position, wrong-branch, and inactive manager assignments fail
 --   - Valid manager assignment succeeds and closes previous manager assignment
@@ -8,6 +9,8 @@
 --   - Security grants: Manager cannot read financial base tables (SQLSTATE 42501)
 --   - Security grants: Clinician cannot read financial base tables (SQLSTATE 42501)
 --   - Security grants: Admin has full access; QA is read-only
+
+
 
 BEGIN;
 
@@ -28,6 +31,11 @@ DECLARE
     v_assign_id BIGINT;
     v_caught BOOLEAN;
     v_count INTEGER;
+
+    v_clinical_user_id BIGINT;
+    v_clinical_patient_id BIGINT;
+    v_clinical_appointment_id BIGINT;
+        
 BEGIN
     -- -------------------------------------------------------------------------
     -- Fixtures: Branches & Specialties
@@ -267,8 +275,76 @@ BEGIN
     VALUES (v_invoice_id, 2500.00, 'Cash', 'Patient')
     RETURNING payment_id INTO v_payment_id;
 
-    INSERT INTO catms.consultation_note_revision (doctor_id, clinical_notes)
-    VALUES (v_doc_emp_id, 'Patient examined. Clear lungs and normal pulse.');
+    -- Clinical fixture for the consultation model introduced in 092.
+    -- Dummy credential used only in this rollback-only test.
+    INSERT INTO catms.user_account (
+        employee_id, username, password_hash
+    )
+    VALUES (
+        v_doc_emp_id,
+        'security_test_clinical_user',
+        'TEST_ONLY_NOT_A_USABLE_PASSWORD_HASH'
+    )
+    RETURNING user_account_id INTO v_clinical_user_id;
+
+    INSERT INTO catms.patient (
+        patient_number, first_name, last_name,
+        date_of_birth, gender, contact_number,
+        registered_branch_id, registered_by
+    )
+    VALUES (
+        'PAT-SEC-CLINICAL',
+        'Security', 'Test Patient',
+        '1995-01-01', 'Male', '0770000024',
+        v_branch_id_1, v_rec_emp_id
+    )
+    RETURNING patient_id INTO v_clinical_patient_id;
+
+    INSERT INTO catms.patient_identity (
+        patient_id, identity_type, identity_number, is_primary
+    )
+    VALUES (
+        v_clinical_patient_id,
+        'Passport', 'SEC-CLINICAL-PASSPORT', TRUE
+    );
+
+    INSERT INTO catms.emergency_contact (
+        patient_id, contact_name, relationship,
+        phone_number, is_primary
+    )
+    VALUES (
+        v_clinical_patient_id,
+        'Security Test Contact', 'Sibling',
+        '0770000025', TRUE
+    );
+
+    INSERT INTO catms.appointment (
+        appointment_number, patient_id, doctor_id,
+        branch_id, specialty_id,
+        start_at, end_at, status, created_by
+    )
+    VALUES (
+        'APT-SEC-CLINICAL',
+        v_clinical_patient_id,
+        v_doc_emp_id,
+        v_branch_id_1,
+        v_spec_id,
+        '2026-10-01 14:00:00+05:30',
+        '2026-10-01 14:15:00+05:30',
+        'Completed',
+        v_clinical_user_id
+    )
+    RETURNING appointment_id INTO v_clinical_appointment_id;
+
+    PERFORM catms.record_consultation_note(
+        v_clinical_appointment_id,
+        v_clinical_user_id,
+        'Patient examined. Clear lungs and normal pulse.'
+    );
+
+    -- Validate the fixture before running the permission checks.
+    SET CONSTRAINTS ALL IMMEDIATE;
+    SET CONSTRAINTS ALL DEFERRED;
 
     -- -------------------------------------------------------------------------
     -- 4. Security Role Negative & Positive Tests (SET LOCAL ROLE)
