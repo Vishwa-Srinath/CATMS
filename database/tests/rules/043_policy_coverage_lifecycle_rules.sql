@@ -34,6 +34,7 @@ DECLARE
     v_policy_id          BIGINT;
     v_coverage_id        BIGINT;
     v_new_coverage_id    BIGINT;
+    v_dummy_id           BIGINT;
 
     v_old_term           RECORD;
     v_new_term           RECORD;
@@ -196,7 +197,8 @@ BEGIN
             p_patient_id    := v_patient_id,
             p_provider_id   := v_inactive_prov_id,
             p_policy_number := 'POL-FAIL-INACT',
-            p_valid_from    := '2026-01-01'::DATE
+            p_valid_from    := '2026-01-01'::DATE,
+            p_policy_id     := v_dummy_id
         );
     EXCEPTION WHEN check_violation THEN
         v_caught := TRUE;
@@ -213,7 +215,8 @@ BEGIN
             p_provider_id   := v_provider_id,
             p_policy_number := 'POL-FAIL-DATES',
             p_valid_from    := '2026-06-01'::DATE,
-            p_valid_to      := '2026-05-01'::DATE
+            p_valid_to      := '2026-05-01'::DATE,
+            p_policy_id     := v_dummy_id
         );
     EXCEPTION WHEN check_violation THEN
         v_caught := TRUE;
@@ -229,7 +232,8 @@ BEGIN
             p_patient_id    := v_patient_id,
             p_provider_id   := v_provider_id,
             p_policy_number := 'POL-43-GOLD',
-            p_valid_from    := '2026-01-01'::DATE
+            p_valid_from    := '2026-01-01'::DATE,
+            p_policy_id     := v_dummy_id
         );
     EXCEPTION WHEN unique_violation THEN
         v_caught := TRUE;
@@ -290,7 +294,8 @@ BEGIN
             p_policy_id           := v_policy_id,
             p_treatment_id        := v_treatment2_id,
             p_coverage_percentage := 120.00,
-            p_effective_from      := '2026-01-01'::DATE
+            p_effective_from      := '2026-01-01'::DATE,
+            p_coverage_id         := v_dummy_id
         );
     EXCEPTION WHEN check_violation THEN
         v_caught := TRUE;
@@ -307,7 +312,8 @@ BEGIN
             p_treatment_id        := v_treatment2_id,
             p_coverage_percentage := 50.00,
             p_coverage_cap        := -100.00,
-            p_effective_from      := '2026-01-01'::DATE
+            p_effective_from      := '2026-01-01'::DATE,
+            p_coverage_id         := v_dummy_id
         );
     EXCEPTION WHEN check_violation THEN
         v_caught := TRUE;
@@ -323,7 +329,8 @@ BEGIN
             p_policy_id           := v_policy_id,
             p_treatment_id        := v_treatment_id,
             p_coverage_percentage := 70.00,
-            p_effective_from      := '2026-06-01'::DATE
+            p_effective_from      := '2026-06-01'::DATE,
+            p_coverage_id         := v_dummy_id
         );
     EXCEPTION WHEN exclusion_violation THEN
         v_caught := TRUE;
@@ -382,10 +389,11 @@ BEGIN
     v_caught := FALSE;
     BEGIN
         CALL catms.update_policy_coverage(
-            p_policy_id      := v_policy_id,
-            p_treatment_id   := v_treatment_id,
-            p_new_percentage := 95.00,
-            p_effective_from := '2026-05-01'::DATE -- before the current term's 2026-07-01 start!
+            p_policy_id       := v_policy_id,
+            p_treatment_id    := v_treatment_id,
+            p_new_percentage  := 95.00,
+            p_effective_from  := '2026-05-01'::DATE, -- before the current term's 2026-07-01 start!
+            p_new_coverage_id := v_dummy_id
         );
     EXCEPTION WHEN check_violation THEN
         v_caught := TRUE;
