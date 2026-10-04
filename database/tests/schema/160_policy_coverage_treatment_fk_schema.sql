@@ -1,6 +1,6 @@
 -- =============================================================================
--- database/tests/schema/063_policy_coverage_treatment_fk_schema.sql
--- Owner: Dev1  |  Issue: CATMS-019 (follow-up)  |  Reviewer: Dev4
+-- database/tests/schema/160_policy_coverage_treatment_fk_schema.sql
+-- Owner: Dev3 (Module B-patient-insurance) with Dev1 cross-module coordination  |  Issue: CATMS-019 (follow-up)  |  Reviewer: Dev4
 --
 -- Schema assertion: verifies that fk_policy_coverage_treatment exists on
 -- catms.policy_coverage after both 042 and 091 have run.
@@ -47,19 +47,19 @@ BEGIN
 
 
     -- ─────────────────────────────────────────────────────────────────────────
-    -- 3. Migration registry entry (version 63)
+    -- 3. Migration registry entry (version 160)
     -- ─────────────────────────────────────────────────────────────────────────
 
     SELECT count(*) INTO v_count
     FROM catms.schema_migrations
-    WHERE version = 92;
+    WHERE version = 160;
 
     IF v_count <> 1 THEN
-        RAISE EXCEPTION 'Migration version 63 not recorded in catms.schema_migrations';
+        RAISE EXCEPTION 'Migration version 160 not recorded in catms.schema_migrations';
     END IF;
 
 
-    RAISE NOTICE 'CATMS-019 (063) policy_coverage treatment FK assertions all passed OK (3 checks)';
+    RAISE NOTICE 'CATMS-019 (160) policy_coverage treatment FK assertions all passed OK (3 checks)';
 END;
 $$;
 

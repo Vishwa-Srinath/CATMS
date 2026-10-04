@@ -6,7 +6,7 @@
 -- Dependencies: 040_create_patient_identity_schema.sql (catms.patient)
 --
 -- NOTE: The FK from policy_coverage.treatment_id to treatment_catalogue is
---       verified and enforced in migration 092_policy_coverage_treatment_fk.sql
+--       verified and enforced in migration 160_policy_coverage_treatment_fk.sql
 --       which runs after 091_treatment_catalogue.sql (Dev4 range).
 --       This respects ADR-009 ownership boundaries without renumbering either.
 --

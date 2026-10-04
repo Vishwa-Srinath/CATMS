@@ -1,5 +1,5 @@
 -- =============================================================================
--- 092_policy_coverage_treatment_fk.sql
+-- 160_policy_coverage_treatment_fk.sql
 -- Module: B-patient-insurance (cross-module FK)
 -- Owner: Dev3 (Module B-patient-insurance) with Dev1 cross-module coordination
 -- Issue: CATMS-019 (cross-module FK follow-up)
@@ -70,11 +70,11 @@ $$;
 
 COMMENT ON COLUMN catms.policy_coverage.treatment_id IS
     'FK to treatment_catalogue. Coverage is treatment-specific (Rule 3.5 of CATMS-006). '
-    'Referential integrity enforced here (092) after treatment_catalogue was created in 091.';
+    'Referential integrity enforced here (160) after treatment_catalogue was created in 091.';
 
 -- Record migration
 INSERT INTO catms.schema_migrations (version, description, applied_by, checksum_sha256, execution_ms)
-VALUES (92, 'policy_coverage treatment FK — cross-module constraint after 091', current_user, 'pending', 0)
+VALUES (160, 'policy_coverage treatment FK — cross-module constraint after 091', current_user, 'pending', 0)
 ON CONFLICT (version) DO NOTHING;
 
 COMMIT;
