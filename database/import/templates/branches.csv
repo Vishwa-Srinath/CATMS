@@ -1,0 +1,4 @@
+code,name,address,contact_number,is_active
+CMB,MedSync Colombo Main,"100 Galle Road, Colombo",0112111111,true
+KND,MedSync Kandy Central,"50 Dalada Veediya, Kandy",0812222222,true
+GAL,MedSync Galle South,"25 Matara Road, Galle",0912333333,true
