@@ -1,8 +1,8 @@
 -- =============================================================================
 -- 092_policy_coverage_treatment_fk.sql
 -- Module: B-patient-insurance (cross-module FK)
--- Owner: Dev1 (Dev1 second block 060-089 — cross-module constraint)
--- Issue: CATMS-019 (follow-up)
+-- Owner: Dev3 (Module B-patient-insurance) with Dev1 cross-module coordination
+-- Issue: CATMS-019 (cross-module FK follow-up)
 -- Dependencies:
 --   042_insurance_provider_policy_coverage.sql (catms.policy_coverage)
 --   091_treatment_catalogue.sql (catms.treatment_catalogue)
