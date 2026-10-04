@@ -441,14 +441,14 @@ BEGIN
     -- =========================================================================
 
     INSERT INTO catms.policy_coverage (
-        policy_id, treatment_id, coverage_percentage, effective_from
+        policy_id, treatment_id, coverage_percentage, effective_from, effective_to
     )
-    VALUES (v_policy2_id, v_treatment2_id, 0.00, '2026-01-01');
+    VALUES (v_policy2_id, v_treatment2_id, 0.00, '2026-01-01', '2026-12-31');
 
     INSERT INTO catms.policy_coverage (
-        policy_id, treatment_id, coverage_percentage, effective_from
+        policy_id, treatment_id, coverage_percentage, effective_from, effective_to
     )
-    VALUES (v_policy2_id, v_treatment2_id, 100.00, '2027-01-01');
+    VALUES (v_policy2_id, v_treatment2_id, 100.00, '2027-01-01', NULL);
 
 
     RAISE NOTICE 'CATMS-019 insurance rules — all 18 tests passed OK';
