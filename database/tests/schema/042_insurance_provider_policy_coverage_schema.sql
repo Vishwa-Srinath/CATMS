@@ -1,6 +1,6 @@
 -- =============================================================================
 -- database/tests/schema/042_insurance_provider_policy_coverage_schema.sql
--- Owner: Dev1 (on behalf of Dev3)  |  Issue: CATMS-019  |  Reviewer: Dev4
+-- Owner: Dev3 (Patient Identity, Insurance & Claims)  |  Issue: CATMS-019  |  Reviewer: Dev4
 --
 -- Schema assertion suite for 042_insurance_provider_policy_coverage.sql
 -- Verifies:

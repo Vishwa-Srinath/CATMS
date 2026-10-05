@@ -1,6 +1,6 @@
 -- =============================================================================
 -- database/tests/rules/042_insurance_provider_policy_coverage_rules.sql
--- Owner: Dev1 (on behalf of Dev3)  |  Issue: CATMS-019  |  Reviewer: Dev4
+-- Owner: Dev3 (Patient Identity, Insurance & Claims)  |  Issue: CATMS-019  |  Reviewer: Dev4
 --
 -- Business-rule assertions for insurance provider, policy, and coverage
 -- (CATMS-006 signed decision document).
@@ -411,7 +411,47 @@ BEGIN
     -- Different policy_id — no overlap constraint applies. Should succeed.
 
 
-    RAISE NOTICE 'CATMS-019 insurance rules — all 16 tests passed OK';
+    -- =========================================================================
+    -- Q. Policy for INACTIVE provider still inserts at raw table level
+    --    (Status guard is enforced in procedure layer)
+    -- =========================================================================
+
+    DECLARE
+        v_inact_prov_id BIGINT;
+        v_inact_pol_id  BIGINT;
+    BEGIN
+        INSERT INTO catms.insurance_provider (provider_code, name, status)
+        VALUES ('INACT-RAW-TST', 'Inactive Insurer Raw Test', 'INACTIVE')
+        RETURNING provider_id INTO v_inact_prov_id;
+
+        INSERT INTO catms.insurance_policy (
+            patient_id, provider_id, policy_number, valid_from
+        )
+        VALUES (v_patient_id, v_inact_prov_id, 'POL-INACT-001', '2026-01-01')
+        RETURNING policy_id INTO v_inact_pol_id;
+
+        IF v_inact_pol_id IS NULL THEN
+            RAISE EXCEPTION 'Test Q FAILED: raw policy table insert should succeed for historical backfill';
+        END IF;
+    END;
+
+
+    -- =========================================================================
+    -- R. Boundary coverage percentage (0.00% and 100.00%) → accepted
+    -- =========================================================================
+
+    INSERT INTO catms.policy_coverage (
+        policy_id, treatment_id, coverage_percentage, effective_from, effective_to
+    )
+    VALUES (v_policy2_id, v_treatment2_id, 0.00, '2026-01-01', '2026-12-31');
+
+    INSERT INTO catms.policy_coverage (
+        policy_id, treatment_id, coverage_percentage, effective_from, effective_to
+    )
+    VALUES (v_policy2_id, v_treatment2_id, 100.00, '2027-01-01', NULL);
+
+
+    RAISE NOTICE 'CATMS-019 insurance rules — all 18 tests passed OK';
 
 END;
 $$;
