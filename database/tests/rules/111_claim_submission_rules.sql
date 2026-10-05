@@ -53,7 +53,7 @@ BEGIN
     RETURNING employee_id INTO v_emp_id;
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
-    VALUES (v_emp_id, 'admin_111', 'hash_adm', 'ACTIVE')
+    VALUES (v_emp_id, 'admin_111', 'TEST_ONLY_NOT_A_USABLE_PASSWORD_HASH', 'ACTIVE')
     RETURNING user_account_id INTO v_admin_user_id;
 
     INSERT INTO catms.user_account_role (user_account_id, app_role_id)
@@ -66,7 +66,7 @@ BEGIN
     RETURNING employee_id INTO v_doctor_emp_id;
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
-    VALUES (v_doctor_emp_id, 'rec_111', 'hash_rec', 'ACTIVE')
+    VALUES (v_doctor_emp_id, 'rec_111', 'TEST_ONLY_NOT_A_USABLE_PASSWORD_HASH', 'ACTIVE')
     RETURNING user_account_id INTO v_reception_user_id;
 
     INSERT INTO catms.user_account_role (user_account_id, app_role_id)
@@ -91,7 +91,7 @@ BEGIN
     VALUES (v_doctor_id, v_specialty_id, TRUE);
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
-    VALUES (v_doctor_emp_id, 'doc_111', 'hash_doc', 'ACTIVE')
+    VALUES (v_doctor_emp_id, 'doc_111', 'TEST_ONLY_NOT_A_USABLE_PASSWORD_HASH', 'ACTIVE')
     RETURNING user_account_id INTO v_clinician_user_id;
 
     INSERT INTO catms.user_account_role (user_account_id, app_role_id)
