@@ -47,6 +47,7 @@ DECLARE
     v_line1_clm2_rec        RECORD;
     v_inv_rec               RECORD;
     v_ok                    BOOLEAN;
+    v_new_coverage_id       BIGINT;
 BEGIN
     -- ─────────────────────────────────────────────────────────────────────────
     -- 1. Setup Golden Fixture (CATMS-008 §2)
@@ -335,8 +336,13 @@ BEGIN
     -- Updating policy coverage in October 2026 must NOT alter the claim snapshot
     -- made for September 2026 service date.
     -- ─────────────────────────────────────────────────────────────────────────
-    PERFORM catms.update_policy_coverage(
-        v_pol_ceylinco_id, v_treat1_id, 90.00, 3000.00, '2026-10-01'
+    CALL catms.update_policy_coverage(
+        p_policy_id       := v_pol_ceylinco_id,
+        p_treatment_id    := v_treat1_id,
+        p_new_percentage  := 90.00,
+        p_new_cap         := 3000.00,
+        p_effective_from  := '2026-10-01'::DATE,
+        p_new_coverage_id := v_new_coverage_id
     );
 
     -- Verify the historical claim line retains original terms
