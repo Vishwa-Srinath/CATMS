@@ -125,13 +125,9 @@ BEGIN
     ) RETURNING appointment_id INTO v_appointment_id;
 
     -- Delivered Treatment
-    INSERT INTO catms.appointment_treatment (
-        appointment_id, treatment_id, line_number, quantity, unit_price_at_time,
-        price_source, administered_at, recorded_by_user_id
-    ) VALUES (
-        v_appointment_id, v_treatment_id, 1, 1, 5000.00,
-        'Standard', '2026-09-15 09:05:00+05:30', v_clinician_user_id
-    ) RETURNING appointment_treatment_id INTO v_app_treatment_id;
+    v_app_treatment_id := catms.record_appointment_treatment(
+        v_appointment_id, v_treatment_id, 1, v_clinician_user_id
+    );
 
     -- Issued Invoice
     SELECT catms.issue_invoice(v_appointment_id, v_admin_user_id) INTO v_invoice_id;

@@ -142,21 +142,8 @@ BEGIN
     ) RETURNING appointment_id INTO v_appointment_id;
 
     -- Treatments administered
-    INSERT INTO catms.appointment_treatment (
-        appointment_id, treatment_id, line_number, quantity, unit_price_at_time,
-        price_source, administered_at, recorded_by_user_id
-    ) VALUES (
-        v_appointment_id, v_treatment1_id, 1, 1, 6000.00,
-        'Standard', '2026-09-10 10:15:00+05:30', v_clinician_user_id
-    );
-
-    INSERT INTO catms.appointment_treatment (
-        appointment_id, treatment_id, line_number, quantity, unit_price_at_time,
-        price_source, administered_at, recorded_by_user_id
-    ) VALUES (
-        v_appointment_id, v_treatment2_id, 2, 1, 8000.00,
-        'Standard', '2026-09-10 10:30:00+05:30', v_clinician_user_id
-    );
+    PERFORM catms.record_appointment_treatment(v_appointment_id, v_treatment1_id, 1, v_clinician_user_id);
+    PERFORM catms.record_appointment_treatment(v_appointment_id, v_treatment2_id, 1, v_clinician_user_id);
 
     -- Issue Invoice: subtotal = 14,000.00 LKR
     SELECT catms.issue_invoice(v_appointment_id, v_admin_user_id) INTO v_invoice_id;
