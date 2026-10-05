@@ -108,8 +108,8 @@ BEGIN
     VALUES ('PAT-1001', 'Nimal', 'Perera', '1985-06-15', 'Male', '+94771234567', v_branch_id, v_doctor_emp_id)
     RETURNING patient_id INTO v_patient_id;
 
-    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, normalized_identity, is_primary)
-    VALUES (v_patient_id, 'NIC', '198512345678', '198512345678', TRUE);
+    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, is_primary)
+    VALUES (v_patient_id, 'NIC', '198512345678', TRUE);
 
     INSERT INTO catms.emergency_contact (patient_id, contact_name, relationship, phone_number, is_primary)
     VALUES (v_patient_id, 'Sunila Perera', 'Spouse', '+94777654321', TRUE);
@@ -179,7 +179,7 @@ BEGIN
 
     -- Policy 1: POL-CEY-001 (Priority 1, 2026-01-01 to 2026-12-31)
     INSERT INTO catms.insurance_policy (
-        patient_id, provider_id, policy_number, status, valid_from, valid_to
+        patient_id, provider_id, policy_number, policy_status, valid_from, valid_to
     ) VALUES (
         v_patient_id, v_prov_ceylinco_id, 'POL-CEY-001', 'ACTIVE', '2026-01-01', '2026-12-31'
     ) RETURNING policy_id INTO v_pol_ceylinco_id;
@@ -194,7 +194,7 @@ BEGIN
 
     -- Policy 2: POL-SLIC-002 (Priority 2, 2026-06-01 to 2027-05-31)
     INSERT INTO catms.insurance_policy (
-        patient_id, provider_id, policy_number, status, valid_from, valid_to
+        patient_id, provider_id, policy_number, policy_status, valid_from, valid_to
     ) VALUES (
         v_patient_id, v_prov_slic_id, 'POL-SLIC-002', 'ACTIVE', '2026-06-01', '2027-05-31'
     ) RETURNING policy_id INTO v_pol_slic_id;

@@ -92,8 +92,8 @@ BEGIN
     VALUES ('PAT-112-001', 'Gamini', 'Dias', '1975-01-01', 'Male', '+94711120001', v_branch_id, v_emp_id)
     RETURNING patient_id INTO v_patient_id;
 
-    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, normalized_identity, is_primary)
-    VALUES (v_patient_id, 'NIC', '197511200001', '197511200001', TRUE);
+    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, is_primary)
+    VALUES (v_patient_id, 'NIC', '197511200001', TRUE);
 
     INSERT INTO catms.emergency_contact (patient_id, contact_name, relationship, phone_number, is_primary)
     VALUES (v_patient_id, 'Sita Dias', 'Wife', '+94711120002', TRUE);
@@ -133,7 +133,7 @@ BEGIN
     RETURNING provider_id INTO v_provider_id;
 
     INSERT INTO catms.insurance_policy (
-        patient_id, provider_id, policy_number, status, valid_from, valid_to
+        patient_id, provider_id, policy_number, policy_status, valid_from, valid_to
     ) VALUES (
         v_patient_id, v_provider_id, 'POL-RES-112', 'ACTIVE', '2026-01-01', '2026-12-31'
     ) RETURNING policy_id INTO v_policy_id;

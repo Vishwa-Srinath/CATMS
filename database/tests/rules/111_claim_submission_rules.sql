@@ -103,8 +103,8 @@ BEGIN
     VALUES ('PAT-111-001', 'Sunil', 'Fernando', '1982-03-10', 'Male', '+94711110001', v_branch_id, v_emp_id)
     RETURNING patient_id INTO v_patient_id;
 
-    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, normalized_identity, is_primary)
-    VALUES (v_patient_id, 'NIC', '198211100001', '198211100001', TRUE);
+    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, is_primary)
+    VALUES (v_patient_id, 'NIC', '198211100001', TRUE);
 
     INSERT INTO catms.emergency_contact (patient_id, contact_name, relationship, phone_number, is_primary)
     VALUES (v_patient_id, 'Kamani Fernando', 'Spouse', '+94711110002', TRUE);
@@ -113,8 +113,8 @@ BEGIN
     VALUES ('PAT-111-002', 'Anoma', 'Silva', '1995-11-25', 'Female', '+94711110003', v_branch_id, v_emp_id)
     RETURNING patient_id INTO v_other_patient_id;
 
-    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, normalized_identity, is_primary)
-    VALUES (v_other_patient_id, 'NIC', '199511100002', '199511100002', TRUE);
+    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, is_primary)
+    VALUES (v_other_patient_id, 'NIC', '199511100002', TRUE);
 
     INSERT INTO catms.emergency_contact (patient_id, contact_name, relationship, phone_number, is_primary)
     VALUES (v_other_patient_id, 'Nimal Silva', 'Father', '+94711110004', TRUE);
@@ -172,7 +172,7 @@ BEGIN
 
     -- 1. Active policy covering 2026
     INSERT INTO catms.insurance_policy (
-        patient_id, provider_id, policy_number, status, valid_from, valid_to
+        patient_id, provider_id, policy_number, policy_status, valid_from, valid_to
     ) VALUES (
         v_patient_id, v_provider_id, 'POL-ACT-111', 'ACTIVE', '2026-01-01', '2026-12-31'
     ) RETURNING policy_id INTO v_active_policy_id;
@@ -186,21 +186,21 @@ BEGIN
 
     -- 2. Expired policy (expired in 2025)
     INSERT INTO catms.insurance_policy (
-        patient_id, provider_id, policy_number, status, valid_from, valid_to
+        patient_id, provider_id, policy_number, policy_status, valid_from, valid_to
     ) VALUES (
         v_patient_id, v_provider_id, 'POL-EXP-111', 'ACTIVE', '2025-01-01', '2025-12-31'
     ) RETURNING policy_id INTO v_expired_policy_id;
 
     -- 3. Suspended policy
     INSERT INTO catms.insurance_policy (
-        patient_id, provider_id, policy_number, status, valid_from, valid_to
+        patient_id, provider_id, policy_number, policy_status, valid_from, valid_to
     ) VALUES (
         v_patient_id, v_provider_id, 'POL-SUS-111', 'SUSPENDED', '2026-01-01', '2026-12-31'
     ) RETURNING policy_id INTO v_suspended_policy_id;
 
     -- 4. Policy belonging to other patient
     INSERT INTO catms.insurance_policy (
-        patient_id, provider_id, policy_number, status, valid_from, valid_to
+        patient_id, provider_id, policy_number, policy_status, valid_from, valid_to
     ) VALUES (
         v_other_patient_id, v_provider_id, 'POL-OTH-111', 'ACTIVE', '2026-01-01', '2026-12-31'
     ) RETURNING policy_id INTO v_other_policy_id;

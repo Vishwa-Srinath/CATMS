@@ -89,8 +89,8 @@ BEGIN
     VALUES ('PAT-110-001', 'Patient', 'One', '1985-05-15', 'Male', '+94711100001', v_branch_id, v_emp_id)
     RETURNING patient_id INTO v_patient1_id;
 
-    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, normalized_identity, is_primary)
-    VALUES (v_patient1_id, 'NIC', '198511000001', '198511000001', TRUE);
+    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, is_primary)
+    VALUES (v_patient1_id, 'NIC', '198511000001', TRUE);
 
     INSERT INTO catms.emergency_contact (patient_id, contact_name, relationship, phone_number, is_primary)
     VALUES (v_patient1_id, 'Contact One', 'Spouse', '+94711100002', TRUE);
@@ -100,8 +100,8 @@ BEGIN
     VALUES ('PAT-110-002', 'Patient', 'Two', '1990-08-20', 'Female', '+94711100003', v_branch_id, v_emp_id)
     RETURNING patient_id INTO v_patient2_id;
 
-    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, normalized_identity, is_primary)
-    VALUES (v_patient2_id, 'NIC', '199011000002', '199011000002', TRUE);
+    INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, is_primary)
+    VALUES (v_patient2_id, 'NIC', '199011000002', TRUE);
 
     INSERT INTO catms.emergency_contact (patient_id, contact_name, relationship, phone_number, is_primary)
     VALUES (v_patient2_id, 'Contact Two', 'Sibling', '+94711100004', TRUE);
@@ -146,14 +146,14 @@ BEGIN
 
     -- Policy for Patient 1
     INSERT INTO catms.insurance_policy (
-        patient_id, provider_id, policy_number, status, valid_from, valid_to
+        patient_id, provider_id, policy_number, policy_status, valid_from, valid_to
     ) VALUES (
         v_patient1_id, v_provider_id, 'POL-110-PAT1', 'ACTIVE', '2026-01-01', '2026-12-31'
     ) RETURNING policy_id INTO v_policy_p1_id;
 
     -- Policy for Patient 2
     INSERT INTO catms.insurance_policy (
-        patient_id, provider_id, policy_number, status, valid_from, valid_to
+        patient_id, provider_id, policy_number, policy_status, valid_from, valid_to
     ) VALUES (
         v_patient2_id, v_provider_id, 'POL-110-PAT2', 'ACTIVE', '2026-01-01', '2026-12-31'
     ) RETURNING policy_id INTO v_policy_p2_id;
@@ -274,7 +274,7 @@ BEGIN
         v_policy2_p1_id BIGINT;
     BEGIN
         INSERT INTO catms.insurance_policy (
-            patient_id, provider_id, policy_number, status, valid_from, valid_to
+            patient_id, provider_id, policy_number, policy_status, valid_from, valid_to
         ) VALUES (
             v_patient1_id, v_provider_id, 'POL-110-PAT1-B', 'ACTIVE', '2026-01-01', '2026-12-31'
         ) RETURNING policy_id INTO v_policy2_p1_id;

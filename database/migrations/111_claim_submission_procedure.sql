@@ -118,7 +118,7 @@ BEGIN
     -- ─────────────────────────────────────────────────────────────────────────
     FOREACH v_policy_id IN ARRAY p_policy_ids LOOP
         SELECT p.policy_id, p.policy_number, p.patient_id, p.provider_id,
-               p.valid_from, p.valid_to, p.status AS policy_status,
+               p.valid_from, p.valid_to, p.policy_status,
                prov.status AS provider_status, prov.name AS provider_name
         INTO v_policy_record
         FROM catms.insurance_policy p
