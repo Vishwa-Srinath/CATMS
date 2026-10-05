@@ -32,9 +32,9 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 | 1 | CATMS-006 | Freeze eligibility and claim rules | ✅ Done |
 | 2 | CATMS-008 | Golden financial worked example | ✅ Done |
 | 3 | CATMS-018 | Patient identity schema | ✅ Done |
-| 4 | CATMS-019 | Provider, policy, coverage schema | ⬜ Not started |
+| 4 | CATMS-019 | Provider, policy, coverage schema | ✅ Done |
 | 5 | CATMS-025 | Atomic registration procedure | ✅ Done |
-| 6 | CATMS-026 | Policy/coverage lifecycle procedures | ⬜ Not started |
+| 6 | CATMS-026 | Policy/coverage lifecycle procedures | ✅ Done |
 | 7 | CATMS-037 | Claim, claim-line, status-history schema | ⬜ Not started |
 | 8 | CATMS-038 | Claim eligibility and submission procedure | ⬜ Not started |
 | 9 | CATMS-039 | Claim resolution and liability recalculation | ⬜ Not started |
@@ -120,19 +120,19 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 
 ---
 
-### Step 4 â€” CATMS-019: Provider, policy and effective-coverage schema
-- [ ] `insurance_provider`, `insurance_policy`, `policy_coverage` tables created
-- [ ] Coverage is treatment-specific and effective-dated
-- [ ] Overlap constraint verified for same policy + treatment
+### Step 4 — CATMS-019: Provider, policy and effective-coverage schema
+- [x] `insurance_provider`, `insurance_policy`, `policy_coverage` tables created
+- [x] Coverage is treatment-specific and effective-dated
+- [x] Overlap constraint verified for same policy + treatment
 
 **What:** Tables: `insurance_provider`, `insurance_policy`, `policy_coverage`. Coverage is treatment-specific and effective-dated (start/end validity window), with percentage and cap fields.
 
-**Why:** Coverage terms change over time. Without effective-dating, you cannot answer "what did this policy cover on the date the treatment happened" â€” which is exactly what a claim needs. Building this now avoids a painful migration later when someone needs coverage history for an old claim.
+**Why:** Coverage terms change over time. Without effective-dating, you cannot answer "what did this policy cover on the date the treatment happened" — which is exactly what a claim needs. Building this now avoids a painful migration later when someone needs coverage history for an old claim.
 
-**Depends on:** CATMS-018 Â· CATMS-020 (Dev4 treatment catalogue)
+**Depends on:** CATMS-018 · CATMS-020 (Dev4 treatment catalogue)
 
 **AI prompt tip:**
-> "Generate a PostgreSQL migration for `insurance_provider`, `insurance_policy`, `policy_coverage`. Requirements: (1) Provider + policy number unique. (2) `policy_coverage` has `effective_from` and `effective_to`. (3) Constraint preventing overlapping date ranges for same `policy_id` + `treatment_id`. (4) Reject invalid percentages (0â€“100) and negative caps. Include rollback."
+> "Generate a PostgreSQL migration for `insurance_provider`, `insurance_policy`, `policy_coverage`. Requirements: (1) Provider + policy number unique. (2) `policy_coverage` has `effective_from` and `effective_to`. (3) Constraint preventing overlapping date ranges for same `policy_id` + `treatment_id`. (4) Reject invalid percentages (0–100) and negative caps. Include rollback."
 
 **Acceptance evidence:**
 - Provider + policy number uniqueness enforced
@@ -141,36 +141,36 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 
 ---
 
-## Phase G2 â€” Database rules and transactions
-> **TL;DR:** Wrap all multi-row writes in stored procedures. The database â€” not the API or frontend â€” guarantees no partial or corrupt state ever exists.
+## Phase G2 — Database rules and transactions
+> **TL;DR:** Wrap all multi-row writes in stored procedures. The database — not the API or frontend — guarantees no partial or corrupt state ever exists.
 
 ---
 
-### Step 5 â€” CATMS-025: Atomic patient-registration procedure
+### Step 5 — CATMS-025: Atomic patient-registration procedure
 - [x] Single procedure creates patient + identity + contact in one transaction
 - [x] Duplicate-identity attempt leaves zero rows behind (confirmed)
 - [x] Missing-contact attempt leaves zero rows behind (confirmed)
 
 **What:** A single database procedure that creates `patient` + `patient_identity` + at least one `emergency_contact` together in one transaction.
 
-**Why:** A half-registered patient (identity row exists but no emergency contact because the second insert failed) is worse than no patient â€” it is a data-integrity landmine that surfaces months later. One controlled procedure means the database guarantees no partial patient ever exists.
+**Why:** A half-registered patient (identity row exists but no emergency contact because the second insert failed) is worse than no patient — it is a data-integrity landmine that surfaces months later. One controlled procedure means the database guarantees no partial patient ever exists.
 
-**Depends on:** CATMS-018 Â· CATMS-021 (fixture data for testing)
+**Depends on:** CATMS-018 · CATMS-021 (fixture data for testing)
 
 **AI prompt tip:**
 > "Write a PostgreSQL procedure `register_patient(...)` that atomically creates a patient, their primary identity, and at least one emergency contact in one transaction. Roll back everything on any failure. `registered_by` and `registered_at` must come from inside the procedure, not from the caller. Return the new `patient_id`."
 
 **Acceptance evidence:**
-- Duplicate-identity attempt leaves zero rows â€” not a dangling patient row
+- Duplicate-identity attempt leaves zero rows — not a dangling patient row
 - Missing-contact attempt also leaves zero rows
 - Timestamps and creator fields come from the database, not client input
 
 ---
 
-### Step 6 â€” CATMS-026: Policy and coverage lifecycle procedures
-- [ ] Procedures for creating providers/policies/coverage exist
-- [ ] "Updating" coverage closes old term and opens a new one (no raw UPDATE)
-- [ ] Old claims still resolve correctly against historical terms after a policy change
+### Step 6 — CATMS-026: Policy and coverage lifecycle procedures
+- [x] Procedures for creating providers/policies/coverage exist
+- [x] "Updating" coverage closes old term and opens a new one (no raw UPDATE)
+- [x] Old claims still resolve correctly against historical terms after a policy change
 
 **What:** Controlled procedures for creating providers/policies/coverage and updating effective terms â€” not raw UPDATE/INSERT from the API.
 

@@ -1,14 +1,14 @@
 -- =============================================================================
 -- 042_insurance_provider_policy_coverage.sql
 -- Module: B-patient-insurance
--- Owner: Dev1 (implementing on behalf of Dev3 to unblock Dev4)
--- Issue: CATMS-019
+-- Owner: Dev3 (Patient Identity, Insurance & Claims)
+-- Issue: CATMS-019 (Phase G1 — Step 4)
 -- Dependencies: 040_create_patient_identity_schema.sql (catms.patient)
 --
 -- NOTE: The FK from policy_coverage.treatment_id to treatment_catalogue is
---       added in migration 063_policy_coverage_treatment_fk.sql which runs
---       after 091_treatment_catalogue.sql. This respects ADR-009 ownership
---       ranges (Dev3: 040-059, Dev4: 090-129) without renumbering either.
+--       verified and enforced in migration 160_policy_coverage_treatment_fk.sql
+--       which runs after 091_treatment_catalogue.sql (Dev4 range).
+--       This respects ADR-009 ownership boundaries without renumbering either.
 --
 -- Deliverables:
 --   - catms.insurance_provider    — Insurance company catalogue
