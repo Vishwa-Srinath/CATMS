@@ -359,11 +359,11 @@ BEGIN
         v_clinical_appointment_id, v_clinical_user_id
     );
 
-    -- Still a permission fixture for the legacy payment scaffold.
-    -- Payment posting/reconciliation is implemented by CATMS-035.
-    INSERT INTO catms.payment (invoice_id, amount, payment_method, payer_type)
-    VALUES (v_invoice_id, 2500.00, 'Cash', 'Patient')
-    RETURNING payment_id INTO v_payment_id;
+    -- CATMS-035: use the controlled receipt entry point.
+    v_payment_id := catms.post_payment_idempotent(
+        v_invoice_id, 'Patient', 2500.00, 'Cash',
+        v_clinical_user_id, gen_random_uuid()
+    );
 
     -- Validate the fixture before running the permission checks.
     SET CONSTRAINTS ALL IMMEDIATE;
@@ -529,5 +529,3 @@ END;
 $$;
 
 ROLLBACK;
-
-
