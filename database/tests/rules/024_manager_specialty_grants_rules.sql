@@ -1,6 +1,6 @@
 -- 024_manager_specialty_grants_rules.sql
 -- Test Suite: Business rules and security permissions validation for CATMS-024
--- Requires migrations through 092 for the clinical permission fixture.
+-- Requires migrations through 094 (CATMS-034) for the clinical/invoice fixture.
 -- Asserts:
 --   - Manager integrity: wrong-position, wrong-branch, and inactive manager assignments fail
 --   - Valid manager assignment succeeds and closes previous manager assignment
@@ -32,6 +32,8 @@ DECLARE
     v_caught BOOLEAN;
     v_count INTEGER;
 
+    v_billing_category_id BIGINT;
+    v_billing_treatment_id BIGINT;
     v_clinical_user_id BIGINT;
     v_clinical_patient_id BIGINT;
     v_clinical_appointment_id BIGINT;
@@ -267,14 +269,6 @@ BEGIN
     -- -------------------------------------------------------------------------
     -- 3. Base Financial Tables & Seed Data for Permission Checks
     -- -------------------------------------------------------------------------
-    INSERT INTO catms.invoice (branch_id, subtotal, patient_payable, status)
-    VALUES (v_branch_id_1, 5000.00, 5000.00, 'Issued')
-    RETURNING invoice_id INTO v_invoice_id;
-
-    INSERT INTO catms.payment (invoice_id, amount, payment_method, payer_type)
-    VALUES (v_invoice_id, 2500.00, 'Cash', 'Patient')
-    RETURNING payment_id INTO v_payment_id;
-
     -- Clinical fixture for the consultation model introduced in 092.
     -- Dummy credential used only in this rollback-only test.
     INSERT INTO catms.user_account (
@@ -341,6 +335,35 @@ BEGIN
         v_clinical_user_id,
         'Patient examined. Clear lungs and normal pulse.'
     );
+
+    -- CATMS-034: create a real delivered treatment and issue its invoice.
+    INSERT INTO catms.treatment_category(category_code, name)
+    VALUES ('SEC-BILLING', 'Security Billing Test')
+    RETURNING treatment_category_id INTO v_billing_category_id;
+
+    INSERT INTO catms.treatment_catalogue (
+        treatment_category_id, service_code, name, current_price,
+        default_duration_minutes, is_consultation_service
+    )
+    VALUES (
+        v_billing_category_id, 'SEC-BILLING', 'Security Test Service',
+        5000, 15, FALSE
+    )
+    RETURNING treatment_id INTO v_billing_treatment_id;
+
+    PERFORM catms.record_appointment_treatment(
+        v_clinical_appointment_id, v_billing_treatment_id,
+        1, v_clinical_user_id
+    );
+    v_invoice_id := catms.issue_invoice(
+        v_clinical_appointment_id, v_clinical_user_id
+    );
+
+    -- Still a permission fixture for the legacy payment scaffold.
+    -- Payment posting/reconciliation is implemented by CATMS-035.
+    INSERT INTO catms.payment (invoice_id, amount, payment_method, payer_type)
+    VALUES (v_invoice_id, 2500.00, 'Cash', 'Patient')
+    RETURNING payment_id INTO v_payment_id;
 
     -- Validate the fixture before running the permission checks.
     SET CONSTRAINTS ALL IMMEDIATE;
@@ -506,3 +529,5 @@ END;
 $$;
 
 ROLLBACK;
+
+
