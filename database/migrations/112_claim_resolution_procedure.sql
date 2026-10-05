@@ -98,13 +98,6 @@ BEGIN
           AND (uar.valid_to IS NULL OR uar.valid_to >= clock_timestamp())
     ) INTO v_has_permission;
 
-    -- Also check if current_user is superuser or admin
-    IF NOT v_has_permission THEN
-        IF current_user IN ('postgres', 'catms_super', 'catms_super_test') THEN
-            v_has_permission := TRUE;
-        END IF;
-    END IF;
-
     IF NOT v_has_permission THEN
         RAISE EXCEPTION 'ERR_INSUFFICIENT_PRIVILEGE: User account % does not possess finance or administrative authority to resolve claims.',
             p_resolved_by_user_id USING ERRCODE = '42501';
