@@ -39,13 +39,9 @@ BEGIN
     VALUES ('TST112', 'Resolution Test Branch', '112 Res Road', 'Colombo', '+94112000000')
     RETURNING branch_id INTO v_branch_id;
 
-    INSERT INTO catms.specialty (name, code)
-    VALUES ('Resolution Specialty', 'CL-RES-01')
-    RETURNING specialty_id INTO v_specialty_id;
-
     -- Admin User
-    INSERT INTO catms.employee (branch_id, employee_number, first_name, last_name, email, role, employment_status)
-    VALUES (v_branch_id, 'EMP-112-ADM', 'Finance', 'Admin', 'adm112@catms.test', 'Admin', 'Active')
+    INSERT INTO catms.employee (employee_number, nic, full_name, gender_code, date_of_birth, position_code, phone, hire_date)
+    VALUES ('EMP-112-ADM', '198201019912', 'Finance Admin', 'Male', '1982-01-01', 'Admin', '+94770000030', CURRENT_DATE)
     RETURNING employee_id INTO v_emp_id;
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
@@ -56,8 +52,8 @@ BEGIN
     SELECT v_admin_user_id, app_role_id FROM catms.app_role WHERE upper(role_code) = 'ADMIN';
 
     -- Reception User (Restricted from resolving claims)
-    INSERT INTO catms.employee (branch_id, employee_number, first_name, last_name, email, role, employment_status)
-    VALUES (v_branch_id, 'EMP-112-REC', 'Receptionist', 'Front', 'rec112@catms.test', 'Receptionist', 'Active')
+    INSERT INTO catms.employee (employee_number, nic, full_name, gender_code, date_of_birth, position_code, phone, hire_date)
+    VALUES ('EMP-112-REC', '199301019912', 'Receptionist Front', 'Female', '1993-01-01', 'Receptionist', '+94770000031', CURRENT_DATE)
     RETURNING employee_id INTO v_emp_id;
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
@@ -68,9 +64,21 @@ BEGIN
     SELECT v_reception_user_id, app_role_id FROM catms.app_role WHERE upper(role_code) = 'RECEPTION';
 
     -- Doctor
-    INSERT INTO catms.employee (branch_id, employee_number, first_name, last_name, email, role, employment_status)
-    VALUES (v_branch_id, 'EMP-112-DOC', 'Doctor', 'Kalu', 'doc112@catms.test', 'Doctor', 'Active')
+    INSERT INTO catms.employee (employee_number, nic, full_name, gender_code, date_of_birth, position_code, phone, hire_date)
+    VALUES ('EMP-112-DOC', '198701019912', 'Dr. Kalu', 'Male', '1987-01-01', 'Doctor', '+94770000032', CURRENT_DATE)
     RETURNING employee_id INTO v_doctor_emp_id;
+
+    v_doctor_id := v_doctor_emp_id;
+
+    INSERT INTO catms.doctor_profile (doctor_id, medical_license_no, practice_start_date, default_consultation_fee)
+    VALUES (v_doctor_id, 'SLMC-112-001', '2015-01-01', 10000.00);
+
+    INSERT INTO catms.specialty (specialty_code, name)
+    VALUES ('SPEC-112', 'Resolution Specialty')
+    RETURNING specialty_id INTO v_specialty_id;
+
+    INSERT INTO catms.doctor_specialty (doctor_id, specialty_id, is_primary)
+    VALUES (v_doctor_id, v_specialty_id, TRUE);
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
     VALUES (v_doctor_emp_id, 'doc_112', 'hash_doc', 'ACTIVE')
@@ -79,13 +87,9 @@ BEGIN
     INSERT INTO catms.user_account_role (user_account_id, app_role_id)
     SELECT v_clinician_user_id, app_role_id FROM catms.app_role WHERE upper(role_code) = 'CLINICIAN';
 
-    INSERT INTO catms.doctor_profile (employee_id, primary_specialty_id, slmc_reg_number)
-    VALUES (v_doctor_emp_id, v_specialty_id, 'SLMC-112-001')
-    RETURNING doctor_id INTO v_doctor_id;
-
     -- Patient
-    INSERT INTO catms.patient (patient_number, first_name, last_name, date_of_birth, gender, contact_number, registered_branch_id)
-    VALUES ('PAT-112-001', 'Gamini', 'Dias', '1975-01-01', 'Male', '+94711120001', v_branch_id)
+    INSERT INTO catms.patient (patient_number, first_name, last_name, date_of_birth, gender, contact_number, registered_branch_id, registered_by)
+    VALUES ('PAT-112-001', 'Gamini', 'Dias', '1975-01-01', 'Male', '+94711120001', v_branch_id, v_emp_id)
     RETURNING patient_id INTO v_patient_id;
 
     INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, normalized_identity, is_primary)
@@ -95,21 +99,21 @@ BEGIN
     VALUES (v_patient_id, 'Sita Dias', 'Wife', '+94711120002', TRUE);
 
     -- Treatment
-    INSERT INTO catms.treatment_category (category_name, description)
-    VALUES ('Dental 112', 'Dental procedures')
-    RETURNING category_id INTO v_treatment_cat_id;
+    INSERT INTO catms.treatment_category (category_code, name)
+    VALUES ('CAT-112', 'Dental 112')
+    RETURNING treatment_category_id INTO v_treatment_cat_id;
 
-    INSERT INTO catms.treatment_catalogue (category_id, service_code, name, base_price, is_active)
-    VALUES (v_treatment_cat_id, 'DEN-112-01', 'Root Canal', 10000.00, TRUE)
+    INSERT INTO catms.treatment_catalogue (treatment_category_id, service_code, name, current_price, default_duration_minutes, is_consultation_service)
+    VALUES (v_treatment_cat_id, 'DEN-112-01', 'Root Canal', 10000.00, 45, FALSE)
     RETURNING treatment_id INTO v_treatment_id;
 
-    -- Appointment
+    -- Appointment (start_at: 11:00, end_at: 11:45)
     INSERT INTO catms.appointment (
         appointment_number, patient_id, doctor_id, branch_id, specialty_id,
         start_at, end_at, status, booking_type, created_by
     ) VALUES (
         'APP-112-0001', v_patient_id, v_doctor_id, v_branch_id, v_specialty_id,
-        '2026-09-12 11:00:00+05:30', '2026-09-12 12:00:00+05:30', 'Completed', 'Booked', v_admin_user_id
+        '2026-09-12 11:00:00+05:30', '2026-09-12 11:45:00+05:30', 'Completed', 'Booked', v_admin_user_id
     ) RETURNING appointment_id INTO v_appointment_id;
 
     INSERT INTO catms.appointment_treatment (

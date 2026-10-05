@@ -45,13 +45,9 @@ BEGIN
     VALUES ('TST110', 'Claims Test Branch', '110 Claim Way', 'Colombo', '+94110000000')
     RETURNING branch_id INTO v_branch_id;
 
-    -- Specialty & Doctor
-    INSERT INTO catms.specialty (name, code)
-    VALUES ('Claims General', 'CL-GEN')
-    RETURNING specialty_id INTO v_specialty_id;
-
-    INSERT INTO catms.employee (branch_id, employee_number, first_name, last_name, email, role, employment_status)
-    VALUES (v_branch_id, 'EMP-CL-ADM', 'Admin', 'User', 'adm110@catms.test', 'Admin', 'Active')
+    -- Admin Employee & User
+    INSERT INTO catms.employee (employee_number, nic, full_name, gender_code, date_of_birth, position_code, phone, hire_date)
+    VALUES ('EMP-CL-ADM', '198001019910', 'Admin User', 'Male', '1980-01-01', 'Admin', '+94770000010', CURRENT_DATE)
     RETURNING employee_id INTO v_emp_id;
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
@@ -59,26 +55,38 @@ BEGIN
     RETURNING user_account_id INTO v_admin_user_id;
 
     -- Assign ADMIN role to admin user
-    INSERT INTO catms.user_account_role (user_account_id, app_role_id, branch_scope_id)
-    SELECT v_admin_user_id, app_role_id, NULL
+    INSERT INTO catms.user_account_role (user_account_id, app_role_id)
+    SELECT v_admin_user_id, app_role_id
     FROM catms.app_role WHERE upper(role_code) = 'ADMIN';
 
-    -- Doctor
-    INSERT INTO catms.employee (branch_id, employee_number, first_name, last_name, email, role, employment_status)
-    VALUES (v_branch_id, 'EMP-CL-DOC', 'Doctor', 'Silva', 'doc110@catms.test', 'Doctor', 'Active')
+    -- Doctor Employee & User
+    INSERT INTO catms.employee (employee_number, nic, full_name, gender_code, date_of_birth, position_code, phone, hire_date)
+    VALUES ('EMP-CL-DOC', '198501019910', 'Dr. Silva', 'Male', '1985-01-01', 'Doctor', '+94770000011', CURRENT_DATE)
     RETURNING employee_id INTO v_doctor_emp_id;
+
+    v_doctor_id := v_doctor_emp_id;
+
+    INSERT INTO catms.doctor_profile (doctor_id, medical_license_no, practice_start_date, default_consultation_fee)
+    VALUES (v_doctor_id, 'SLMC-110-001', '2015-01-01', 5000.00);
+
+    INSERT INTO catms.specialty (specialty_code, name)
+    VALUES ('SPEC-110', 'Claims General')
+    RETURNING specialty_id INTO v_specialty_id;
+
+    INSERT INTO catms.doctor_specialty (doctor_id, specialty_id, is_primary)
+    VALUES (v_doctor_id, v_specialty_id, TRUE);
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
     VALUES (v_doctor_emp_id, 'claims_doc_110', 'hash_doc', 'ACTIVE')
     RETURNING user_account_id INTO v_clinician_user_id;
 
-    INSERT INTO catms.doctor_profile (employee_id, primary_specialty_id, slmc_reg_number)
-    VALUES (v_doctor_emp_id, v_specialty_id, 'SLMC-110-001')
-    RETURNING doctor_id INTO v_doctor_id;
+    INSERT INTO catms.user_account_role (user_account_id, app_role_id)
+    SELECT v_clinician_user_id, app_role_id
+    FROM catms.app_role WHERE upper(role_code) = 'CLINICIAN';
 
     -- Patient 1 (Invoice Patient)
-    INSERT INTO catms.patient (patient_number, first_name, last_name, date_of_birth, gender, contact_number, registered_branch_id)
-    VALUES ('PAT-110-001', 'Patient', 'One', '1985-05-15', 'Male', '+94711100001', v_branch_id)
+    INSERT INTO catms.patient (patient_number, first_name, last_name, date_of_birth, gender, contact_number, registered_branch_id, registered_by)
+    VALUES ('PAT-110-001', 'Patient', 'One', '1985-05-15', 'Male', '+94711100001', v_branch_id, v_emp_id)
     RETURNING patient_id INTO v_patient1_id;
 
     INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, normalized_identity, is_primary)
@@ -88,8 +96,8 @@ BEGIN
     VALUES (v_patient1_id, 'Contact One', 'Spouse', '+94711100002', TRUE);
 
     -- Patient 2 (Other Patient)
-    INSERT INTO catms.patient (patient_number, first_name, last_name, date_of_birth, gender, contact_number, registered_branch_id)
-    VALUES ('PAT-110-002', 'Patient', 'Two', '1990-08-20', 'Female', '+94711100003', v_branch_id)
+    INSERT INTO catms.patient (patient_number, first_name, last_name, date_of_birth, gender, contact_number, registered_branch_id, registered_by)
+    VALUES ('PAT-110-002', 'Patient', 'Two', '1990-08-20', 'Female', '+94711100003', v_branch_id, v_emp_id)
     RETURNING patient_id INTO v_patient2_id;
 
     INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, normalized_identity, is_primary)
@@ -99,12 +107,12 @@ BEGIN
     VALUES (v_patient2_id, 'Contact Two', 'Sibling', '+94711100004', TRUE);
 
     -- Treatment Catalogue
-    INSERT INTO catms.treatment_category (category_name, description)
-    VALUES ('Claims Category', 'Category for 110 tests')
-    RETURNING category_id INTO v_treatment_cat_id;
+    INSERT INTO catms.treatment_category (category_code, name)
+    VALUES ('CAT-110', 'Claims Category')
+    RETURNING treatment_category_id INTO v_treatment_cat_id;
 
-    INSERT INTO catms.treatment_catalogue (category_id, service_code, name, base_price, is_active)
-    VALUES (v_treatment_cat_id, 'SRV-110-01', 'Consultation Service', 5000.00, TRUE)
+    INSERT INTO catms.treatment_catalogue (treatment_category_id, service_code, name, current_price, default_duration_minutes, is_consultation_service)
+    VALUES (v_treatment_cat_id, 'SRV-110-01', 'Consultation Service', 5000.00, 15, FALSE)
     RETURNING treatment_id INTO v_treatment_id;
 
     -- Appointment Completed for Patient 1
@@ -113,7 +121,7 @@ BEGIN
         start_at, end_at, status, booking_type, created_by
     ) VALUES (
         'APP-110-0001', v_patient1_id, v_doctor_id, v_branch_id, v_specialty_id,
-        '2026-09-15 09:00:00+05:30', '2026-09-15 09:30:00+05:30', 'Completed', 'Booked', v_admin_user_id
+        '2026-09-15 09:00:00+05:30', '2026-09-15 09:15:00+05:30', 'Completed', 'Booked', v_admin_user_id
     ) RETURNING appointment_id INTO v_appointment_id;
 
     -- Delivered Treatment
@@ -122,7 +130,7 @@ BEGIN
         price_source, administered_at, recorded_by_user_id
     ) VALUES (
         v_appointment_id, v_treatment_id, 1, 1, 5000.00,
-        'Standard', '2026-09-15 09:15:00+05:30', v_clinician_user_id
+        'Standard', '2026-09-15 09:05:00+05:30', v_clinician_user_id
     ) RETURNING appointment_treatment_id INTO v_app_treatment_id;
 
     -- Issued Invoice

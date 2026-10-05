@@ -55,14 +55,9 @@ BEGIN
     VALUES ('BR-001', 'Central Clinic, Colombo', '10 Galle Road', 'Colombo', '+94112000001')
     RETURNING branch_id INTO v_branch_id;
 
-    INSERT INTO catms.specialty (name, code)
-    VALUES ('Specialist Cardiology', 'SPEC-CARD')
-    RETURNING specialty_id INTO v_specialty_id;
-
-    -- Staff & Users
-    -- Finance Officer
-    INSERT INTO catms.employee (branch_id, employee_number, first_name, last_name, email, role, employment_status)
-    VALUES (v_branch_id, 'EMP-FIN-01', 'Finance', 'Officer', 'finance@catms.test', 'Admin', 'Active')
+    -- Finance Officer Employee & User
+    INSERT INTO catms.employee (employee_number, nic, full_name, gender_code, date_of_birth, position_code, phone, hire_date)
+    VALUES ('EMP-FIN-01', '198001019913', 'Finance Officer', 'Male', '1980-01-01', 'Admin', '+94770000040', CURRENT_DATE)
     RETURNING employee_id INTO v_doctor_emp_id;
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
@@ -72,9 +67,9 @@ BEGIN
     INSERT INTO catms.user_account_role (user_account_id, app_role_id)
     SELECT v_finance_user_id, app_role_id FROM catms.app_role WHERE upper(role_code) = 'ADMIN';
 
-    -- Receptionist
-    INSERT INTO catms.employee (branch_id, employee_number, first_name, last_name, email, role, employment_status)
-    VALUES (v_branch_id, 'EMP-REC-01', 'Reception', 'Desk', 'reception@catms.test', 'Receptionist', 'Active')
+    -- Receptionist Employee & User
+    INSERT INTO catms.employee (employee_number, nic, full_name, gender_code, date_of_birth, position_code, phone, hire_date)
+    VALUES ('EMP-REC-01', '199101019913', 'Reception Desk', 'Female', '1991-01-01', 'Receptionist', '+94770000041', CURRENT_DATE)
     RETURNING employee_id INTO v_doctor_emp_id;
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
@@ -85,9 +80,21 @@ BEGIN
     SELECT v_reception_user_id, app_role_id FROM catms.app_role WHERE upper(role_code) = 'RECEPTION';
 
     -- Doctor: Dr. K. Silva (DOC-0201)
-    INSERT INTO catms.employee (branch_id, employee_number, first_name, last_name, email, role, employment_status)
-    VALUES (v_branch_id, 'DOC-0201', 'K.', 'Silva', 'ksilva@catms.test', 'Doctor', 'Active')
+    INSERT INTO catms.employee (employee_number, nic, full_name, gender_code, date_of_birth, position_code, phone, hire_date)
+    VALUES ('DOC-0201', '197501019913', 'Dr. K. Silva', 'Male', '1975-01-01', 'Doctor', '+94770000042', CURRENT_DATE)
     RETURNING employee_id INTO v_doctor_emp_id;
+
+    v_doctor_id := v_doctor_emp_id;
+
+    INSERT INTO catms.doctor_profile (doctor_id, medical_license_no, practice_start_date, default_consultation_fee)
+    VALUES (v_doctor_id, 'SLMC-DOC-0201', '2010-01-01', 3500.00);
+
+    INSERT INTO catms.specialty (specialty_code, name)
+    VALUES ('SPEC-CARD', 'Specialist Cardiology')
+    RETURNING specialty_id INTO v_specialty_id;
+
+    INSERT INTO catms.doctor_specialty (doctor_id, specialty_id, is_primary)
+    VALUES (v_doctor_id, v_specialty_id, TRUE);
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
     VALUES (v_doctor_emp_id, 'dr_ksilva', 'hash_doc', 'ACTIVE')
@@ -96,13 +103,9 @@ BEGIN
     INSERT INTO catms.user_account_role (user_account_id, app_role_id)
     SELECT v_clinician_user_id, app_role_id FROM catms.app_role WHERE upper(role_code) = 'CLINICIAN';
 
-    INSERT INTO catms.doctor_profile (employee_id, primary_specialty_id, slmc_reg_number)
-    VALUES (v_doctor_emp_id, v_specialty_id, 'SLMC-DOC-0201')
-    RETURNING doctor_id INTO v_doctor_id;
-
     -- Patient: Nimal Perera (PAT-1001, NIC: 198512345678)
-    INSERT INTO catms.patient (patient_number, first_name, last_name, date_of_birth, gender, contact_number, registered_branch_id)
-    VALUES ('PAT-1001', 'Nimal', 'Perera', '1985-06-15', 'Male', '+94771234567', v_branch_id)
+    INSERT INTO catms.patient (patient_number, first_name, last_name, date_of_birth, gender, contact_number, registered_branch_id, registered_by)
+    VALUES ('PAT-1001', 'Nimal', 'Perera', '1985-06-15', 'Male', '+94771234567', v_branch_id, v_doctor_emp_id)
     RETURNING patient_id INTO v_patient_id;
 
     INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, normalized_identity, is_primary)
@@ -112,21 +115,21 @@ BEGIN
     VALUES (v_patient_id, 'Sunila Perera', 'Spouse', '+94777654321', TRUE);
 
     -- Treatment Catalogue
-    INSERT INTO catms.treatment_category (category_name, description)
-    VALUES ('Clinical Cardiology', 'Cardiology outpatient care')
-    RETURNING category_id INTO v_treatment_cat_id;
+    INSERT INTO catms.treatment_category (category_code, name)
+    VALUES ('CAT-CARD', 'Clinical Cardiology')
+    RETURNING treatment_category_id INTO v_treatment_cat_id;
 
     -- TREAT-001: Specialist Cardiology Consultation (3,500.00 LKR)
-    INSERT INTO catms.treatment_catalogue (category_id, service_code, name, base_price, is_active)
-    VALUES (v_treatment_cat_id, 'TREAT-001', 'Specialist Cardiology Consultation', 3500.00, TRUE)
+    INSERT INTO catms.treatment_catalogue (treatment_category_id, service_code, name, current_price, default_duration_minutes, is_consultation_service)
+    VALUES (v_treatment_cat_id, 'TREAT-001', 'Specialist Cardiology Consultation', 3500.00, 30, TRUE)
     RETURNING treatment_id INTO v_treat1_id;
 
     -- TREAT-002: Diagnostic 12-Lead ECG + Report (6,500.00 LKR)
-    INSERT INTO catms.treatment_catalogue (category_id, service_code, name, base_price, is_active)
-    VALUES (v_treatment_cat_id, 'TREAT-002', 'Diagnostic 12-Lead ECG + Report', 6500.00, TRUE)
+    INSERT INTO catms.treatment_catalogue (treatment_category_id, service_code, name, current_price, default_duration_minutes, is_consultation_service)
+    VALUES (v_treatment_cat_id, 'TREAT-002', 'Diagnostic 12-Lead ECG + Report', 6500.00, 30, FALSE)
     RETURNING treatment_id INTO v_treat2_id;
 
-    -- Appointment on Date of Service: 2026-09-10
+    -- Appointment on Date of Service: 2026-09-10 (start_at: 09:00, end_at: 10:00)
     INSERT INTO catms.appointment (
         appointment_number, patient_id, doctor_id, branch_id, specialty_id,
         start_at, end_at, status, booking_type, created_by
