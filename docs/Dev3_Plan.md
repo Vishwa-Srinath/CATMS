@@ -35,10 +35,10 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 | 4 | CATMS-019 | Provider, policy, coverage schema | ✅ Done |
 | 5 | CATMS-025 | Atomic registration procedure | ✅ Done |
 | 6 | CATMS-026 | Policy/coverage lifecycle procedures | ✅ Done |
-| 7 | CATMS-037 | Claim, claim-line, status-history schema | ⬜ Not started |
-| 8 | CATMS-038 | Claim eligibility and submission procedure | ⬜ Not started |
-| 9 | CATMS-039 | Claim resolution and liability recalculation | ⬜ Not started |
-| 10 | CATMS-040 | Prove insurance and claim rules (DB tests) | ⬜ Not started |
+| 7 | CATMS-037 | Claim, claim-line, status-history schema | ✅ Done |
+| 8 | CATMS-038 | Claim eligibility and submission procedure | ✅ Done |
+| 9 | CATMS-039 | Claim resolution and liability recalculation | ✅ Done |
+| 10 | CATMS-040 | Prove insurance and claim rules (DB tests) | ✅ Done |
 | 11 | CATMS-048 | Patient and Insurance Terms API | ⬜ Not started |
 | 12 | CATMS-049 | Claims API and tests | ⬜ Not started |
 | 13 | CATMS-059 | Connect Patient and Insurance frontend | ⬜ Not started |
@@ -193,19 +193,19 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 
 ---
 
-### Step 7 â€” CATMS-037: Claim, claim-line and status-history schema
-- [ ] `insurance_claim`, `insurance_claim_line`, `insurance_claim_status_log` created
-- [ ] DB-level check: claim policy belongs to the invoice patient
-- [ ] Status-history is append-only (no UPDATE or DELETE)
+### Step 7 — CATMS-037: Claim, claim-line and status-history schema
+- [x] `insurance_claim`, `insurance_claim_line`, `insurance_claim_status_log` created
+- [x] DB-level check: claim policy belongs to the invoice patient
+- [x] Status-history is append-only (no UPDATE or DELETE)
 
 **What:** Tables: `insurance_claim`, `insurance_claim_line`, `insurance_claim_status_log`, with checks that a claim's policy belongs to the invoice's patient and claim lines reference real invoice/coverage lines.
 
-**Why:** Without database-level enforcement of "this policy belongs to this patient," it is possible to submit a claim for the wrong patient's policy â€” a fraud/audit problem, not just a bug. Status-history is append-only because financial/audit data must never be silently overwritten.
+**Why:** Without database-level enforcement of "this policy belongs to this patient," it is possible to submit a claim for the wrong patient's policy — a fraud/audit problem, not just a bug. Status-history is append-only because financial/audit data must never be silently overwritten.
 
-**Depends on:** CATMS-019 Â· CATMS-034 (Dev4 invoice-line schema)
+**Depends on:** CATMS-019 · CATMS-034 (Dev4 invoice-line schema)
 
 **AI prompt tip:**
-> "Generate a PostgreSQL migration for `insurance_claim`, `insurance_claim_line`, `insurance_claim_status_log`. Requirements: (1) CHECK/FK constraint â€” claim's `policy_id` must belong to the invoice's patient. (2) `insurance_claim_status_log` is append-only â€” trigger prevents UPDATE or DELETE. (3) Claimed amounts per line cannot exceed the invoice line total. Include rollback."
+> "Generate a PostgreSQL migration for `insurance_claim`, `insurance_claim_line`, `insurance_claim_status_log`. Requirements: (1) CHECK/FK constraint — claim's `policy_id` must belong to the invoice's patient. (2) `insurance_claim_status_log` is append-only — trigger prevents UPDATE or DELETE. (3) Claimed amounts per line cannot exceed the invoice line total. Include rollback."
 
 **Acceptance evidence:**
 - Claim on a policy not belonging to the invoice patient rejected at DB level
@@ -213,19 +213,19 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 
 ---
 
-### Step 8 â€” CATMS-038: Claim eligibility and submission procedure
-- [ ] Procedure snapshots coverage at service date (not current terms)
-- [ ] Multi-policy allocation sum-check enforced (never exceeds line total)
-- [ ] Output matches golden example from Step 2
+### Step 8 — CATMS-038: Claim eligibility and submission procedure
+- [x] Procedure snapshots coverage at service date (not current terms)
+- [x] Multi-policy allocation sum-check enforced (never exceeds line total)
+- [x] Output matches golden example from Step 2
 
 **What:** A procedure that snapshots treatment-level eligibility (percentage/cap as of service date), validates multi-policy allocation does not exceed the invoice line total, and creates the claim in `Pending` status.
 
-**Why:** "Snapshot" is the key word â€” coverage terms can change after submission, but the claim must always reflect what was true on the service date. The multi-policy cap check is where "double coverage" bugs live â€” two policies can each pay 80% of the same line without an explicit sum-check.
+**Why:** "Snapshot" is the key word — coverage terms can change after submission, but the claim must always reflect what was true on the service date. The multi-policy cap check is where "double coverage" bugs live — two policies can each pay 80% of the same line without an explicit sum-check.
 
-**Depends on:** CATMS-026 Â· CATMS-037 Â· CATMS-008 (golden example â€” validate output against hand-calculated numbers)
+**Depends on:** CATMS-026 · CATMS-037 · CATMS-008 (golden example — validate output against hand-calculated numbers)
 
 **AI prompt tip:**
-> "Write a PostgreSQL procedure `submit_claim(invoice_id, policy_ids[], service_date)` that: (1) looks up effective coverage for each policy as of `service_date` â€” not current terms, (2) calculates each policy's allocation using percentage/cap rules, (3) checks that the sum of allocations does not exceed the invoice line total, (4) creates an `insurance_claim` in Pending status. Roll back and raise a descriptive error on any failure. Rules: [paste from Step 1]."
+> "Write a PostgreSQL procedure `submit_claim(invoice_id, policy_ids[], service_date)` that: (1) looks up effective coverage for each policy as of `service_date` — not current terms, (2) calculates each policy's allocation using percentage/cap rules, (3) checks that the sum of allocations does not exceed the invoice line total, (4) creates an `insurance_claim` in Pending status. Roll back and raise a descriptive error on any failure. Rules: [paste from Step 1]."
 
 **Acceptance evidence:**
 - Expired policy on service date cannot be claimed
@@ -234,31 +234,31 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 
 ---
 
-### Step 9 â€” CATMS-039: Claim resolution and liability recalculation
-- [ ] Procedure transitions claim to Approved/PartiallyApproved/Rejected
-- [ ] Transition recorded immutably in status log
-- [ ] Liability recalculation is atomic with the status transition
+### Step 9 — CATMS-039: Claim resolution and liability recalculation
+- [x] Procedure transitions claim to Approved/PartiallyApproved/Rejected
+- [x] Transition recorded immutably in status log
+- [x] Liability recalculation is atomic with the status transition
 
-**What:** Procedure for transitioning a claim to Approved/PartiallyApproved/Rejected, recording immutably, and â€” atomically, in the same transaction â€” recalculating the patient's outstanding liability on the invoice.
+**What:** Procedure for transitioning a claim to Approved/PartiallyApproved/Rejected, recording immutably, and — atomically, in the same transaction — recalculating the patient's outstanding liability on the invoice.
 
-**Why:** Liability recalculation touches real money. If the claim resolves but the recalculation fails (or vice versa), you get an invoice and a claim that disagree â€” and nobody can tell which is correct. One transaction means either both happen or neither does.
+**Why:** Liability recalculation touches real money. If the claim resolves but the recalculation fails (or vice versa), you get an invoice and a claim that disagree — and nobody can tell which is correct. One transaction means either both happen or neither does.
 
-**Depends on:** CATMS-038 Â· CATMS-034
+**Depends on:** CATMS-038 · CATMS-034
 
 **AI prompt tip:**
-> "Write a PostgreSQL procedure `resolve_claim(claim_id, resolution, approved_amount, resolved_by)` where resolution is one of Approved, PartiallyApproved, Rejected. It must: (1) validate claim is in Pending, (2) INSERT into `insurance_claim_status_log` â€” never UPDATE, (3) in the same transaction, UPDATE the patient's invoice liability â€” only `approved_amount` reduces liability. Roll back the status change if the liability update fails."
+> "Write a PostgreSQL procedure `resolve_claim(claim_id, resolution, approved_amount, resolved_by)` where resolution is one of Approved, PartiallyApproved, Rejected. It must: (1) validate claim is in Pending, (2) INSERT into `insurance_claim_status_log` — never UPDATE, (3) in the same transaction, UPDATE the patient's invoice liability — only `approved_amount` reduces liability. Roll back the status change if the liability update fails."
 
 **Acceptance evidence:**
-- Only the approved amount reduces liability â€” partial approval reduces by approved portion only
+- Only the approved amount reduces liability — partial approval reduces by approved portion only
 - Induced failure mid-procedure leaves both claim and invoice in prior state
 
 ---
 
-### Step 10 â€” CATMS-040: Prove insurance and claim rules (database tests)
-- [ ] Direct DB tests written (not through API or UI)
-- [ ] No double-coverage scenario passes
-- [ ] Coverage snapshot on old claim survives policy edits
-- [ ] Amounts reconcile with golden example
+### Step 10 — CATMS-040: Prove insurance and claim rules (database tests)
+- [x] Direct DB tests written (not through API or UI)
+- [x] No double-coverage scenario passes
+- [x] Coverage snapshot on old claim survives policy edits
+- [x] Amounts reconcile with golden example
 
 **What:** Test suite run directly against PostgreSQL: active/expired/suspended policies, cap enforcement, multi-policy allocation, partial/rejected claims, forced-rollback scenarios.
 
