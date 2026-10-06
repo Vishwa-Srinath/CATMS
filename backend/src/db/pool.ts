@@ -1,48 +1,43 @@
-/**
- * src/db/pool.ts
- * Owner: Dev1 | Issue: CATMS-013
- *
- * PostgreSQL connection pool — singleton shared across all modules.
- *
- * Rules (member_plan.md §3, CODEBASE_GUIDE.md):
- *   - All modules import `pool` from this file; never create their own Pool.
- *   - All SQL uses parameterized queries ($1, $2, …) — never string interpolation.
- *   - SET LOCAL ROLE is called inside withTransaction(), never on the pool connection.
- *   - The pool uses POSTGRES_USER (catms_app), not the superuser.
- *     The superuser is only used by scripts/migrate.sh and scripts/reset.sh.
- */
-
-import { Pool, type PoolConfig } from 'pg';
+import { Pool, type PoolConfig, type QueryResult, type QueryResultRow } from 'pg';
 import { env } from '../shared/env';
 import { logger } from '../shared/logger';
+import type { DatabaseHealthCheck, MigrationHealthCheck } from '../contracts/health.contract';
 
 const poolConfig: PoolConfig = {
-  host:     env.POSTGRES_HOST,
-  port:     env.POSTGRES_PORT,
+  host: env.POSTGRES_HOST,
+  port: env.POSTGRES_PORT,
   database: env.POSTGRES_DB,
-  user:     env.POSTGRES_USER,
+  user: env.POSTGRES_USER,
   password: env.POSTGRES_PASSWORD,
-
-  // Connection pool sizing — tuned for a clinic demo environment
   min: 2,
   max: 10,
-  idleTimeoutMillis:    30_000,
+  idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
-
-  // Tell pg to parse numeric types as JS numbers (not strings)
-  // Override at query level for NUMERIC(12,2) money columns to avoid float imprecision.
-  // Money is returned as strings and parsed in the service layer.
 };
 
 export const pool = new Pool(poolConfig);
 
-// Log pool errors — these are connection-level errors, not query errors
 pool.on('error', (err) => {
   logger.error({ err }, 'Unexpected PostgreSQL pool error');
 });
 
-// Health check query — used by readiness endpoint and verify script
-export async function checkDatabaseConnectivity(): Promise<{ ok: boolean; latencyMs: number }> {
+export async function query<R extends QueryResultRow = QueryResultRow>(
+  text: string,
+  params?: unknown[],
+): Promise<QueryResult<R>> {
+  const start = Date.now();
+  try {
+    const result = await pool.query<R>(text, params);
+    const duration = Date.now() - start;
+    logger.debug({ text, duration, rowCount: result.rowCount }, 'Executed pool query');
+    return result;
+  } catch (err) {
+    logger.error({ text, err }, 'Database pool query failed');
+    throw err;
+  }
+}
+
+export async function checkDatabaseConnectivity(): Promise<DatabaseHealthCheck> {
   const start = Date.now();
   try {
     await pool.query('SELECT 1');
@@ -53,8 +48,33 @@ export async function checkDatabaseConnectivity(): Promise<{ ok: boolean; latenc
   }
 }
 
-// Graceful shutdown — drain the pool when the server exits
+export async function checkDatabaseMigrations(): Promise<MigrationHealthCheck> {
+  try {
+    const result = await pool.query<{ latest_version: number; applied_count: number }>(`
+      SELECT
+        COALESCE(MAX(version), 0)::int AS latest_version,
+        COUNT(*)::int AS applied_count
+      FROM catms.schema_migrations;
+    `);
+
+    const row = result.rows[0];
+    return {
+      ok: true,
+      latestVersion: row ? row.latest_version : 0,
+      appliedCount: row ? row.applied_count : 0,
+    };
+  } catch (err) {
+    logger.warn({ err }, 'Migration level check failed or schema_migrations table missing');
+    return {
+      ok: false,
+      latestVersion: 0,
+      appliedCount: 0,
+    };
+  }
+}
+
 export async function closePool(): Promise<void> {
   await pool.end();
   logger.info('PostgreSQL pool closed');
 }
+

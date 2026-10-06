@@ -1,11 +1,4 @@
-/**
- * src/db/index.ts
- * Owner: Dev1 | Issue: CATMS-013
- *
- * Barrel re-export for the db layer.
- * Modules import from 'db' not from individual files.
- */
+export { pool, query, checkDatabaseConnectivity, checkDatabaseMigrations, closePool } from './pool';
+export { withTransaction, withReadonlyTransaction, setLocalRole, sql, isSafeIdentifier } from './transaction';
+export type { DbRole, ParameterizedQuery } from './transaction';
 
-export { pool, checkDatabaseConnectivity, closePool } from './pool';
-export { withTransaction, withReadonlyTransaction, setLocalRole } from './transaction';
-export type { DbRole } from './transaction';
