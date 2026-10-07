@@ -31,9 +31,10 @@ import { logger } from '../shared/logger';
 import { correlationId } from './middleware/correlationId';
 import { errorHandler } from './middleware/errorHandler';
 import { AppError, ErrorCode, errorEnvelope, successEnvelope } from '../shared/errors';
-import { checkDatabaseConnectivity } from '../db/pool';
+import { checkDatabaseConnectivity, checkDatabaseMigrations } from '../db/pool';
 
 import type { HealthResponse, ReadinessResponse } from '../contracts/health.contract';
+
 
 const START_TIME = Date.now();
 
@@ -47,12 +48,15 @@ export function createApp(): express.Application {
   app.use(
     pinoHttp({
       logger,
-      // Attach the correlation ID that correlationId middleware already set
       genReqId: (_req, res) => res.locals['correlationId'] as string,
-      // Do not log health-check requests — they are too noisy in CI
       autoLogging: {
-        ignore: (req) => req.url === '/api/v1/health',
+        ignore: (req) =>
+          req.url === '/api/v1/health' ||
+          req.url === '/api/v1/health/live' ||
+          req.url === '/api/v1/readiness' ||
+          req.url === '/api/v1/health/ready',
       },
+
       // Sanitize request/response body fields to never log sensitive values
       serializers: {
         req: (req) => ({
@@ -133,8 +137,7 @@ export function createApp(): express.Application {
   // CATMS-013 scope: health and readiness only.
   // All other routers are added by their respective owner's issue.
 
-  // ── Health endpoint — always responds 200 (liveness probe) ────────────────
-  app.get('/api/v1/health', (_req: Request, res: Response) => {
+  const livenessHandler = (_req: Request, res: Response) => {
     const correlationId = res.locals['correlationId'] as string;
     const body: HealthResponse = {
       status:    'ok',
@@ -143,22 +146,34 @@ export function createApp(): express.Application {
       uptime:    Math.floor((Date.now() - START_TIME) / 1000),
     };
     res.status(200).json(successEnvelope(body, correlationId));
-  });
+  };
 
-  // ── Readiness endpoint — checks DB connectivity (used by Compose healthcheck) ─
-  app.get('/api/v1/readiness', async (_req: Request, res: Response, next: NextFunction) => {
+  app.get('/api/v1/health', livenessHandler);
+  app.get('/api/v1/health/live', livenessHandler);
+
+  const readinessHandler = async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const correlationId = res.locals['correlationId'] as string;
       const db = await checkDatabaseConnectivity();
+      const migrations = await checkDatabaseMigrations();
+      const isReady = db.ok && migrations.ok;
+
       const body: ReadinessResponse = {
-        ready:  db.ok,
-        checks: { database: db },
+        ready: isReady,
+        checks: {
+          database: db,
+          migrations,
+        },
       };
-      res.status(db.ok ? 200 : 503).json(successEnvelope(body, correlationId));
+      res.status(isReady ? 200 : 503).json(successEnvelope(body, correlationId));
     } catch (err) {
       next(err);
     }
-  });
+  };
+
+  app.get('/api/v1/readiness', readinessHandler);
+  app.get('/api/v1/health/ready', readinessHandler);
+
 
   // ── 404 handler — catches routes not matched above ─────────────────────────
   app.use((req: Request, res: Response) => {

@@ -117,6 +117,10 @@ export const PG_ERROR_MAP: Record<string, { code: ErrorCode; statusCode: number;
   '23505': { code: ErrorCode.CONFLICT,              statusCode: 409, message: 'A record with these details already exists.' },
   '23503': { code: ErrorCode.CONFLICT,              statusCode: 409, message: 'This record is referenced by other data and cannot be changed.' },
   '23514': { code: ErrorCode.VALIDATION_ERROR,      statusCode: 422, message: 'The provided data violates a database constraint.' },
+  '23P01': { code: ErrorCode.APPOINTMENT_OVERLAP,   statusCode: 409, message: 'The requested slot overlaps with an existing appointment.' },
+  '22001': { code: ErrorCode.VALIDATION_ERROR,      statusCode: 422, message: 'A field value exceeds the maximum allowable length.' },
+  '22P02': { code: ErrorCode.VALIDATION_ERROR,      statusCode: 422, message: 'Invalid data format provided for one or more fields.' },
+  '42501': { code: ErrorCode.FORBIDDEN,             statusCode: 403, message: 'Database permission denied for this operation.' },
   '40001': { code: ErrorCode.CONFLICT,              statusCode: 409, message: 'Concurrent modification detected. Please retry.' },
   '40P01': { code: ErrorCode.CONFLICT,              statusCode: 409, message: 'Deadlock detected. Please retry.' },
 
@@ -128,6 +132,7 @@ export const PG_ERROR_MAP: Record<string, { code: ErrorCode; statusCode: number;
   'P0005': { code: ErrorCode.CLAIM_ALLOCATION_EXCEEDED, statusCode: 422, message: 'Claim allocation exceeds the invoice line total.' },
   'P0006': { code: ErrorCode.POLICY_INACTIVE,       statusCode: 422, message: 'The insurance policy is not active for this service date.' },
 };
+
 
 // ── Success/Error response envelope ───────────────────────────────────────────
 // Matches the contract in CODEBASE_GUIDE.md §6 and member_plan.md §14

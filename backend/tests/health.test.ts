@@ -1,22 +1,11 @@
-/**
- * backend/tests/health.test.ts
- * Owner: Dev1 | Issue: CATMS-013
- *
- * Supertest integration test for the health and readiness endpoints.
- *
- * Acceptance criterion: API compiles and starts; health endpoint responds 200.
- *
- * Strategy: Mock env.ts and the DB pool before importing server.ts so that
- * no real database connection or .env file is needed in CI at CATMS-013 stage.
- */
-
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import type { Express } from 'express';
 
-// ── Mock shared/env BEFORE any import that touches it ────────────────────────
-// env.ts calls process.exit(1) at module init if vars are invalid.
-// We bypass that entirely by mocking the module's export.
+const mockCheckDatabaseConnectivity = vi.fn().mockResolvedValue({ ok: true, latencyMs: 1 });
+const mockCheckDatabaseMigrations = vi.fn().mockResolvedValue({ ok: true, latestVersion: 160, appliedCount: 25 });
+const mockClosePool = vi.fn().mockResolvedValue(undefined);
+
 vi.mock('../src/shared/env', () => ({
   env: {
     NODE_ENV:                'test',
@@ -38,11 +27,11 @@ vi.mock('../src/shared/env', () => ({
   },
 }));
 
-// ── Mock DB pool — no real PostgreSQL required ────────────────────────────────
 vi.mock('../src/db/pool', () => ({
   pool: {},
-  checkDatabaseConnectivity: vi.fn().mockResolvedValue({ ok: true, latencyMs: 1 }),
-  closePool: vi.fn().mockResolvedValue(undefined),
+  checkDatabaseConnectivity: () => mockCheckDatabaseConnectivity(),
+  checkDatabaseMigrations: () => mockCheckDatabaseMigrations(),
+  closePool: () => mockClosePool(),
 }));
 
 let app: Express;
@@ -52,14 +41,24 @@ beforeAll(async () => {
   app = createApp();
 });
 
-// ── /api/v1/health ────────────────────────────────────────────────────────────
-describe('GET /api/v1/health', () => {
-  it('responds 200 with status ok', async () => {
+beforeEach(() => {
+  mockCheckDatabaseConnectivity.mockResolvedValue({ ok: true, latencyMs: 1 });
+  mockCheckDatabaseMigrations.mockResolvedValue({ ok: true, latestVersion: 160, appliedCount: 25 });
+});
+
+describe('Liveness Probes (/api/v1/health and /api/v1/health/live)', () => {
+  it('GET /api/v1/health responds 200 with status ok', async () => {
     const res = await request(app).get('/api/v1/health');
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe('ok');
     expect(typeof res.body.data.uptime).toBe('number');
     expect(typeof res.body.meta.correlationId).toBe('string');
+  });
+
+  it('GET /api/v1/health/live responds 200 with status ok', async () => {
+    const res = await request(app).get('/api/v1/health/live');
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('ok');
   });
 
   it('echoes X-Correlation-Id header', async () => {
@@ -68,20 +67,45 @@ describe('GET /api/v1/health', () => {
       .get('/api/v1/health')
       .set('X-Correlation-Id', id);
     expect(res.headers['x-correlation-id']).toBe(id);
+    expect(res.body.meta.correlationId).toBe(id);
   });
 });
 
-// ── /api/v1/readiness ─────────────────────────────────────────────────────────
-describe('GET /api/v1/readiness', () => {
-  it('responds 200 when DB is healthy', async () => {
+describe('Readiness Probes (/api/v1/readiness and /api/v1/health/ready)', () => {
+  it('responds 200 when database and migrations are healthy', async () => {
     const res = await request(app).get('/api/v1/readiness');
     expect(res.status).toBe(200);
     expect(res.body.data.ready).toBe(true);
     expect(res.body.data.checks.database.ok).toBe(true);
+    expect(res.body.data.checks.migrations.ok).toBe(true);
+    expect(res.body.data.checks.migrations.latestVersion).toBe(160);
+    expect(res.body.data.checks.migrations.appliedCount).toBe(25);
+  });
+
+  it('GET /api/v1/health/ready responds 200 with migration check details', async () => {
+    const res = await request(app).get('/api/v1/health/ready');
+    expect(res.status).toBe(200);
+    expect(res.body.data.ready).toBe(true);
+    expect(res.body.data.checks.database.ok).toBe(true);
+  });
+
+  it('responds 503 when database connectivity check fails', async () => {
+    mockCheckDatabaseConnectivity.mockResolvedValueOnce({ ok: false, latencyMs: 50 });
+    const res = await request(app).get('/api/v1/readiness');
+    expect(res.status).toBe(503);
+    expect(res.body.data.ready).toBe(false);
+    expect(res.body.data.checks.database.ok).toBe(false);
+  });
+
+  it('responds 503 when migration check fails', async () => {
+    mockCheckDatabaseMigrations.mockResolvedValueOnce({ ok: false, latestVersion: 0, appliedCount: 0 });
+    const res = await request(app).get('/api/v1/readiness');
+    expect(res.status).toBe(503);
+    expect(res.body.data.ready).toBe(false);
+    expect(res.body.data.checks.migrations.ok).toBe(false);
   });
 });
 
-// ── 404 handler ───────────────────────────────────────────────────────────────
 describe('Unknown routes', () => {
   it('returns 404 with NOT_FOUND code', async () => {
     const res = await request(app).get('/api/v1/does-not-exist');
@@ -96,7 +120,6 @@ describe('Unknown routes', () => {
   });
 });
 
-// ── Security headers ──────────────────────────────────────────────────────────
 describe('Security headers', () => {
   it('sets X-Content-Type-Options nosniff', async () => {
     const res = await request(app).get('/api/v1/health');
@@ -108,3 +131,4 @@ describe('Security headers', () => {
     expect(res.headers['x-powered-by']).toBeUndefined();
   });
 });
+
