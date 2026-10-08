@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import request from 'supertest';
-import type { Express } from 'express';
+import type { Application } from 'express';
 
 const mockCheckDatabaseConnectivity = vi.fn().mockResolvedValue({ ok: true, latencyMs: 1 });
 const mockCheckDatabaseMigrations = vi.fn().mockResolvedValue({ ok: true, latestVersion: 160, appliedCount: 25 });
@@ -34,7 +34,7 @@ vi.mock('../src/db/pool', () => ({
   closePool: () => mockClosePool(),
 }));
 
-let app: Express;
+let app: Application;
 
 beforeAll(async () => {
   const { createApp } = await import('../src/app/server');
