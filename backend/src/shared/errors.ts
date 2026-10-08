@@ -131,6 +131,19 @@ export const PG_ERROR_MAP: Record<string, { code: ErrorCode; statusCode: number;
   'P0004': { code: ErrorCode.PAYMENT_OVERAGE,       statusCode: 422, message: 'Payment amount exceeds the outstanding balance.' },
   'P0005': { code: ErrorCode.CLAIM_ALLOCATION_EXCEEDED, statusCode: 422, message: 'Claim allocation exceeds the invoice line total.' },
   'P0006': { code: ErrorCode.POLICY_INACTIVE,       statusCode: 422, message: 'The insurance policy is not active for this service date.' },
+  'DA001': { code: ErrorCode.DOCTOR_UNAVAILABLE,    statusCode: 422, message: 'The doctor is unavailable at this time.' },
+  'DA002': { code: ErrorCode.DOCTOR_UNAVAILABLE,    statusCode: 422, message: 'Requested slot is outside of scheduled doctor availability.' },
+  'A0001': { code: ErrorCode.NOT_FOUND,             statusCode: 404, message: 'Appointment not found.' },
+  'A0002': { code: ErrorCode.CONFLICT,              statusCode: 409, message: 'Cannot reschedule an appointment in terminal state.' },
+  'A0003': { code: ErrorCode.CONFLICT,              statusCode: 409, message: 'Cannot change status of an appointment in terminal state.' },
+  'A0004': { code: ErrorCode.VALIDATION_ERROR,      statusCode: 422, message: 'Invalid status transition.' },
+  'D0001': { code: ErrorCode.NOT_FOUND,             statusCode: 404, message: 'Doctor not found.' },
+  'D0002': { code: ErrorCode.CONFLICT,              statusCode: 409, message: 'Doctor is inactive.' },
+  'B0001': { code: ErrorCode.NOT_FOUND,             statusCode: 404, message: 'Branch not found.' },
+  'B0002': { code: ErrorCode.CONFLICT,              statusCode: 409, message: 'Branch is inactive.' },
+  'S0001': { code: ErrorCode.NOT_FOUND,             statusCode: 404, message: 'Specialty not found.' },
+  'S0002': { code: ErrorCode.CONFLICT,              statusCode: 409, message: 'Specialty is inactive.' },
+  'DS001': { code: ErrorCode.VALIDATION_ERROR,      statusCode: 422, message: 'Doctor does not practice the requested specialty.' },
 };
 
 

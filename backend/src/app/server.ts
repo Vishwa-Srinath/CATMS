@@ -42,6 +42,7 @@ import {
   specialtyRouter,
   adminUserRouter,
 } from '../modules/auth-staff/staff.routes';
+import { appointmentRouter } from '../modules/appointments/appointments.routes';
 import { cookieAuthCsrfProtection } from './middleware/csrf';
 
 
@@ -149,6 +150,7 @@ export function createApp(): express.Application {
   app.use('/api/v1/doctors', doctorRouter);
   app.use('/api/v1/specialties', specialtyRouter);
   app.use('/api/v1/admin/users', adminUserRouter);
+  app.use('/api/v1/appointments', appointmentRouter);
 
   const livenessHandler = (_req: Request, res: Response) => {
     const correlationId = res.locals['correlationId'] as string;
