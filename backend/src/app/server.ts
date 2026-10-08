@@ -34,6 +34,8 @@ import { AppError, ErrorCode, errorEnvelope, successEnvelope } from '../shared/e
 import { checkDatabaseConnectivity, checkDatabaseMigrations } from '../db/pool';
 
 import type { HealthResponse, ReadinessResponse } from '../contracts/health.contract';
+import { authRouter } from '../modules/auth-staff/auth.routes';
+import { cookieAuthCsrfProtection } from './middleware/csrf';
 
 
 const START_TIME = Date.now();
@@ -130,12 +132,11 @@ export function createApp(): express.Application {
   });
   app.use('/api', limiter);
 
+  // ── CSRF protection for cookie-authenticated mutations ──────────────────────
+  app.use('/api', cookieAuthCsrfProtection);
+
   // ── Module routers ─────────────────────────────────────────────────────────
-  // Routers are mounted here as each module is implemented.
-  // Format:  app.use('/api/v1/<resource>', <module>Router);
-  //
-  // CATMS-013 scope: health and readiness only.
-  // All other routers are added by their respective owner's issue.
+  app.use('/api/v1/auth', authRouter);
 
   const livenessHandler = (_req: Request, res: Response) => {
     const correlationId = res.locals['correlationId'] as string;

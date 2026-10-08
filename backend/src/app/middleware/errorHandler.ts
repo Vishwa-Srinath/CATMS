@@ -77,6 +77,25 @@ export function errorHandler(
     return;
   }
 
+  // ── 3. CSRF token error (EBADCSRFTOKEN from csurf) ─────────────────────────
+  if ((err as { code?: string }).code === 'EBADCSRFTOKEN') {
+    res.status(403).json(
+      errorEnvelope(ErrorCode.CSRF_INVALID, 'Invalid or missing CSRF token.', correlationId),
+    );
+    return;
+  }
+
+  // ── 4. JWT error (expired or malformed token) ──────────────────────────────
+  if (
+    err instanceof Error &&
+    (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError')
+  ) {
+    res.status(401).json(
+      errorEnvelope(ErrorCode.UNAUTHENTICATED, 'Invalid or expired session token.', correlationId),
+    );
+    return;
+  }
+
   // ── 3. PostgreSQL error (SQLSTATE code) ────────────────────────────────────
   if (isPgError(err) && err.code !== undefined) {
     const mapped = PG_ERROR_MAP[err.code];
