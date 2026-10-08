@@ -37,7 +37,7 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 | 6 | CATMS-024 | Implement manager/specialty integrity & database grants | G2 | ✅ Done |
 | 7 | CATMS-045 | Implement authentication, session & password security API | G3 | ✅ Done |
 | 8 | CATMS-046 | Implement Branch, Staff & Access API | G3 | ✅ Done |
-| 9 | CATMS-047 | Add authentication & administration API tests | G3 | ⬜ Not started |
+| 9 | CATMS-047 | Add authentication & administration API tests | G3 | ✅ Done |
 | 10 | CATMS-058 | Connect Administration, staff & security frontend screens | G4 | ⬜ Not started |
 | 11 | CATMS-066 | Add Administration frontend tests | G4 | ⬜ Not started |
 
@@ -250,8 +250,8 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 9 — CATMS-047: Add authentication and administration API tests
-- [ ] Supertest integration tests in `backend/tests/auth-staff.test.ts`
-- [ ] Test cases:
+- [x] Supertest integration tests in `backend/tests/auth-staff.test.ts`
+- [x] Test cases:
   - Login success & invalid credentials rejection
   - Account locking after consecutive failed attempts
   - CSRF protection and missing token rejection

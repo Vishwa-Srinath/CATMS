@@ -29,7 +29,7 @@ import {
   registerDoctorSchema,
   createAdminUserSchema,
 } from './staff.schema';
-import { successEnvelope } from '../../shared/errors';
+import { AppError, successEnvelope } from '../../shared/errors';
 
 // =============================================================================
 // 1. Branch Router (/api/v1/branches)
@@ -51,6 +51,15 @@ branchRouter.get(
   },
 );
 
+function parseId(param: unknown, paramName = 'ID'): number {
+  const value = Array.isArray(param) ? param[0] : param;
+  const num = typeof value === 'string' || typeof value === 'number' ? Number(value) : NaN;
+  if (value === undefined || value === null || value === '' || Number.isNaN(num) || !Number.isInteger(num) || num <= 0) {
+    throw AppError.validationError(`Invalid ${paramName} provided.`);
+  }
+  return num;
+}
+
 // GET /api/v1/branches/:id — View branch details
 branchRouter.get(
   '/:id',
@@ -58,7 +67,8 @@ branchRouter.get(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
-      const branch = await staffService.getBranchById(Number(req.params.id));
+      const branchId = parseId(req.params.id, 'branch ID');
+      const branch = await staffService.getBranchById(branchId);
       res.status(200).json(successEnvelope(branch, correlationId));
     } catch (err) {
       next(err);
@@ -91,8 +101,9 @@ branchRouter.put(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
+      const branchId = parseId(req.params.id, 'branch ID');
       const validated = updateBranchSchema.parse(req.body);
-      const branch = await staffService.updateBranch(Number(req.params.id), validated, req.user?.userId);
+      const branch = await staffService.updateBranch(branchId, validated, req.user?.userId);
       res.status(200).json(successEnvelope(branch, correlationId));
     } catch (err) {
       next(err);
@@ -108,9 +119,10 @@ branchRouter.post(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
+      const branchId = parseId(req.params.id, 'branch ID');
       const validated = assignBranchManagerSchema.parse(req.body);
       const result = await staffService.assignBranchManager(
-        Number(req.params.id),
+        branchId,
         validated.employeeId,
         validated.reason,
         validated.effectiveDate,
@@ -143,7 +155,7 @@ employeeRouter.get(
         // Manager is strictly scoped to their assigned branch
         branchFilter = user.branchId === 'all' ? undefined : Number(user.branchId);
       } else if (req.query.branchId) {
-        branchFilter = Number(req.query.branchId);
+        branchFilter = parseId(req.query.branchId as string, 'branchId query parameter');
       }
 
       const employees = await staffService.listEmployees(branchFilter);
@@ -162,7 +174,8 @@ employeeRouter.get(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
-      const employee = await staffService.getEmployeeById(Number(req.params.id));
+      const employeeId = parseId(req.params.id, 'employee ID');
+      const employee = await staffService.getEmployeeById(employeeId);
       res.status(200).json(successEnvelope(employee, correlationId));
     } catch (err) {
       next(err);
@@ -195,9 +208,10 @@ employeeRouter.post(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
+      const employeeId = parseId(req.params.id, 'employee ID');
       const validated = assignEmployeeBranchSchema.parse(req.body);
       const result = await staffService.assignEmployeeBranch(
-        Number(req.params.id),
+        employeeId,
         validated.branchId,
         validated.assignmentType,
         validated.effectiveDate,
@@ -218,9 +232,10 @@ employeeRouter.delete(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
+      const employeeId = parseId(req.params.id, 'employee ID');
       const validated = deactivateEmployeeSchema.parse(req.body ?? {});
       const result = await staffService.deactivateEmployee(
-        Number(req.params.id),
+        employeeId,
         validated.reason,
         validated.effectiveDate,
         req.user?.userId,
