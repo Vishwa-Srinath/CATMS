@@ -35,6 +35,13 @@ import { checkDatabaseConnectivity, checkDatabaseMigrations } from '../db/pool';
 
 import type { HealthResponse, ReadinessResponse } from '../contracts/health.contract';
 import { authRouter } from '../modules/auth-staff/auth.routes';
+import {
+  branchRouter,
+  employeeRouter,
+  doctorRouter,
+  specialtyRouter,
+  adminUserRouter,
+} from '../modules/auth-staff/staff.routes';
 import { cookieAuthCsrfProtection } from './middleware/csrf';
 
 
@@ -137,6 +144,11 @@ export function createApp(): express.Application {
 
   // ── Module routers ─────────────────────────────────────────────────────────
   app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/branches', branchRouter);
+  app.use('/api/v1/employees', employeeRouter);
+  app.use('/api/v1/doctors', doctorRouter);
+  app.use('/api/v1/specialties', specialtyRouter);
+  app.use('/api/v1/admin/users', adminUserRouter);
 
   const livenessHandler = (_req: Request, res: Response) => {
     const correlationId = res.locals['correlationId'] as string;
