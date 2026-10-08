@@ -2,9 +2,45 @@ import type { PoolClient } from 'pg';
 import { pool } from './pool';
 import { logger } from '../shared/logger';
 
-export type DbRole = 'catms_app' | 'catms_readonly';
+export type DbRole =
+  | 'catms_app'
+  | 'catms_readonly'
+  | 'catms_reception'
+  | 'catms_clinician'
+  | 'catms_manager'
+  | 'catms_admin'
+  | 'catms_qa';
 
-const ALLOWED_ROLES: readonly DbRole[] = ['catms_app', 'catms_readonly'] as const;
+const ALLOWED_ROLES: readonly DbRole[] = [
+  'catms_app',
+  'catms_readonly',
+  'catms_reception',
+  'catms_clinician',
+  'catms_manager',
+  'catms_admin',
+  'catms_qa',
+] as const;
+
+export function mapAppRoleToDbRole(appRole: string): DbRole {
+  switch (appRole.toLowerCase()) {
+    case 'reception':
+    case 'receptionist':
+      return 'catms_reception';
+    case 'clinician':
+    case 'doctor':
+      return 'catms_clinician';
+    case 'manager':
+    case 'branchmanager':
+      return 'catms_manager';
+    case 'admin':
+    case 'adminfinance':
+      return 'catms_admin';
+    case 'qa':
+      return 'catms_qa';
+    default:
+      return 'catms_app';
+  }
+}
 
 export interface ParameterizedQuery {
   text: string;

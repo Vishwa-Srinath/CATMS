@@ -35,8 +35,8 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 | 4 | CATMS-017 | Implement doctor, specialty, user-account and role schema | G1 | ✅ Done |
 | 5 | CATMS-023 | Implement staff registration, assignment & deactivation procedures | G2 | ✅ Done |
 | 6 | CATMS-024 | Implement manager/specialty integrity & database grants | G2 | ✅ Done |
-| 7 | CATMS-045 | Implement authentication, session & password security API | G3 | ⬜ Not started |
-| 8 | CATMS-046 | Implement Branch, Staff & Access API | G3 | ⬜ Not started |
+| 7 | CATMS-045 | Implement authentication, session & password security API | G3 | ✅ Done |
+| 8 | CATMS-046 | Implement Branch, Staff & Access API | G3 | ✅ Done |
 | 9 | CATMS-047 | Add authentication & administration API tests | G3 | ⬜ Not started |
 | 10 | CATMS-058 | Connect Administration, staff & security frontend screens | G4 | ⬜ Not started |
 | 11 | CATMS-066 | Add Administration frontend tests | G4 | ⬜ Not started |
@@ -199,12 +199,12 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 7 — CATMS-045: Implement authentication, session and password security API
-- [ ] Express module: `backend/src/modules/auth-staff/auth.routes.ts`, `auth.service.ts`, `auth.schema.ts`
-- [ ] Password verification using `bcrypt.compare`
-- [ ] Signed `HttpOnly`, `SameSite=Lax`, `Secure` JWT cookie
-- [ ] Rate limiting on `/api/v1/auth/login` (brute-force protection)
-- [ ] Account lockout handling (`LOCKED` after repeated failures)
-- [ ] Authentication middleware `requireAuth` and session endpoint `GET /api/v1/auth/me`
+- [x] Express module: `backend/src/modules/auth-staff/auth.routes.ts`, `auth.service.ts`, `auth.schema.ts`
+- [x] Password verification using `bcrypt.compare`
+- [x] Signed `HttpOnly`, `SameSite=Lax`, `Secure` JWT cookie
+- [x] Rate limiting on `/api/v1/auth/login` (brute-force protection)
+- [x] Account lockout handling (`LOCKED` after repeated failures)
+- [x] Authentication middleware `requireAuth` and session endpoint `GET /api/v1/auth/me`
 
 **What:** Production-grade authentication and session lifecycle management.
 
@@ -223,16 +223,16 @@ The plan follows the team gate structure (G0–G6) because your tables (`branch`
 ---
 
 ### Step 8 — CATMS-046: Implement Branch, Staff and Access API
-- [ ] Endpoints:
+- [x] Endpoints:
   - `GET, POST, PUT /api/v1/branches`
   - `GET, POST /api/v1/employees`
   - `DELETE /api/v1/employees/:id` (Deactivation)
   - `POST /api/v1/branches/:id/manager`
   - `POST /api/v1/doctors`
   - `GET, POST /api/v1/admin/users`
-- [ ] Route guards: `requireRole('Admin')`, `requireRole('Admin', 'Manager')`
-- [ ] Zod schema validation stripping client-supplied IDs or maintained timestamps
-- [ ] Invocation of stored procedures via `withTransaction()`
+- [x] Route guards: `requireRole('Admin')`, `requireRole('Admin', 'Manager')`
+- [x] Zod schema validation stripping client-supplied IDs or maintained timestamps
+- [x] Invocation of stored procedures via `withTransaction()`
 
 **What:** REST endpoints for organizational and staff administration.
 
