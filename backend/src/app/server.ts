@@ -52,6 +52,7 @@ import {
   treatmentRouter,
 } from '../modules/clinical-billing/clinical.routes';
 import { paymentRouter } from '../modules/payments/payments.routes';
+import { reportsRouter } from '../modules/reports-import/reports.routes';
 
 
 const START_TIME = Date.now();
@@ -166,6 +167,7 @@ export function createApp(): express.Application {
   app.use('/api/v1/treatments', treatmentRouter);
   app.use('/api/v1/invoices', invoiceRouter);
   app.use('/api/v1/payments', paymentRouter);
+  app.use('/api/v1/reports', reportsRouter);
 
   const livenessHandler = (_req: Request, res: Response) => {
     const correlationId = res.locals['correlationId'] as string;

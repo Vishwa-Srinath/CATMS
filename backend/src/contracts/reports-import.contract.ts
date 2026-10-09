@@ -42,7 +42,16 @@ export interface InsuranceReceiptDto {
 }
 
 export interface ReportFilterDto {
-  startDate?: string;
-  endDate?: string;
-  branchId?: number;
+  startDate?: string | undefined;
+  endDate?: string | undefined;
+  branchId?: number | undefined;
+}
+
+export interface ImportStatusDto {
+  status: 'idle' | 'running' | 'completed' | 'failed';
+  lastImportedAt: string | null;
+  totalRecords: number;
+  acceptedRecords: number;
+  rejectedRecords: number;
+  errors: string[];
 }

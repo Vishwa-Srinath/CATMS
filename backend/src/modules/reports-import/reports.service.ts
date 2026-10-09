@@ -11,7 +11,8 @@ import {
   PatientBalanceDto, 
   TreatmentCountDto, 
   InsuranceReceiptDto, 
-  ReportFilterDto 
+  ReportFilterDto,
+  ImportStatusDto,
 } from '../../contracts/reports-import.contract';
 
 export class ReportsService {
@@ -39,5 +40,16 @@ export class ReportsService {
   static async getInsuranceReceipts(filters: ReportFilterDto): Promise<InsuranceReceiptDto[]> {
     void filters;
     return [];
+  }
+
+  static async getImportStatus(): Promise<ImportStatusDto> {
+    return {
+      status: 'idle',
+      lastImportedAt: null,
+      totalRecords: 0,
+      acceptedRecords: 0,
+      rejectedRecords: 0,
+      errors: [],
+    };
   }
 }
