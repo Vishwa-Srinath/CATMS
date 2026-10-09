@@ -43,6 +43,7 @@ import {
   adminUserRouter,
 } from '../modules/auth-staff/staff.routes';
 import { appointmentRouter } from '../modules/appointments/appointments.routes';
+import { patientRouter, insuranceRouter } from '../modules/patients-insurance/patients-insurance.routes';
 import { cookieAuthCsrfProtection } from './middleware/csrf';
 import {
   clinicalRouter,
@@ -157,6 +158,8 @@ export function createApp(): express.Application {
   app.use('/api/v1/specialties', specialtyRouter);
   app.use('/api/v1/admin/users', adminUserRouter);
   app.use('/api/v1/appointments', appointmentRouter);
+  app.use('/api/v1/patients', patientRouter);
+  app.use('/api/v1/insurance', insuranceRouter);
   app.use('/api/v1/clinical', clinicalRouter);
   app.use('/api/v1/treatments', treatmentRouter);
   app.use('/api/v1/invoices', invoiceRouter);

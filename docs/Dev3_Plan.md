@@ -39,7 +39,7 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 | 8 | CATMS-038 | Claim eligibility and submission procedure | ✅ Done |
 | 9 | CATMS-039 | Claim resolution and liability recalculation | ✅ Done |
 | 10 | CATMS-040 | Prove insurance and claim rules (DB tests) | ✅ Done |
-| 11 | CATMS-048 | Patient and Insurance Terms API | ⬜ Not started |
+| 11 | CATMS-048 | Patient and Insurance Terms API | ✅ Done |
 | 12 | CATMS-049 | Claims API and tests | ⬜ Not started |
 | 13 | CATMS-059 | Connect Patient and Insurance frontend | ⬜ Not started |
 | 14 | CATMS-060 | Connect Claim submission and review frontend | ⬜ Not started |
@@ -281,10 +281,10 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 
 ---
 
-### Step 11 â€” CATMS-048: Patient and Insurance Terms API
-- [ ] Patient search/register/detail endpoints implemented
-- [ ] Provider/policy/coverage endpoints implemented
-- [ ] Zod validation in place; `registered_by` cannot be supplied by client
+### Step 11 — CATMS-048: Patient and Insurance Terms API
+- [x] Patient search/register/detail endpoints implemented
+- [x] Provider/policy/coverage endpoints implemented
+- [x] Zod validation in place; `registered_by` cannot be supplied by client
 
 **What:** Endpoints for clinic-wide patient search/register/detail, emergency contacts, and provider/policy/coverage â€” thin routes calling database procedures from Steps 3â€“6, plus Zod validation.
 
