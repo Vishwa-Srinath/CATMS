@@ -45,6 +45,12 @@ import {
 import { appointmentRouter } from '../modules/appointments/appointments.routes';
 import { patientRouter, insuranceRouter } from '../modules/patients-insurance/patients-insurance.routes';
 import { cookieAuthCsrfProtection } from './middleware/csrf';
+import {
+  clinicalRouter,
+  invoiceRouter,
+  treatmentRouter,
+} from '../modules/clinical-billing/clinical.routes';
+import { paymentRouter } from '../modules/payments/payments.routes';
 
 
 const START_TIME = Date.now();
@@ -154,6 +160,10 @@ export function createApp(): express.Application {
   app.use('/api/v1/appointments', appointmentRouter);
   app.use('/api/v1/patients', patientRouter);
   app.use('/api/v1/insurance', insuranceRouter);
+  app.use('/api/v1/clinical', clinicalRouter);
+  app.use('/api/v1/treatments', treatmentRouter);
+  app.use('/api/v1/invoices', invoiceRouter);
+  app.use('/api/v1/payments', paymentRouter);
 
   const livenessHandler = (_req: Request, res: Response) => {
     const correlationId = res.locals['correlationId'] as string;
