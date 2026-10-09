@@ -302,10 +302,10 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 ---
 
 ### Step 12 â€” CATMS-049: Claims API and tests
-- [ ] Eligibility preview endpoint implemented
-- [ ] Claim submission endpoint implemented
-- [ ] Claim resolution restricted to finance-role users
-- [ ] Browser-supplied totals/actors rejected
+- [x] Eligibility preview endpoint implemented
+- [x] Claim submission endpoint implemented
+- [x] Claim resolution restricted to finance-role users
+- [x] Browser-supplied totals/actors rejected
 
 **What:** Endpoints for eligibility preview, claim submission, list/detail, and controlled resolution (finance-role only) â€” plus contract tests.
 
