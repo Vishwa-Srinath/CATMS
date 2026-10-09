@@ -17,27 +17,27 @@ import {
 export class ReportsService {
   
   static async getBranchWiseSummary(filters: ReportFilterDto): Promise<BranchWiseSummaryDto[]> {
-    // Skeleton implementation
+    void filters;
     return [];
   }
 
   static async getDoctorRevenue(filters: ReportFilterDto): Promise<DoctorRevenueDto[]> {
-    // Skeleton implementation
+    void filters;
     return [];
   }
 
   static async getPatientBalances(filters: ReportFilterDto): Promise<PatientBalanceDto[]> {
-    // Skeleton implementation
+    void filters;
     return [];
   }
 
   static async getTreatmentCounts(filters: ReportFilterDto): Promise<TreatmentCountDto[]> {
-    // Skeleton implementation
+    void filters;
     return [];
   }
 
   static async getInsuranceReceipts(filters: ReportFilterDto): Promise<InsuranceReceiptDto[]> {
-    // Skeleton implementation
+    void filters;
     return [];
   }
 }

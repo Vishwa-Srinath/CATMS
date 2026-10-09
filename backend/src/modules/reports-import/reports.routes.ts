@@ -14,7 +14,7 @@ const router = Router();
 // Apply auth middleware
 router.use(requireAuth);
 // Only Branch Manager, Admin/Finance can access reports
-router.use(requireRole(['Branch Manager', 'Admin/Finance']));
+router.use(requireRole('Branch Manager', 'Admin/Finance'));
 
 router.get('/r1-branch-summary', async (req: Request, res: Response, next: NextFunction) => {
   try {
