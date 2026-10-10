@@ -1,3 +1,10 @@
-// Appointments feature — owned by Dev1 (CATMS-050, CATMS-051, CATMS-061)
-// Re-export all components and hooks consumed by pages/AppointmentsPage.tsx
-// Add exports here as you implement components and hooks.
+/**
+ * src/features/appointments/index.ts
+ * Owner: Dev1 | Issue: CATMS-061
+ *
+ * Feature public API for appointments, live schedule grid, and booking workflows.
+ */
+
+export * from './hooks';
+export * from './components';
+export * from './utils';
