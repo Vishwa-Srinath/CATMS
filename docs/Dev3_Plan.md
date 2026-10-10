@@ -42,7 +42,7 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 | 11 | CATMS-048 | Patient and Insurance Terms API | ✅ Done |
 | 12 | CATMS-049 | Claims API and tests | ✅ Done |
 | 13 | CATMS-059 | Connect Patient and Insurance frontend | ✅ Done |
-| 14 | CATMS-060 | Connect Claim submission and review frontend | ⬜ Not started |
+| 14 | CATMS-060 | Connect Claim submission and review frontend | ✅ Done |
 | 15 | CATMS-067 | Patient/Insurance/Claim frontend tests | ⬜ Not started |
 | 16 | CATMS-075 | Reconcile at scale and privacy audit | ⬜ Not started |
 
@@ -349,11 +349,11 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 
 ---
 
-### Step 14 â€” CATMS-060: Connect Claim submission and review frontend
-- [ ] Eligibility preview wired to real API
-- [ ] Policy selection and submission wired to real API
-- [ ] Status/history display wired to real API
-- [ ] Finance-review UI role-gated (non-finance users genuinely blocked)
+### Step 14 — CATMS-060: Connect Claim submission and review frontend
+- [x] Eligibility preview wired to real API
+- [x] Policy selection and submission wired to real API
+- [x] Status/history display wired to real API
+- [x] Finance-review UI role-gated (non-finance users genuinely blocked)
 
 **What:** Wire eligibility preview, policy selection, submission, status/history display, and the finance-review UI to the Claims API.
 

@@ -52,6 +52,21 @@ export interface InvoiceDto {
   lines: InvoiceLineDto[];
 }
 
+export interface InvoiceSummaryDto extends Omit<InvoiceDto, 'lines'> {
+  patientId: string;
+  patientNumber: string;
+  patientName: string;
+  appointmentNumber: string;
+  approvedClaims: Array<{
+    claimId: string;
+    claimNumber: string;
+    claimStatus: string;
+    approvedAmount: string;
+    policyNumber: string;
+    providerName: string;
+  }>;
+}
+
 export interface PaymentDto {
   paymentId: string;
   invoiceId: string;
