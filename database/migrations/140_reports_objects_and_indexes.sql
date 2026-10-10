@@ -32,7 +32,7 @@ SELECT
 FROM catms.invoice i
 JOIN catms.appointment a ON i.appointment_id = a.appointment_id
 JOIN catms.doctor_profile d ON a.doctor_id = d.doctor_id
-JOIN catms.employee e ON d.employee_id = e.employee_id
+JOIN catms.employee e ON d.doctor_id = e.employee_id
 GROUP BY d.doctor_id, e.full_name;
 
 COMMENT ON VIEW catms.r2_doctor_revenue IS 'Gross invoiced revenue vs actual collected payments by doctor.';
