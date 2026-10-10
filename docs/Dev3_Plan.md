@@ -40,8 +40,8 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 | 9 | CATMS-039 | Claim resolution and liability recalculation | ✅ Done |
 | 10 | CATMS-040 | Prove insurance and claim rules (DB tests) | ✅ Done |
 | 11 | CATMS-048 | Patient and Insurance Terms API | ✅ Done |
-| 12 | CATMS-049 | Claims API and tests | ⬜ Not started |
-| 13 | CATMS-059 | Connect Patient and Insurance frontend | ⬜ Not started |
+| 12 | CATMS-049 | Claims API and tests | ✅ Done |
+| 13 | CATMS-059 | Connect Patient and Insurance frontend | ✅ Done |
 | 14 | CATMS-060 | Connect Claim submission and review frontend | ⬜ Not started |
 | 15 | CATMS-067 | Patient/Insurance/Claim frontend tests | ⬜ Not started |
 | 16 | CATMS-075 | Reconcile at scale and privacy audit | ⬜ Not started |
@@ -328,11 +328,11 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 
 ---
 
-### Step 13 â€” CATMS-059: Connect Patient and Insurance frontend
-- [ ] Patient search wired to real API
-- [ ] Registration wired to real API
-- [ ] Policy/coverage actions wired to real API
-- [ ] Persisted patient survives page refresh
+### Step 13 — CATMS-059: Connect Patient and Insurance frontend
+- [x] Patient search wired to real API
+- [x] Registration wired to real API
+- [x] Policy/coverage actions wired to real API
+- [x] Persisted patient survives page refresh
 
 **What:** Wire the existing Patients/Insurance screens to your real API â€” replacing `ClinicContext` in-memory data â€” for search, registration, detail, contact management, and policy/coverage actions.
 
