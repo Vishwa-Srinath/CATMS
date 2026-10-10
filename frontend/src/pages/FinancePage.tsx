@@ -7,7 +7,7 @@
  * Unifies live Invoices, live Payments, live Claims Tracker, and Treatment Catalogue.
  */
 
-import { useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Banknote,
@@ -80,6 +80,7 @@ export default function FinancePage() {
   // Form input states
   const [payerType, setPayerType] = useState<PayerType>('Patient');
   const [claimId, setClaimId] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentError, setPaymentError] = useState<Error | null>(null);
   const [catalogueError, setCatalogueError] = useState<Error | null>(null);
   const [reverseError, setReverseError] = useState<Error | null>(null);
@@ -117,6 +118,12 @@ export default function FinancePage() {
     retry: false,
   });
 
+  useEffect(() => {
+    if (paymentPreviewQuery.data) {
+      setPaymentAmount(paymentPreviewQuery.data.outstandingAmount);
+    }
+  }, [paymentPreviewQuery.data]);
+
   // Query patient policies for the selected claim target
   const patientPoliciesQuery = useQuery({
     queryKey: ['insurance-policies', claimTarget?.patientId],
@@ -138,6 +145,7 @@ export default function FinancePage() {
       });
       await queryClient.invalidateQueries({ queryKey: ['invoices'] });
       await queryClient.invalidateQueries({ queryKey: ['payments'] });
+      await queryClient.invalidateQueries({ queryKey: ['invoice-detail'] });
     },
   });
 
@@ -223,6 +231,7 @@ export default function FinancePage() {
     setPaymentTarget(item);
     setPayerType('Patient');
     setClaimId('');
+    setPaymentAmount('');
     setPaymentError(null);
     idempotencyKey.current = null;
   };
@@ -807,6 +816,7 @@ export default function FinancePage() {
                 onChange={(event) => {
                   setPayerType(event.target.value as PayerType);
                   setClaimId('');
+                  setPaymentAmount('');
                   setPaymentError(null);
                 }}
               >
@@ -820,7 +830,10 @@ export default function FinancePage() {
                 <select
                   className="input"
                   value={claimId}
-                  onChange={(event) => setClaimId(event.target.value)}
+                  onChange={(event) => {
+                    setClaimId(event.target.value);
+                    setPaymentAmount('');
+                  }}
                   required
                 >
                   <option value="">Select approved claim</option>
@@ -843,7 +856,7 @@ export default function FinancePage() {
               />
             )}
 
-            {paymentPreviewQuery.data && (
+            {paymentPreviewQuery.data && Number(paymentPreviewQuery.data.outstandingAmount) > 0 && (
               <div className="rounded-xl bg-slate-50 p-4">
                 <p className="label-caps">{payerType} outstanding</p>
                 <p className="mt-1 text-2xl font-bold">
@@ -855,6 +868,12 @@ export default function FinancePage() {
               </div>
             )}
 
+            {paymentPreviewQuery.data && Number(paymentPreviewQuery.data.outstandingAmount) <= 0 && (
+              <InfoNote title="No balance due">
+                There is no outstanding balance for this payer and claim.
+              </InfoNote>
+            )}
+
             <Field label="Payment amount" required>
               <input
                 name="amount"
@@ -863,9 +882,10 @@ export default function FinancePage() {
                 min="0.01"
                 step="0.01"
                 max={paymentPreviewQuery.data?.outstandingAmount}
-                defaultValue={paymentPreviewQuery.data?.outstandingAmount}
+                value={paymentAmount}
+                onChange={(event) => setPaymentAmount(event.target.value)}
                 required
-                disabled={!paymentPreviewQuery.data}
+                disabled={!paymentPreviewQuery.data || Number(paymentPreviewQuery.data.outstandingAmount) <= 0}
               />
             </Field>
 
@@ -886,7 +906,15 @@ export default function FinancePage() {
               <Button type="button" variant="secondary" onClick={() => setPaymentTarget(null)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={!paymentPreviewQuery.data || postPaymentMutation.isPending}>
+              <Button
+                type="submit"
+                disabled={
+                  !paymentPreviewQuery.data ||
+                  Number(paymentPreviewQuery.data.outstandingAmount) <= 0 ||
+                  !paymentAmount ||
+                  postPaymentMutation.isPending
+                }
+              >
                 {postPaymentMutation.isPending ? 'Posting…' : 'Commit payment'}
               </Button>
             </div>
