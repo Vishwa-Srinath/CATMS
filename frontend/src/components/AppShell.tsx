@@ -8,6 +8,7 @@ import {
 import { useClinic } from '../context/ClinicContext'
 import type { Role } from '../types'
 import { Avatar, Modal, SearchInput, Badge } from './ui'
+import { AmbientGlowSpheres } from './AmbientGlowSpheres'
 import medSyncLogo from '../assets/brand/medsync-logo.png'
 import medSyncMark from '../assets/brand/medsync-mark.png'
 
@@ -75,10 +76,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (!user) return null
   const branchName = user.branchId === 'all' ? 'All clinic branches' : data.branches.find((branch) => branch.id === user.branchId)?.name ?? 'MedSync Clinics'
   const portalClass = 'portal-reception'
-  return <div className={`portal-shell ${portalClass} min-h-screen`} data-theme={user.role === 'Clinician' && nightCharting ? 'night' : 'light'}>
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:block"><Sidebar /></aside>
-    {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><button className="absolute inset-0 bg-slate-950/50" aria-label="Close navigation" onClick={() => setMobileOpen(false)} /><aside className="floating-surface relative h-full w-[min(86vw,20rem)]"><button className="absolute right-3 top-3 z-10 rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X size={20} /></button><Sidebar close={() => setMobileOpen(false)} /></aside></div>}
-    <div className="lg:pl-64">
+  return (
+    <div
+      className={`portal-shell ${portalClass} min-h-screen relative overflow-x-hidden`}
+      data-theme={user.role === 'Clinician' && nightCharting ? 'night' : 'light'}
+    >
+      {/* Ambient background glowing spheres across all dashboards for glass refraction */}
+      <AmbientGlowSpheres role="Receptionist" interactive intensity="subtle" className="z-0 fixed" />
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:block"><Sidebar /></aside>
+      {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><button className="absolute inset-0 bg-slate-950/50" aria-label="Close navigation" onClick={() => setMobileOpen(false)} /><aside className="floating-surface relative h-full w-[min(86vw,20rem)]"><button className="absolute right-3 top-3 z-10 rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X size={20} /></button><Sidebar close={() => setMobileOpen(false)} /></aside></div>}
+      <div className="lg:pl-64 relative z-10">
       <header className="portal-topbar sticky top-0 z-30 flex h-[60px] items-center justify-between border-b bg-white/95 px-4 sm:px-5 lg:px-6">
         <div className="flex items-center gap-3"><button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" aria-label="Open navigation"><Menu size={21} /></button><img className="h-9 w-9 object-contain lg:hidden" src={medSyncMark} alt="MedSync" /><div className="hidden sm:block"><p className="text-sm font-bold text-slate-800">{currentPage}</p><p className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium text-slate-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{branchName} · Live workspace</p></div></div>
         <div className="flex items-center gap-2 sm:gap-3">
@@ -227,5 +234,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       </div>
     </Modal>
-  </div>
+    </div>
+  )
 }
