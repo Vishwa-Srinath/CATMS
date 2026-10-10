@@ -36,11 +36,11 @@ export default function ReportsPage() {
   const treatmentCountsQuery = useTreatmentCounts({ startDate: from, endDate: to })
   const insuranceReceiptsQuery = useInsuranceReceipts()
 
-  const appointmentRows = (branchSummaryQuery.data ?? []).map((row: any) => ({ branch: row.branchName, scheduled: Number(row.scheduledCount), completed: Number(row.completedCount), cancelled: Number(row.cancelledCount), total: Number(row.scheduledCount) + Number(row.completedCount) + Number(row.cancelledCount) }))
-  const revenueRows = (doctorRevenueQuery.data ?? []).map((row: any) => ({ doctor: row.doctorName, specialty: 'General', gross: Number(row.grossRevenue), collected: Number(row.actualCollections), invoices: 0 }))
-  const outstandingRows = (patientBalancesQuery.data ?? []).map((row: any) => ({ patient: row.patientName, patientNo: `PAT-${row.patientId}`, invoice: `INV-${row.invoiceId}`, issued: DEMO_TODAY, payable: Number(row.patientLiability), paid: Number(row.patientLiability) - Number(row.outstandingBalance), due: Number(row.outstandingBalance), status: 'PENDING' }))
-  const treatmentRows = (treatmentCountsQuery.data ?? []).map((row: any) => ({ category: row.categoryName, count: Number(row.treatmentCount), value: 0 }))
-  const coverageRows = (insuranceReceiptsQuery.data ?? []).map((row: any) => ({ month: row.reportMonth, insurance: Number(row.totalApprovedInsurance), patientPaid: Number(row.totalPatientReceipts) }))
+  const appointmentRows = (branchSummaryQuery.data ?? []).map((row: import('../api/reports.api').BranchWiseSummaryDto) => ({ branch: row.branchName, scheduled: Number(row.scheduledCount), completed: Number(row.completedCount), cancelled: Number(row.cancelledCount), total: Number(row.scheduledCount) + Number(row.completedCount) + Number(row.cancelledCount) }))
+  const revenueRows = (doctorRevenueQuery.data ?? []).map((row: import('../api/reports.api').DoctorRevenueDto) => ({ doctor: row.doctorName, specialty: 'General', gross: Number(row.grossRevenue), collected: Number(row.actualCollections), invoices: 0 }))
+  const outstandingRows = (patientBalancesQuery.data ?? []).map((row: import('../api/reports.api').PatientBalanceDto) => ({ patient: row.patientName, patientNo: `PAT-${row.patientId}`, invoice: `INV-${row.invoiceId}`, issued: DEMO_TODAY, payable: Number(row.patientLiability), paid: Number(row.patientLiability) - Number(row.outstandingBalance), due: Number(row.outstandingBalance), status: 'PENDING' }))
+  const treatmentRows = (treatmentCountsQuery.data ?? []).map((row: import('../api/reports.api').TreatmentCountDto) => ({ category: row.categoryName, count: Number(row.treatmentCount), value: 0 }))
+  const coverageRows = (insuranceReceiptsQuery.data ?? []).map((row: import('../api/reports.api').InsuranceReceiptDto) => ({ month: row.reportMonth, insurance: Number(row.totalApprovedInsurance), patientPaid: Number(row.totalPatientReceipts) }))
 
   const isLoading = branchSummaryQuery.isLoading || doctorRevenueQuery.isLoading || patientBalancesQuery.isLoading || treatmentCountsQuery.isLoading || insuranceReceiptsQuery.isLoading
 
