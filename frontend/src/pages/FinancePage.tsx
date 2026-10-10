@@ -24,7 +24,7 @@ import {
 type Tab = 'invoices' | 'claims' | 'catalogue';
 
 export default function FinancePage() {
-  const { data, postPayment, submitClaim, updateClaimStatus, addTreatment, toggleTreatment, notify } = useClinic();
+  const { data, user, postPayment, addTreatment, toggleTreatment, notify } = useClinic();
   const [tab, setTab] = useState<Tab>('invoices');
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
@@ -83,35 +83,6 @@ export default function FinancePage() {
     }
   };
 
-  const submitInsuranceClaim = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!invoice) return;
-    setError(null);
-    const patient = getPatient(invoice);
-    const form = new FormData(event.currentTarget);
-    const policyNo = String(form.get('policy'));
-    const policy = patient.policies.find((item) => item.policyNo === policyNo);
-    try {
-      submitClaim(invoice.id, policyNo, policy?.provider ?? '', Number(form.get('amount')));
-      setClaimOpen(false);
-      setInvoice(null);
-    } catch (caught) {
-      handleError(caught, 'Claim rejected');
-    }
-  };
-
-  const submitClaimReview = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!claimReview) return;
-    const form = new FormData(event.currentTarget);
-    updateClaimStatus(
-      claimReview.invoice.id,
-      claimReview.claim.id,
-      form.get('status') as Claim['status'],
-      Number(form.get('approvedAmount')),
-    );
-    setClaimReview(null);
-  };
 
   const submitTreatment = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -230,6 +201,7 @@ export default function FinancePage() {
           pendingCount={pendingClaims.length}
           onReviewClaim={setClaimReview}
           getPatient={getPatient}
+          currentUser={user}
         />
       )}
 
@@ -280,7 +252,13 @@ export default function FinancePage() {
           setClaimOpen(false);
           setInvoice(null);
         }}
-        onSubmit={submitInsuranceClaim}
+        onSubmitSuccess={() => {
+          notify({
+            type: 'success',
+            title: 'Claim submitted to database',
+            message: 'Claim created in Pending state. Patient liability remains unchanged until resolution.',
+          });
+        }}
         error={error}
         getPatient={getPatient}
       />
@@ -290,7 +268,14 @@ export default function FinancePage() {
         claimReview={claimReview}
         open={Boolean(claimReview)}
         onClose={() => setClaimReview(null)}
-        onSubmit={submitClaimReview}
+        currentUser={user}
+        onSuccess={() => {
+          notify({
+            type: 'success',
+            title: 'Claim resolved successfully',
+            message: 'Invoice patient liability updated by database procedure.',
+          });
+        }}
       />
 
       {/* Add Treatment Service Modal (Dev4) */}

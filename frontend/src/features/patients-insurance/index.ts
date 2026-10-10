@@ -13,3 +13,4 @@ export * from './components/AddPolicyModal';
 export * from './components/PatientDetailModal';
 
 export * from './hooks/usePatientsInsurance';
+export * from './hooks/useClaims';
