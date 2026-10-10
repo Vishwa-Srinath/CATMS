@@ -1,9 +1,9 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  BarChart3, Bell, Building2, CalendarDays,
-  CreditCard, FileText, LayoutDashboard, LogOut, Menu, Moon, Search, Settings, ShieldCheck,
-  Stethoscope, Sun, User, UsersRound, X,
+  BarChart3, Bell, CalendarDays, Clock,
+  CreditCard, LayoutDashboard, LogOut, Menu, Moon, Search, Settings, ShieldCheck,
+  Stethoscope, Sun, UsersRound, X,
   type LucideIcon,
 } from 'lucide-react'
 import { useClinic } from '../context/ClinicContext'
@@ -123,14 +123,36 @@ function Sidebar({ close }: { close?: () => void }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { user, data, signOut } = useClinic()
+  const { user, data } = useClinic()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [nightCharting, setNightCharting] = useState(false)
-  const [profileOpen, setProfileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentTime, setCurrentTime] = useState(() =>
+    new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    })
+  )
+
+  useEffect(() => {
+    const updateTime = () => {
+      setCurrentTime(
+        new Date().toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        })
+      )
+    }
+    const timer = setInterval(updateTime, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -144,7 +166,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [])
 
   if (!user) return null
-  const branchName = user.branchId === 'all' ? 'All clinic branches' : data.branches.find((branch) => branch.id === user.branchId)?.name ?? 'MedSync Clinics'
   const portalClass = 'portal-reception'
 
   return (
@@ -274,55 +295,20 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             </div>
 
-            {/* Profile circular button */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setProfileOpen(!profileOpen)}
-                className="h-10 w-10 rounded-full bg-white/90 border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-600 hover:bg-white transition"
-                aria-label="User profile"
-              >
-                <User size={17} />
-              </button>
-              {profileOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl z-50">
-                    <div className="px-3 py-2 border-b border-slate-100">
-                      <p className="text-xs font-bold text-slate-800">{user.name}</p>
-                      <p className="text-[11px] text-slate-500">{user.jobTitle}</p>
-                      <div className="mt-2 space-y-1 text-[11px] text-slate-600">
-                        <p className="flex items-center gap-1.5"><ShieldCheck size={13} className="text-emerald-500" />{user.role}</p>
-                        <p className="flex items-center gap-1.5"><Building2 size={13} className="text-blue-500" />{branchName}</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => { setProfileOpen(false); signOut(); }}
-                      className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition"
-                    >
-                      <LogOut size={14} />Sign out
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
             {/* Date Pill badge */}
             <div className="hidden sm:flex items-center gap-2 rounded-full bg-white/90 border border-slate-200/80 shadow-xs px-4 py-2 text-xs font-semibold text-slate-700">
               <CalendarDays size={14} className="text-slate-400" />
               <span>October 23, 2025</span>
             </div>
 
-            {/* Generate Report Pill Button */}
-            <button
-              type="button"
-              onClick={() => navigate(user.role === 'Receptionist' ? '/appointments' : '/reports')}
-              className="hidden sm:flex items-center gap-2 rounded-full bg-[#1E8A5F] hover:bg-[#187550] text-white font-semibold text-xs px-5 py-2.5 shadow-sm transition"
+            {/* Live Clock Pill with Seconds */}
+            <div
+              className="flex items-center gap-2 rounded-full bg-white/90 border border-slate-200/80 shadow-xs px-4 py-2 text-xs font-semibold text-slate-700 tabular-nums"
+              aria-label="Current time"
             >
-              <FileText size={14} />
-              <span>Generate Report</span>
-            </button>
+              <Clock size={14} className="text-slate-400" />
+              <span>{currentTime}</span>
+            </div>
               </div>
             </header>
           </div>
