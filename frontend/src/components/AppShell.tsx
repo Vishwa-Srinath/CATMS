@@ -153,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       data-theme={user.role === 'Clinician' && nightCharting ? 'night' : 'light'}
     >
       {/* Ambient background glowing spheres across all dashboards for glass refraction */}
-      <AmbientGlowSpheres role="Receptionist" interactive intensity="subtle" className="z-0 fixed" />
+      <AmbientGlowSpheres role={user.role} interactive intensity="medium" className="z-0 fixed" />
 
       {/* Floating rounded Sidebar on Desktop */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:block p-3 sm:p-4">
@@ -198,22 +198,24 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Main layout container */}
       <div className="lg:pl-64 relative z-10">
-        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between px-4 sm:px-6 lg:px-8 py-3 bg-white/40 backdrop-blur-md">
-          {/* Left: Mobile toggle + Pill Search input */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="rounded-xl p-2 text-slate-600 hover:bg-white/80 lg:hidden"
-              aria-label="Open navigation"
-            >
-              <Menu size={22} />
-            </button>
+        <div className="sticky top-0 z-30 pt-3 sm:pt-4 pointer-events-none">
+          <div className="mx-auto max-w-[1560px] px-4 sm:px-6 lg:px-8 pointer-events-none">
+            <header className="pointer-events-auto portal-topbar flex h-[68px] sm:h-[72px] items-center justify-between px-4 sm:px-6 lg:px-8 py-3 rounded-2xl border border-white/80 shadow-xs">
+              {/* Left: Mobile toggle + Pill Search input */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setMobileOpen(true)}
+                  className="rounded-xl p-2 text-slate-600 hover:bg-white/80 lg:hidden"
+                  aria-label="Open navigation"
+                >
+                  <Menu size={22} />
+                </button>
 
-            <div
-              onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2.5 rounded-full bg-white/90 border border-slate-200/80 shadow-xs px-4 py-2 w-64 sm:w-80 cursor-pointer hover:border-slate-300 transition"
-              role="search"
-            >
+                <div
+                  onClick={() => setSearchOpen(true)}
+                  className="flex items-center gap-2.5 rounded-full bg-white/90 border border-slate-200/80 shadow-xs px-4 py-2 w-48 sm:w-80 cursor-pointer hover:border-slate-300 transition"
+                  role="search"
+                >
               <Search size={15} className="text-slate-400" />
               <span className="text-xs text-slate-400 font-medium">Search</span>
             </div>
@@ -321,8 +323,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               <FileText size={14} />
               <span>Generate Report</span>
             </button>
+              </div>
+            </header>
           </div>
-        </header>
+        </div>
 
         <main id="main-content" className="mx-auto max-w-[1560px] px-4 sm:px-6 lg:px-8 py-4 sm:py-5">{children}</main>
         <footer className="px-6 pb-6 text-center text-[11px] text-slate-400">

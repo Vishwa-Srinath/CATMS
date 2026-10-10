@@ -26,22 +26,22 @@ const weeklyData = [
 const roleCopy = {
   Receptionist: {
     eyebrow: 'Reception operations',
-    title: 'Reception dashboard',
+    title: 'Reception Dashboard',
     description: 'Manage today’s arrivals, appointments, walk-ins, and patient registration from this work area.',
   },
   Clinician: {
     eyebrow: 'Clinical operations',
-    title: 'Clinical dashboard',
+    title: 'Clinical Dashboard',
     description: 'Review assigned patients, today’s consultation sequence, and clinical records awaiting completion.',
   },
   Manager: {
     eyebrow: 'Branch operations',
-    title: 'Branch management dashboard',
+    title: 'Branch Management Dashboard',
     description: 'Review branch activity, appointment completion, service demand, and operational exceptions.',
   },
   Admin: {
     eyebrow: 'Administration and finance',
-    title: 'Finance administration dashboard',
+    title: 'Finance and Administration Dashboard',
     description: 'Review clinic-wide collections, outstanding balances, insurance claims, and administrative actions.',
   },
 } as const

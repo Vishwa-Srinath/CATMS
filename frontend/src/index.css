@@ -72,33 +72,39 @@
 }
 
 @layer components {
-  /* 12-14px card radius with optical Glassmorphism */
+  /* 14-16px card radius with optical Glassmorphism */
   .card {
-    border: 1px solid rgba(255, 255, 255, 0.72);
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.82);
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.82) 0%,
-      color-mix(in srgb, var(--portal-accent) 3%, rgba(255, 255, 255, 0.62)) 100%
+      rgba(255, 255, 255, 0.74) 0%,
+      rgba(255, 255, 255, 0.52) 55%,
+      color-mix(in srgb, var(--portal-accent) 4%, rgba(255, 255, 255, 0.46)) 100%
     );
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border-radius: 14px;
+    backdrop-filter: blur(20px) saturate(190%);
+    -webkit-backdrop-filter: blur(20px) saturate(190%);
+    border-radius: 16px;
     box-shadow:
-      inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95),
-      0 4px 20px -2px rgba(18, 35, 43, 0.04);
-    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+      inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+      inset 0 0 20px 0 rgba(255, 255, 255, 0.20),
+      0 10px 30px -4px rgba(18, 35, 43, 0.05);
+    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease, background 200ms ease;
   }
-  .card-hover:hover {
-    border-color: rgba(255, 255, 255, 0.95);
+  .card-hover:hover,
+  .card:hover {
+    border-color: rgba(255, 255, 255, 0.98);
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.90) 0%,
-      color-mix(in srgb, var(--portal-accent) 5%, rgba(255, 255, 255, 0.70)) 100%
+      rgba(255, 255, 255, 0.84) 0%,
+      rgba(255, 255, 255, 0.62) 55%,
+      color-mix(in srgb, var(--portal-accent) 6%, rgba(255, 255, 255, 0.54)) 100%
     );
     box-shadow:
-      inset 0 1px 2px 0 rgba(255, 255, 255, 1),
-      0 8px 24px -2px color-mix(in srgb, var(--portal-accent) 12%, rgba(18, 35, 43, 0.06));
-    transform: translateY(-1px);
+      inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
+      inset 0 0 24px 0 rgba(255, 255, 255, 0.28),
+      0 14px 36px -4px color-mix(in srgb, var(--portal-accent) 10%, rgba(18, 35, 43, 0.07));
+    transform: translateY(-2px);
   }
 
   /* Premium Glassmorphism Refraction Card */
@@ -152,21 +158,23 @@
     color: var(--ink-faint);
   }
 
-  /* Table shell with 14px radius and Glassmorphism */
+  /* Table shell with 16px radius and Glassmorphism */
   .table-shell {
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.82);
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.84) 0%,
-      color-mix(in srgb, var(--portal-accent) 2%, rgba(255, 255, 255, 0.68)) 100%
+      rgba(255, 255, 255, 0.74) 0%,
+      rgba(255, 255, 255, 0.54) 60%,
+      color-mix(in srgb, var(--portal-accent) 3%, rgba(255, 255, 255, 0.48)) 100%
     );
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border-radius: 14px;
+    backdrop-filter: blur(20px) saturate(185%);
+    -webkit-backdrop-filter: blur(20px) saturate(185%);
+    border-radius: 16px;
     box-shadow:
-      inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95),
-      0 4px 20px -2px rgba(18, 35, 43, 0.04);
+      inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+      inset 0 0 20px 0 rgba(255, 255, 255, 0.2),
+      0 10px 30px -4px rgba(18, 35, 43, 0.05);
   }
   .data-table {
     width: 100%;
@@ -382,10 +390,20 @@
   color: var(--portal-accent);
 }
 .portal-topbar {
-  border-bottom-color: rgba(220, 228, 228, 0.85);
-  box-shadow: 0 2px 10px rgba(18, 35, 43, 0.025);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  background: linear-gradient(
+    118deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(255, 255, 255, 0.70) 55%,
+    color-mix(in srgb, var(--portal-accent-soft) 50%, rgba(255, 255, 255, 0.6)) 100%
+  );
+  backdrop-filter: blur(24px) saturate(185%);
+  -webkit-backdrop-filter: blur(24px) saturate(185%);
+  box-shadow:
+    inset 0 1px 2px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 24px 0 rgba(255, 255, 255, 0.2),
+    0 12px 36px -6px rgba(18, 35, 43, 0.06);
 }
 .topbar-search {
   border-color: var(--hairline);
@@ -393,23 +411,24 @@
   border-radius: 10px;
 }
 
-/* Page Header Hero (14px radius, calm clinical appearance with Glassmorphism) */
+/* Page Header Hero (16px radius, calm clinical appearance with Glassmorphism) */
 .page-hero {
   position: relative;
   padding: 22px 26px;
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 16px;
   background: linear-gradient(
     110deg,
-    rgba(255, 255, 255, 0.86) 0%,
-    rgba(255, 255, 255, 0.68) 60%,
-    color-mix(in srgb, var(--portal-accent-soft) 50%, rgba(255, 255, 255, 0.55)) 100%
+    rgba(255, 255, 255, 0.76) 0%,
+    rgba(255, 255, 255, 0.56) 60%,
+    color-mix(in srgb, var(--portal-accent-soft) 50%, rgba(255, 255, 255, 0.48)) 100%
   );
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(185%);
+  -webkit-backdrop-filter: blur(22px) saturate(185%);
   box-shadow:
-    inset 0 1px 2px 0 rgba(255, 255, 255, 0.95),
-    0 8px 24px -4px rgba(18, 35, 43, 0.04);
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 20px 0 rgba(255, 255, 255, 0.2),
+    0 10px 30px -4px rgba(18, 35, 43, 0.05);
 }
 .page-hero::before {
   content: "";
@@ -447,34 +466,49 @@
   min-height: 130px;
   overflow: hidden;
   padding: 18px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.82) 0%,
-    color-mix(in srgb, var(--portal-accent) 4%, rgba(255, 255, 255, 0.60)) 100%
+    rgba(255, 255, 255, 0.74) 0%,
+    rgba(255, 255, 255, 0.52) 55%,
+    color-mix(in srgb, var(--portal-accent) 6%, rgba(255, 255, 255, 0.46)) 100%
   );
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
   box-shadow:
-    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95),
-    0 4px 16px -2px rgba(18, 35, 43, 0.04);
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 20px 0 rgba(255, 255, 255, 0.22),
+    0 10px 30px -4px rgba(18, 35, 43, 0.05);
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background 200ms ease;
 }
 .metric-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.98);
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.90) 0%,
-    color-mix(in srgb, var(--portal-accent) 6%, rgba(255, 255, 255, 0.72)) 100%
+    rgba(255, 255, 255, 0.84) 0%,
+    rgba(255, 255, 255, 0.62) 55%,
+    color-mix(in srgb, var(--portal-accent) 8%, rgba(255, 255, 255, 0.54)) 100%
   );
   box-shadow:
-    inset 0 1px 2px 0 rgba(255, 255, 255, 1),
-    0 10px 24px -2px color-mix(in srgb, var(--portal-accent) 12%, rgba(18, 35, 43, 0.06));
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
+    inset 0 0 24px 0 rgba(255, 255, 255, 0.3),
+    0 16px 36px -4px color-mix(in srgb, var(--portal-accent) 12%, rgba(18, 35, 43, 0.08));
 }
 .metric-card p {
   font-variant-numeric: tabular-nums;
+}
+.metric-curve {
+  position: absolute;
+  top: -24px;
+  right: -24px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(6px);
 }
 
 /* Role Home Showcase in Dashboard with Frosted Glassmorphism */
@@ -487,20 +521,20 @@
   gap: 28px;
   overflow: hidden;
   padding: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.85);
   border-radius: 16px;
   background: linear-gradient(
     118deg,
-    rgba(255, 255, 255, 0.88) 0%,
-    rgba(255, 255, 255, 0.70) 55%,
-    color-mix(in srgb, var(--portal-accent-soft) 50%, rgba(255, 255, 255, 0.6)) 100%
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(255, 255, 255, 0.58) 55%,
+    color-mix(in srgb, var(--portal-accent-soft) 50%, rgba(255, 255, 255, 0.50)) 100%
   );
-  backdrop-filter: blur(24px) saturate(185%);
-  -webkit-backdrop-filter: blur(24px) saturate(185%);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
   box-shadow:
-    inset 0 1px 2px 0 rgba(255, 255, 255, 0.95),
-    inset 0 0 24px 0 rgba(255, 255, 255, 0.2),
-    0 12px 36px -6px rgba(18, 35, 43, 0.06);
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 24px 0 rgba(255, 255, 255, 0.24),
+    0 14px 40px -6px rgba(18, 35, 43, 0.06);
 }
 .role-showcase {
   position: relative;
@@ -509,10 +543,15 @@
   overflow: hidden;
   border-radius: 14px;
   color: white;
+  border: 1px solid rgba(255, 255, 255, 0.25);
   background:
-    radial-gradient(circle at 86% 3%, rgba(255, 255, 255, 0.16), transparent 13rem),
-    linear-gradient(145deg, color-mix(in srgb, var(--portal-accent) 84%, #12232B), color-mix(in srgb, var(--portal-accent-deep) 65%, #12232B));
-  box-shadow: 0 10px 30px color-mix(in srgb, var(--portal-accent) 18%, rgba(18, 35, 43, 0.14));
+    radial-gradient(circle at 86% 3%, rgba(255, 255, 255, 0.22), transparent 13rem),
+    linear-gradient(145deg, color-mix(in srgb, var(--portal-accent) 78%, rgba(18, 35, 43, 0.85)), color-mix(in srgb, var(--portal-accent-deep) 60%, rgba(18, 35, 43, 0.90)));
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    inset 0 1px 2px 0 rgba(255, 255, 255, 0.35),
+    0 12px 32px color-mix(in srgb, var(--portal-accent) 22%, rgba(18, 35, 43, 0.16));
 }
 .role-showcase-photo {
   position: absolute;
@@ -536,7 +575,9 @@
 }
 .showcase-heading strong {
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.20);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(8px);
   padding: 4px 8px;
   font-size: 10px;
   letter-spacing: 0.04em;
@@ -551,7 +592,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 10px;
 }
 .floating-appointment {
@@ -563,12 +604,15 @@
   width: calc(100% - 60px);
   min-height: 58px;
   padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 6px 18px rgba(9, 24, 29, 0.15);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow:
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95),
+    0 8px 24px rgba(9, 24, 29, 0.16);
 }
 .floating-appointment.appointment-1 { left: 45px; top: 62px; }
 .floating-appointment.appointment-2 { left: 35px; top: 130px; width: calc(100% - 70px); }
@@ -579,27 +623,63 @@
 .activity-surface,
 .attention-surface {
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 16px;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.82) 0%,
-    color-mix(in srgb, var(--portal-accent) 3%, rgba(255, 255, 255, 0.62)) 100%
+    rgba(255, 255, 255, 0.74) 0%,
+    rgba(255, 255, 255, 0.52) 55%,
+    color-mix(in srgb, var(--portal-accent) 4%, rgba(255, 255, 255, 0.46)) 100%
   );
-  backdrop-filter: blur(18px) saturate(185%);
-  -webkit-backdrop-filter: blur(18px) saturate(185%);
+  backdrop-filter: blur(22px) saturate(190%);
+  -webkit-backdrop-filter: blur(22px) saturate(190%);
   box-shadow:
-    inset 0 1px 2px 0 rgba(255, 255, 255, 0.95),
-    0 8px 28px -4px rgba(18, 35, 43, 0.05);
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 20px 0 rgba(255, 255, 255, 0.2),
+    0 10px 30px -4px rgba(18, 35, 43, 0.05);
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 .flow-surface:hover,
 .activity-surface:hover,
 .attention-surface:hover {
-  border-color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.98);
   box-shadow:
-    inset 0 1px 2px 0 rgba(255, 255, 255, 1),
-    0 12px 32px -4px color-mix(in srgb, var(--portal-accent) 8%, rgba(18, 35, 43, 0.06));
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
+    inset 0 0 24px 0 rgba(255, 255, 255, 0.28),
+    0 14px 36px -4px color-mix(in srgb, var(--portal-accent) 10%, rgba(18, 35, 43, 0.07));
+}
+
+.walkin-callout {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  overflow: hidden;
+  padding: 24px 28px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--portal-accent) 85%, rgba(255, 255, 255, 0.25)) 0%,
+    color-mix(in srgb, var(--portal-accent-deep) 75%, #12232B) 100%
+  );
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  box-shadow:
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.45),
+    0 12px 36px -4px color-mix(in srgb, var(--portal-accent) 22%, rgba(18, 35, 43, 0.12));
+}
+.walkin-orbit {
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .appointment-flow-row {
@@ -613,9 +693,9 @@
 }
 .appointment-flow-row:hover {
   background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 8px rgba(18, 35, 43, 0.03);
+  border-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(18, 35, 43, 0.04);
 }
 
 .attention-row {
@@ -629,9 +709,9 @@
 }
 .attention-row:hover {
   background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 8px rgba(18, 35, 43, 0.03);
+  border-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(18, 35, 43, 0.04);
 }
 
 /* Gateway / Login Portal Selection */
@@ -918,9 +998,15 @@
 }
 .portal-shell[data-theme="night"] .role-home-hero,
 .portal-shell[data-theme="night"] .metric-card,
-.portal-shell[data-theme="night"] .page-hero {
-  background: var(--surface) !important;
-  border-color: var(--hairline) !important;
+.portal-shell[data-theme="night"] .page-hero,
+.portal-shell[data-theme="night"] .flow-surface,
+.portal-shell[data-theme="night"] .activity-surface,
+.portal-shell[data-theme="night"] .attention-surface,
+.portal-shell[data-theme="night"] .walkin-callout {
+  background: rgba(27, 36, 41, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15), 0 12px 32px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Skip link for accessible keyboard navigation */

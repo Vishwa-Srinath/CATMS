@@ -58,7 +58,12 @@ export function PageHeader({ eyebrow, title, description, actions, image }: { ey
 }
 
 export function StatCard({ label, value, detail, icon: Icon, accent = 'teal' }: { label: string; value: ReactNode; detail: string; icon: LucideIcon; accent?: 'teal' | 'blue' | 'amber' | 'coral' }) {
-  const colors = { teal: 'bg-[#E7F5EE] text-[#1E8A5F]', blue: 'bg-[#EAF4FB] text-[#1E77B8]', amber: 'bg-[#FBF2E3] text-[#C0872A]', coral: 'bg-[#FBEAEE] text-[#C4425A]' }
+  const colors = {
+    teal: 'bg-[#E7F5EE]/80 text-[#1E8A5F] border border-white/60 shadow-xs backdrop-blur-xs',
+    blue: 'bg-[#EAF4FB]/80 text-[#1E77B8] border border-white/60 shadow-xs backdrop-blur-xs',
+    amber: 'bg-[#FBF2E3]/80 text-[#C0872A] border border-white/60 shadow-xs backdrop-blur-xs',
+    coral: 'bg-[#FBEAEE]/80 text-[#C4425A] border border-white/60 shadow-xs backdrop-blur-xs',
+  }
   return <div className={`metric-card metric-${accent}`}>
     <span className="metric-curve" aria-hidden="true" />
     <div className="relative z-[1] flex items-start justify-between gap-3"><div><p className="text-[12px] font-semibold text-slate-500">{label}</p><p className="mt-2 text-[26px] font-bold tracking-[-.035em] text-slate-900">{value}</p></div><span className={`rounded-2xl p-2.5 ${colors[accent]}`}><Icon size={19} aria-hidden="true" /></span></div>
