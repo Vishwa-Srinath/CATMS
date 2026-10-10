@@ -93,7 +93,7 @@ CREATE INDEX IF NOT EXISTS idx_invoice_appointment_issued
 COMMENT ON INDEX catms.idx_invoice_appointment_issued IS 'Optimize R2 and R5 invoice aggregations by date/appointment.';
 
 CREATE INDEX IF NOT EXISTS idx_invoice_outstanding_balance
-    ON catms.invoice (patient_id, (patient_liability_amount - patient_paid_amount)) 
+    ON catms.invoice ((patient_liability_amount - patient_paid_amount))
     WHERE (patient_liability_amount - patient_paid_amount) > 0;
 COMMENT ON INDEX catms.idx_invoice_outstanding_balance IS 'Optimize R3 patient outstanding balances filter.';
 
