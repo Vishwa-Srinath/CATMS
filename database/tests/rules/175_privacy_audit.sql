@@ -92,7 +92,7 @@ BEGIN
         v_treat_cat_id, 'TRT-AUD-75', 'Audit Consultation', 3000.00, 15, TRUE
     ) RETURNING treatment_id INTO v_treat_id;
 
-    INSERT INTO catms.insurance_provider (name, code, contact_phone, contact_email, status)
+    INSERT INTO catms.insurance_provider (name, provider_code, contact_phone, contact_email, status)
     VALUES ('Audit Insurer', 'AUD-INS-75', '+94112333333', 'audit@insurer.lk', 'ACTIVE')
     RETURNING provider_id INTO v_prov_id;
 
