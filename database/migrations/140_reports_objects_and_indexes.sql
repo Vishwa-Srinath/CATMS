@@ -11,6 +11,7 @@ BEGIN;
 -- R1: Branch-wise daily appointment summary
 CREATE OR REPLACE VIEW catms.r1_branch_appointment_summary AS
 SELECT 
+    b.branch_id,
     b.name AS branch_name,
     DATE(a.start_at AT TIME ZONE 'Asia/Colombo') AS appointment_date,
     COUNT(*) FILTER (WHERE a.status = 'Scheduled') AS scheduled_count,
@@ -18,7 +19,7 @@ SELECT
     COUNT(*) FILTER (WHERE a.status = 'Cancelled') AS cancelled_count
 FROM catms.appointment a
 JOIN catms.branch b ON a.branch_id = b.branch_id
-GROUP BY b.name, appointment_date;
+GROUP BY b.branch_id, b.name, appointment_date;
 
 COMMENT ON VIEW catms.r1_branch_appointment_summary IS 'Daily aggregation of scheduled, completed, and cancelled appointments per branch.';
 
@@ -68,7 +69,7 @@ COMMENT ON VIEW catms.r4_treatment_counts IS 'Count of delivered treatments aggr
 -- R5: Approved insurance, insurer receipts and patient receipts by month
 CREATE OR REPLACE VIEW catms.r5_insurance_receipts AS
 SELECT 
-    DATE_TRUNC('month', i.issued_at AT TIME ZONE 'Asia/Colombo') AS report_month,
+    TO_CHAR(DATE_TRUNC('month', i.issued_at AT TIME ZONE 'Asia/Colombo'), 'YYYY-MM') AS report_month,
     COALESCE(SUM(i.approved_insurance_amount), 0.00) AS total_approved_insurance,
     COALESCE(SUM(i.insurer_paid_amount), 0.00) AS total_insurer_receipts,
     COALESCE(SUM(i.patient_paid_amount), 0.00) AS total_patient_receipts
@@ -82,12 +83,7 @@ COMMENT ON VIEW catms.r5_insurance_receipts IS 'Monthly aggregation of insurance
 -- 2. Report Indexes
 -- =============================================================================
 
--- Target R1: Appointments by date and status
-CREATE INDEX IF NOT EXISTS idx_appointment_branch_start 
-    ON catms.appointment (branch_id, start_at, status);
-COMMENT ON INDEX catms.idx_appointment_branch_start IS 'Optimize R1 branch/date grouping.';
-
--- Target R2/R3/R5: Invoices
+-- Target R2/R5: Invoices
 CREATE INDEX IF NOT EXISTS idx_invoice_appointment_issued 
     ON catms.invoice (appointment_id, issued_at);
 COMMENT ON INDEX catms.idx_invoice_appointment_issued IS 'Optimize R2 and R5 invoice aggregations by date/appointment.';
@@ -101,5 +97,16 @@ COMMENT ON INDEX catms.idx_invoice_outstanding_balance IS 'Optimize R3 patient o
 CREATE INDEX IF NOT EXISTS idx_appointment_treatment_tid
     ON catms.appointment_treatment (treatment_id);
 COMMENT ON INDEX catms.idx_appointment_treatment_tid IS 'Optimize R4 treatment aggregation.';
+
+
+-- =============================================================================
+-- 3. Grants for Application & Reporting Roles
+-- =============================================================================
+
+GRANT SELECT ON catms.r1_branch_appointment_summary TO catms_app, catms_readonly;
+GRANT SELECT ON catms.r2_doctor_revenue TO catms_app, catms_readonly;
+GRANT SELECT ON catms.r3_patient_balances TO catms_app, catms_readonly;
+GRANT SELECT ON catms.r4_treatment_counts TO catms_app, catms_readonly;
+GRANT SELECT ON catms.r5_insurance_receipts TO catms_app, catms_readonly;
 
 COMMIT;

@@ -192,8 +192,10 @@ const importCsvHandler = async (req: Request, res: Response, next: NextFunction)
     let csvData = '';
     if (typeof req.body === 'string') {
       csvData = req.body;
+    } else if (Buffer.isBuffer(req.body)) {
+      csvData = req.body.toString('utf-8');
     } else if (req.body && req.body.csvData) {
-      csvData = req.body.csvData;
+      csvData = String(req.body.csvData);
     }
     
     const data = await ReportsService.importCsv(csvData);
