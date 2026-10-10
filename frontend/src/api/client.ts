@@ -58,6 +58,25 @@ function buildQueryString(params?: object): string {
   return str ? `?${str}` : '';
 }
 
+let inMemoryCsrfToken: string | null = null;
+
+export async function fetchCsrfToken(): Promise<string> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/csrf`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (res.ok) {
+      const json = (await res.json()) as { data?: { csrfToken?: string } };
+      inMemoryCsrfToken = json?.data?.csrfToken || null;
+      return inMemoryCsrfToken || '';
+    }
+  } catch {
+    // Ignore CSRF fetch errors
+  }
+  return '';
+}
+
 /**
  * Base request dispatcher.
  */
@@ -67,7 +86,7 @@ async function request<T>(
   body?: unknown,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { params, headers = {}, skipCsrf = false, ...fetchOptions } = options;
+  const { params, headers = {}, skipCsrf = false, skipSessionExpiry = false, ...fetchOptions } = options;
 
   const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}${buildQueryString(params)}`;
 
@@ -95,7 +114,10 @@ async function request<T>(
 
   // Inject CSRF token on mutating methods unless explicitly skipped
   if (!skipCsrf && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    const csrfToken = getCookie('catms_csrf') || getCookie('csrf_token');
+    let csrfToken = getCookie('catms_csrf') || getCookie('csrf_token') || inMemoryCsrfToken;
+    if (!csrfToken && typeof window !== 'undefined') {
+      csrfToken = await fetchCsrfToken();
+    }
     if (csrfToken && !requestHeaders['X-CSRF-Token']) {
       requestHeaders['X-CSRF-Token'] = csrfToken;
     }
@@ -126,7 +148,7 @@ async function request<T>(
     const errorDetails = errorPayload?.error;
     const correlationId = errorPayload?.meta?.correlationId || requestHeaders['X-Correlation-Id'];
 
-    if (response.status === 401 && !endpoint.includes('/auth/me') && !endpoint.includes('/auth/login')) {
+    if (response.status === 401 && !skipSessionExpiry && !endpoint.includes('/auth/login')) {
       notifySessionExpired();
     }
 

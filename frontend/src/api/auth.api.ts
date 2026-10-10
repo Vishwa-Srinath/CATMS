@@ -38,11 +38,23 @@ export const authApi = {
   login: (data: LoginRequest) =>
     apiClient.post<LoginResponseDto>('/auth/login', data),
 
-  logout: () =>
-    apiClient.post<{ message: string }>('/auth/logout'),
+  logout: async () => {
+    try {
+      return await apiClient.post<{ message: string }>('/auth/logout');
+    } catch {
+      return { message: 'Logged out' };
+    }
+  },
 
-  getMe: () =>
-    apiClient.get<SessionUserDto>('/auth/me'),
+  getMe: async (options?: { skipSessionExpiry?: boolean }): Promise<SessionUserDto> => {
+    const res = await apiClient.get<SessionUserDto | { user: SessionUserDto }>('/auth/me', {
+      skipSessionExpiry: options?.skipSessionExpiry,
+    });
+    if (res && typeof res === 'object' && 'user' in res && (res as { user?: SessionUserDto }).user) {
+      return (res as { user: SessionUserDto }).user;
+    }
+    return res as SessionUserDto;
+  },
 
   getCsrf: () =>
     apiClient.get<CsrfTokenResponseDto>('/auth/csrf'),

@@ -24,7 +24,7 @@ export function useSession() {
     queryKey: SESSION_QUERY_KEY,
     queryFn: async () => {
       try {
-        return await authApi.getMe();
+        return await authApi.getMe({ skipSessionExpiry: true });
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           // Not logged in is normal state, not an unhandled error
@@ -47,7 +47,7 @@ export function useSession() {
 
   const logoutMutation = useMutation({
     mutationFn: () => authApi.logout(),
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.setQueryData(SESSION_QUERY_KEY, null);
       queryClient.clear();
     },

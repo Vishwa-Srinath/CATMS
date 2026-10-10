@@ -37,4 +37,5 @@ export interface RequestOptions extends Omit<RequestInit, 'method' | 'body'> {
   params?: object;
   headers?: Record<string, string>;
   skipCsrf?: boolean;
+  skipSessionExpiry?: boolean;
 }
