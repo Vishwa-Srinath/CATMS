@@ -51,10 +51,12 @@ export const formatCurrency = (amount: number) =>
     maximumFractionDigits: 0,
   }).format(amount)
 
-export const formatDate = (date: string, options?: Intl.DateTimeFormatOptions) =>
-  new Intl.DateTimeFormat('en-LK', options ?? { day: 'numeric', month: 'short', year: 'numeric' }).format(
-    new Date(`${date}T00:00:00`),
-  )
+export const formatDate = (date: string, options?: Intl.DateTimeFormatOptions) => {
+  const parsed = date.includes('T') ? new Date(date) : new Date(`${date}T00:00:00`)
+  return isNaN(parsed.getTime())
+    ? date
+    : new Intl.DateTimeFormat('en-LK', options ?? { day: 'numeric', month: 'short', year: 'numeric' }).format(parsed)
+}
 
 export const initials = (name: string) =>
   name

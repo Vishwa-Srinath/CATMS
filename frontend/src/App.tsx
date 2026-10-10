@@ -16,7 +16,7 @@ const ReportsPage = lazy(() => import('./pages/ReportsPage'))
 const AdministrationPage = lazy(() => import('./pages/AdministrationPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
-function ProtectedPage({ roles, children }: { roles?: Role[]; children: ReactNode }) {
+export function ProtectedPage({ roles, children }: { roles?: Role[]; children: ReactNode }) {
   const { user, isLoadingSession } = useClinic()
   if (isLoadingSession) {
     return <div className="min-h-screen bg-canvas flex items-center justify-center"><LoadingBlock label="Verifying session credentials…" /></div>
