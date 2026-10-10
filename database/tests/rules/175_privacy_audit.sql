@@ -32,6 +32,7 @@ DECLARE
     v_branch_id             BIGINT;
     v_user_id               BIGINT;
     v_emp_id                BIGINT;
+    v_specialty_id          BIGINT;
     v_prov_id               BIGINT;
     v_pol_id                BIGINT;
     v_appt_id               BIGINT;
@@ -45,27 +46,30 @@ BEGIN
     -- ─────────────────────────────────────────────────────────────────────────
     -- 1. Setup Isolated Audit Sample
     -- ─────────────────────────────────────────────────────────────────────────
-    SELECT branch_id INTO v_branch_id FROM catms.branch LIMIT 1;
-    IF v_branch_id IS NULL THEN
-        INSERT INTO catms.branch (branch_code, name, address_line_1, city, contact_phone)
-        VALUES ('BR-AUDIT-75', 'Audit Branch', '1 Galle Rd', 'Colombo', '+94112000075')
-        RETURNING branch_id INTO v_branch_id;
-    END IF;
+    INSERT INTO catms.branch (branch_code, name, address_line_1, city, contact_phone)
+    VALUES ('BR-AUDIT-75', 'Audit Branch', '1 Galle Rd', 'Colombo', '+94112000075')
+    RETURNING branch_id INTO v_branch_id;
 
-    SELECT user_account_id, employee_id INTO v_user_id, v_emp_id
-    FROM catms.user_account LIMIT 1;
-    IF v_user_id IS NULL THEN
-        INSERT INTO catms.employee (employee_number, nic, full_name, gender_code, date_of_birth, position_code, phone, hire_date)
-        VALUES ('EMP-AUD-75', '198801019075', 'Auditor User', 'Male', '1988-01-01', 'Admin', '+94770000077', CURRENT_DATE)
-        RETURNING employee_id INTO v_emp_id;
+    INSERT INTO catms.employee (employee_number, nic, full_name, gender_code, date_of_birth, position_code, phone, hire_date)
+    VALUES ('EMP-AUD-75', '198801019075', 'Auditor User', 'Male', '1988-01-01', 'Doctor', '+94770000077', CURRENT_DATE)
+    RETURNING employee_id INTO v_emp_id;
 
-        INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
-        VALUES (v_emp_id, 'audit_runner_75', 'TEST_HASH', 'ACTIVE')
-        RETURNING user_account_id INTO v_user_id;
+    INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
+    VALUES (v_emp_id, 'audit_runner_75', 'TEST_HASH', 'ACTIVE')
+    RETURNING user_account_id INTO v_user_id;
 
-        INSERT INTO catms.user_account_role (user_account_id, app_role_id)
-        SELECT v_user_id, app_role_id FROM catms.app_role WHERE upper(role_code) = 'ADMIN';
-    END IF;
+    INSERT INTO catms.user_account_role (user_account_id, app_role_id)
+    SELECT v_user_id, app_role_id FROM catms.app_role WHERE upper(role_code) = 'ADMIN';
+
+    INSERT INTO catms.doctor_profile (doctor_id, medical_license_no, practice_start_date, default_consultation_fee)
+    VALUES (v_emp_id, 'SLMC-AUD-75', '2015-01-01', 3000.00);
+
+    INSERT INTO catms.specialty (specialty_code, name)
+    VALUES ('SPEC-AUD-75', 'Audit Specialty')
+    RETURNING specialty_id INTO v_specialty_id;
+
+    INSERT INTO catms.doctor_specialty (doctor_id, specialty_id, is_primary)
+    VALUES (v_emp_id, v_specialty_id, TRUE);
 
     -- Create test patient with known NIC and name
     INSERT INTO catms.patient (
@@ -80,11 +84,13 @@ BEGIN
     -- Treatment & Provider
     INSERT INTO catms.treatment_category (category_code, name)
     VALUES ('CAT-AUD-75', 'Audit Category')
-    RETURNING category_id INTO v_treat_cat_id;
+    RETURNING treatment_category_id INTO v_treat_cat_id;
 
-    INSERT INTO catms.treatment_catalogue (treatment_code, name, category_id, standard_fee)
-    VALUES ('TRT-AUD-75', 'Audit Consultation', v_treat_cat_id, 3000.00)
-    RETURNING treatment_id INTO v_treat_id;
+    INSERT INTO catms.treatment_catalogue (
+        treatment_category_id, service_code, name, current_price, default_duration_minutes, is_consultation_service
+    ) VALUES (
+        v_treat_cat_id, 'TRT-AUD-75', 'Audit Consultation', 3000.00, 15, TRUE
+    ) RETURNING treatment_id INTO v_treat_id;
 
     INSERT INTO catms.insurance_provider (name, code, contact_phone, contact_email, status)
     VALUES ('Audit Insurer', 'AUD-INS-75', '+94112333333', 'audit@insurer.lk', 'ACTIVE')
@@ -98,24 +104,15 @@ BEGIN
     VALUES (v_pol_id, v_treat_id, 100.00, NULL, '2026-01-01', '2026-12-31');
 
     INSERT INTO catms.appointment (
-        appointment_number, patient_id, doctor_id, branch_id, start_at, end_at, status, booking_type, created_by
+        appointment_number, patient_id, doctor_id, branch_id, specialty_id,
+        start_at, end_at, status, booking_type, created_by
     ) VALUES (
-        'APT-AUD-75', v_test_pat_id, v_emp_id, v_branch_id,
+        'APT-AUD-75', v_test_pat_id, v_emp_id, v_branch_id, v_specialty_id,
         '2026-07-01 09:00:00+00', '2026-07-01 09:30:00+00', 'Completed', 'Booked', v_user_id
     ) RETURNING appointment_id INTO v_appt_id;
 
-    INSERT INTO catms.invoice (
-        invoice_number, appointment_id, patient_id, subtotal_amount,
-        approved_insurance_amount, patient_liability_amount, patient_paid_amount,
-        invoice_state, patient_payment_status, issued_at
-    ) VALUES (
-        'INV-AUD-75', v_appt_id, v_test_pat_id, 3000.00,
-        0.00, 3000.00, 0.00,
-        'Issued', 'Unpaid', '2026-07-01 09:30:00+00'
-    ) RETURNING invoice_id INTO v_test_inv_id;
-
-    INSERT INTO catms.invoice_line (invoice_id, treatment_id, line_number, unit_price, quantity, line_total)
-    VALUES (v_test_inv_id, v_treat_id, 1, 3000.00, 1, 3000.00);
+    PERFORM catms.record_appointment_treatment(v_appt_id, v_treat_id, 1, v_user_id);
+    SELECT catms.issue_invoice(v_appt_id, v_user_id) INTO v_test_inv_id;
 
     -- Submit claim & Resolve with clean sanitized reason
     SELECT (catms.submit_claim(v_test_inv_id, ARRAY[v_pol_id], v_user_id))[1] INTO v_test_claim_id;

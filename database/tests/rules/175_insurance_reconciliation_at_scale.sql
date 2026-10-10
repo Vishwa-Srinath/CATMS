@@ -117,22 +117,34 @@ BEGIN
     INSERT INTO catms.doctor_specialty (doctor_id, specialty_id, is_primary)
     VALUES (v_doctor_id, v_specialty_id, TRUE);
 
-    -- Treatment Catalogue
+    -- Treatment Catalogue (Consistent schema contract with 090 & 091 migrations)
     INSERT INTO catms.treatment_category (category_code, name)
     VALUES ('CAT-SCALE-75', 'Scale Audit Treatments')
-    RETURNING category_id INTO v_treat_cat_id;
+    RETURNING treatment_category_id INTO v_treat_cat_id;
 
-    INSERT INTO catms.treatment_catalogue (treatment_code, name, category_id, standard_fee)
-    VALUES ('TRT-75-01', 'Consultation Standard', v_treat_cat_id, 3500.00) RETURNING treatment_id INTO v_treat1_id;
+    INSERT INTO catms.treatment_catalogue (
+        treatment_category_id, service_code, name, current_price, default_duration_minutes, is_consultation_service
+    ) VALUES (
+        v_treat_cat_id, 'TRT-75-01', 'Consultation Standard', 3500.00, 15, TRUE
+    ) RETURNING treatment_id INTO v_treat1_id;
 
-    INSERT INTO catms.treatment_catalogue (treatment_code, name, category_id, standard_fee)
-    VALUES ('TRT-75-02', 'Clinical ECG Examination', v_treat_cat_id, 6500.00) RETURNING treatment_id INTO v_treat2_id;
+    INSERT INTO catms.treatment_catalogue (
+        treatment_category_id, service_code, name, current_price, default_duration_minutes, is_consultation_service
+    ) VALUES (
+        v_treat_cat_id, 'TRT-75-02', 'Clinical ECG Examination', 6500.00, 30, FALSE
+    ) RETURNING treatment_id INTO v_treat2_id;
 
-    INSERT INTO catms.treatment_catalogue (treatment_code, name, category_id, standard_fee)
-    VALUES ('TRT-75-03', 'Comprehensive Blood Profile', v_treat_cat_id, 2500.00) RETURNING treatment_id INTO v_treat3_id;
+    INSERT INTO catms.treatment_catalogue (
+        treatment_category_id, service_code, name, current_price, default_duration_minutes, is_consultation_service
+    ) VALUES (
+        v_treat_cat_id, 'TRT-75-03', 'Comprehensive Blood Profile', 2500.00, 15, FALSE
+    ) RETURNING treatment_id INTO v_treat3_id;
 
-    INSERT INTO catms.treatment_catalogue (treatment_code, name, category_id, standard_fee)
-    VALUES ('TRT-75-04', 'Minor Surgical Procedure', v_treat_cat_id, 12000.00) RETURNING treatment_id INTO v_treat4_id;
+    INSERT INTO catms.treatment_catalogue (
+        treatment_category_id, service_code, name, current_price, default_duration_minutes, is_consultation_service
+    ) VALUES (
+        v_treat_cat_id, 'TRT-75-04', 'Minor Surgical Procedure', 12000.00, 60, FALSE
+    ) RETURNING treatment_id INTO v_treat4_id;
 
     -- Insurance Providers
     INSERT INTO catms.insurance_provider (name, code, contact_phone, contact_email, status)
@@ -311,29 +323,21 @@ BEGIN
     SELECT policy_id INTO v_pol2_id FROM catms.insurance_policy WHERE policy_number = 'POL-SLIC-0001';
 
     INSERT INTO catms.appointment (
-        appointment_number, patient_id, doctor_id, branch_id, start_at, end_at, status, booking_type, created_by
+        appointment_number, patient_id, doctor_id, branch_id, specialty_id,
+        start_at, end_at, status, booking_type, created_by
     ) VALUES (
-        'APT-SCALE-0001', v_pat_id, v_doctor_id, v_branch_id,
+        'APT-SCALE-0001', v_pat_id, v_doctor_id, v_branch_id, v_specialty_id,
         '2026-06-15 09:00:00+00', '2026-06-15 09:30:00+00', 'Completed', 'Booked', v_finance_user_id
     ) RETURNING appointment_id INTO v_appt_id;
 
-    INSERT INTO catms.invoice (
-        invoice_number, appointment_id, patient_id, subtotal_amount,
-        approved_insurance_amount, patient_liability_amount, patient_paid_amount,
-        invoice_state, patient_payment_status, issued_at
-    ) VALUES (
-        'INV-SCALE-0001', v_appt_id, v_pat_id, 10000.00,
-        0.00, 10000.00, 0.00,
-        'Issued', 'Unpaid', '2026-06-15 09:30:00+00'
-    ) RETURNING invoice_id INTO v_inv_id;
+    -- Record treatments delivered and issue invoice atomically via standard procedures
+    PERFORM catms.record_appointment_treatment(v_appt_id, v_treat1_id, 1, v_finance_user_id);
+    PERFORM catms.record_appointment_treatment(v_appt_id, v_treat2_id, 1, v_finance_user_id);
 
-    INSERT INTO catms.invoice_line (invoice_id, treatment_id, line_number, unit_price, quantity, line_total)
-    VALUES
-    (v_inv_id, v_treat1_id, 1, 3500.00, 1, 3500.00) RETURNING invoice_line_id INTO v_inv_line1_id;
+    SELECT catms.issue_invoice(v_appt_id, v_finance_user_id) INTO v_inv_id;
 
-    INSERT INTO catms.invoice_line (invoice_id, treatment_id, line_number, unit_price, quantity, line_total)
-    VALUES
-    (v_inv_id, v_treat2_id, 2, 6500.00, 1, 6500.00) RETURNING invoice_line_id INTO v_inv_line2_id;
+    SELECT invoice_line_id INTO v_inv_line1_id FROM catms.invoice_line WHERE invoice_id = v_inv_id AND line_number = 1;
+    SELECT invoice_line_id INTO v_inv_line2_id FROM catms.invoice_line WHERE invoice_id = v_inv_id AND line_number = 2;
 
     -- Submit multi-policy claim array [Policy 1, Policy 2]
     v_claim_ids := catms.submit_claim(v_inv_id, ARRAY[v_pol1_id, v_pol2_id], v_finance_user_id);
@@ -406,29 +410,20 @@ BEGIN
         SELECT policy_id INTO v_pol2_id FROM catms.insurance_policy WHERE policy_number = 'POL-SLIC-' || lpad(i::TEXT, 4, '0');
 
         INSERT INTO catms.appointment (
-            appointment_number, patient_id, doctor_id, branch_id, start_at, end_at, status, booking_type, created_by
+            appointment_number, patient_id, doctor_id, branch_id, specialty_id,
+            start_at, end_at, status, booking_type, created_by
         ) VALUES (
-            'APT-SCALE-' || lpad(i::TEXT, 4, '0'), v_pat_id, v_doctor_id, v_branch_id,
-            '2026-06-15 10:00:00+00'::TIMESTAMPTZ + (i * INTERVAL '30 minutes'),
-            '2026-06-15 10:30:00+00'::TIMESTAMPTZ + (i * INTERVAL '30 minutes'),
+            'APT-SCALE-' || lpad(i::TEXT, 4, '0'), v_pat_id, v_doctor_id, v_branch_id, v_specialty_id,
+            '2026-06-16 08:00:00+00'::TIMESTAMPTZ + (i * INTERVAL '30 minutes'),
+            '2026-06-16 08:30:00+00'::TIMESTAMPTZ + (i * INTERVAL '30 minutes'),
             'Completed', 'Booked', v_finance_user_id
         ) RETURNING appointment_id INTO v_appt_id;
 
-        INSERT INTO catms.invoice (
-            invoice_number, appointment_id, patient_id, subtotal_amount,
-            approved_insurance_amount, patient_liability_amount, patient_paid_amount,
-            invoice_state, patient_payment_status, issued_at
-        ) VALUES (
-            'INV-SCALE-' || lpad(i::TEXT, 4, '0'), v_appt_id, v_pat_id, 6000.00,
-            0.00, 6000.00, 0.00,
-            'Issued', 'Unpaid', '2026-06-15 10:30:00+00'::TIMESTAMPTZ + (i * INTERVAL '30 minutes')
-        ) RETURNING invoice_id INTO v_inv_id;
-
         -- Treatment 1: Consultation (3,500 LKR), Treatment 3: Blood Profile (2,500 LKR) -> Subtotal 6,000 LKR
-        INSERT INTO catms.invoice_line (invoice_id, treatment_id, line_number, unit_price, quantity, line_total)
-        VALUES
-        (v_inv_id, v_treat1_id, 1, 3500.00, 1, 3500.00),
-        (v_inv_id, v_treat3_id, 2, 2500.00, 1, 2500.00);
+        PERFORM catms.record_appointment_treatment(v_appt_id, v_treat1_id, 1, v_finance_user_id);
+        PERFORM catms.record_appointment_treatment(v_appt_id, v_treat3_id, 1, v_finance_user_id);
+
+        SELECT catms.issue_invoice(v_appt_id, v_finance_user_id) INTO v_inv_id;
 
         -- Submit multi-policy
         v_claim_ids := catms.submit_claim(v_inv_id, ARRAY[v_pol1_id, v_pol2_id], v_finance_user_id);
@@ -497,24 +492,15 @@ BEGIN
     SELECT policy_id INTO v_pol3_id FROM catms.insurance_policy WHERE policy_number = 'POL-EXP-0065';
 
     INSERT INTO catms.appointment (
-        appointment_number, patient_id, doctor_id, branch_id, start_at, end_at, status, booking_type, created_by
+        appointment_number, patient_id, doctor_id, branch_id, specialty_id,
+        start_at, end_at, status, booking_type, created_by
     ) VALUES (
-        'APT-NEG-EXP', v_pat_id, v_doctor_id, v_branch_id,
-        '2026-06-15 15:00:00+00', '2026-06-15 15:30:00+00', 'Completed', 'Booked', v_finance_user_id
+        'APT-NEG-EXP', v_pat_id, v_doctor_id, v_branch_id, v_specialty_id,
+        '2026-06-17 09:00:00+00', '2026-06-17 09:30:00+00', 'Completed', 'Booked', v_finance_user_id
     ) RETURNING appointment_id INTO v_appt_id;
 
-    INSERT INTO catms.invoice (
-        invoice_number, appointment_id, patient_id, subtotal_amount,
-        approved_insurance_amount, patient_liability_amount, patient_paid_amount,
-        invoice_state, patient_payment_status, issued_at
-    ) VALUES (
-        'INV-NEG-EXP', v_appt_id, v_pat_id, 3500.00,
-        0.00, 3500.00, 0.00,
-        'Issued', 'Unpaid', '2026-06-15 15:30:00+00'
-    ) RETURNING invoice_id INTO v_inv_id;
-
-    INSERT INTO catms.invoice_line (invoice_id, treatment_id, line_number, unit_price, quantity, line_total)
-    VALUES (v_inv_id, v_treat1_id, 1, 3500.00, 1, 3500.00);
+    PERFORM catms.record_appointment_treatment(v_appt_id, v_treat1_id, 1, v_finance_user_id);
+    SELECT catms.issue_invoice(v_appt_id, v_finance_user_id) INTO v_inv_id;
 
     v_err_caught := FALSE;
     BEGIN
@@ -531,24 +517,15 @@ BEGIN
     SELECT policy_id INTO v_pol3_id FROM catms.insurance_policy WHERE policy_number = 'POL-SUSP-0080';
 
     INSERT INTO catms.appointment (
-        appointment_number, patient_id, doctor_id, branch_id, start_at, end_at, status, booking_type, created_by
+        appointment_number, patient_id, doctor_id, branch_id, specialty_id,
+        start_at, end_at, status, booking_type, created_by
     ) VALUES (
-        'APT-NEG-SUSP', v_pat_id, v_doctor_id, v_branch_id,
-        '2026-06-15 16:00:00+00', '2026-06-15 16:30:00+00', 'Completed', 'Booked', v_finance_user_id
+        'APT-NEG-SUSP', v_pat_id, v_doctor_id, v_branch_id, v_specialty_id,
+        '2026-06-17 10:00:00+00', '2026-06-17 10:30:00+00', 'Completed', 'Booked', v_finance_user_id
     ) RETURNING appointment_id INTO v_appt_id;
 
-    INSERT INTO catms.invoice (
-        invoice_number, appointment_id, patient_id, subtotal_amount,
-        approved_insurance_amount, patient_liability_amount, patient_paid_amount,
-        invoice_state, patient_payment_status, issued_at
-    ) VALUES (
-        'INV-NEG-SUSP', v_appt_id, v_pat_id, 3500.00,
-        0.00, 3500.00, 0.00,
-        'Issued', 'Unpaid', '2026-06-15 16:30:00+00'
-    ) RETURNING invoice_id INTO v_inv_id;
-
-    INSERT INTO catms.invoice_line (invoice_id, treatment_id, line_number, unit_price, quantity, line_total)
-    VALUES (v_inv_id, v_treat1_id, 1, 3500.00, 1, 3500.00);
+    PERFORM catms.record_appointment_treatment(v_appt_id, v_treat1_id, 1, v_finance_user_id);
+    SELECT catms.issue_invoice(v_appt_id, v_finance_user_id) INTO v_inv_id;
 
     v_err_caught := FALSE;
     BEGIN
@@ -565,24 +542,15 @@ BEGIN
     SELECT policy_id INTO v_pol3_id FROM catms.insurance_policy WHERE policy_number = 'POL-DEACT-0095';
 
     INSERT INTO catms.appointment (
-        appointment_number, patient_id, doctor_id, branch_id, start_at, end_at, status, booking_type, created_by
+        appointment_number, patient_id, doctor_id, branch_id, specialty_id,
+        start_at, end_at, status, booking_type, created_by
     ) VALUES (
-        'APT-NEG-DEACT', v_pat_id, v_doctor_id, v_branch_id,
-        '2026-06-15 17:00:00+00', '2026-06-15 17:30:00+00', 'Completed', 'Booked', v_finance_user_id
+        'APT-NEG-DEACT', v_pat_id, v_doctor_id, v_branch_id, v_specialty_id,
+        '2026-06-17 11:00:00+00', '2026-06-17 11:30:00+00', 'Completed', 'Booked', v_finance_user_id
     ) RETURNING appointment_id INTO v_appt_id;
 
-    INSERT INTO catms.invoice (
-        invoice_number, appointment_id, patient_id, subtotal_amount,
-        approved_insurance_amount, patient_liability_amount, patient_paid_amount,
-        invoice_state, patient_payment_status, issued_at
-    ) VALUES (
-        'INV-NEG-DEACT', v_appt_id, v_pat_id, 3500.00,
-        0.00, 3500.00, 0.00,
-        'Issued', 'Unpaid', '2026-06-15 17:30:00+00'
-    ) RETURNING invoice_id INTO v_inv_id;
-
-    INSERT INTO catms.invoice_line (invoice_id, treatment_id, line_number, unit_price, quantity, line_total)
-    VALUES (v_inv_id, v_treat1_id, 1, 3500.00, 1, 3500.00);
+    PERFORM catms.record_appointment_treatment(v_appt_id, v_treat1_id, 1, v_finance_user_id);
+    SELECT catms.issue_invoice(v_appt_id, v_finance_user_id) INTO v_inv_id;
 
     v_err_caught := FALSE;
     BEGIN
@@ -594,29 +562,12 @@ BEGIN
         RAISE EXCEPTION 'NEGATIVE TEST FAILED: Policy belonging to deactivated provider was accepted!';
     END IF;
 
-    -- D. Cross-Patient Policy Mismatch (Claiming Patient 2''s policy against Patient 1''s invoice)
-    SELECT patient_id INTO v_pat_id FROM catms.patient WHERE patient_number = 'PAT-SCALE-0001';
+    -- D. Cross-Patient Policy Mismatch (Claiming Patient 2's policy against Patient 1's invoice)
     SELECT policy_id INTO v_pol2_id FROM catms.insurance_policy WHERE policy_number = 'POL-CEY-0002';
-
-    INSERT INTO catms.appointment (
-        appointment_number, patient_id, doctor_id, branch_id, start_at, end_at, status, booking_type, created_by
-    ) VALUES (
-        'APT-NEG-MISMATCH', v_pat_id, v_doctor_id, v_branch_id,
-        '2026-06-15 18:00:00+00', '2026-06-15 18:30:00+00', 'Completed', 'Booked', v_finance_user_id
-    ) RETURNING appointment_id INTO v_appt_id;
-
-    INSERT INTO catms.invoice (
-        invoice_number, appointment_id, patient_id, subtotal_amount,
-        approved_insurance_amount, patient_liability_amount, patient_paid_amount,
-        invoice_state, patient_payment_status, issued_at
-    ) VALUES (
-        'INV-NEG-MISMATCH', v_appt_id, v_pat_id, 3500.00,
-        0.00, 3500.00, 0.00,
-        'Issued', 'Unpaid', '2026-06-15 18:30:00+00'
-    ) RETURNING invoice_id INTO v_inv_id;
-
-    INSERT INTO catms.invoice_line (invoice_id, treatment_id, line_number, unit_price, quantity, line_total)
-    VALUES (v_inv_id, v_treat1_id, 1, 3500.00, 1, 3500.00);
+    -- Using Patient 1's invoice
+    SELECT invoice_id INTO v_inv_id FROM catms.invoice inv
+    JOIN catms.appointment a ON a.appointment_id = inv.appointment_id
+    WHERE a.appointment_number = 'APT-SCALE-0001';
 
     v_err_caught := FALSE;
     BEGIN
@@ -644,11 +595,15 @@ BEGIN
         p_new_coverage_id := v_new_cov_id
     );
 
-    -- Verify Patient 1''s historical claim line for June 2026 retains original terms
+    -- Verify Patient 1's historical claim line for June 2026 retains original terms
     SELECT * INTO v_line1_rec
     FROM catms.insurance_claim_line cl
     JOIN catms.insurance_claim c ON c.claim_id = cl.claim_id
-    WHERE c.invoice_id = (SELECT invoice_id FROM catms.invoice WHERE invoice_number = 'INV-SCALE-0001')
+    WHERE c.invoice_id = (
+        SELECT inv.invoice_id FROM catms.invoice inv
+        JOIN catms.appointment a ON a.appointment_id = inv.appointment_id
+        WHERE a.appointment_number = 'APT-SCALE-0001'
+    )
       AND cl.line_number = 1
       AND c.policy_id = v_pol1_id;
 
