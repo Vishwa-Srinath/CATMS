@@ -4,6 +4,7 @@ import { AppError, ErrorCode } from '../../shared/errors';
 import type {
   ClinicalWorklistItem,
   InvoiceDto,
+  InvoiceSummaryDto,
   TreatmentDto,
 } from '../../contracts/clinical-billing.contract';
 import type {
@@ -452,6 +453,74 @@ export class ClinicalService {
         })),
       };
     }, databaseRole(role));
+  }
+
+  async listInvoices(): Promise<InvoiceSummaryDto[]> {
+    return withTransaction(async (client) => {
+      const result = await client.query(
+        `SELECT i.invoice_id, i.invoice_number, i.appointment_id, a.appointment_number,
+                a.patient_id, p.patient_number,
+                concat_ws(' ', p.first_name, p.last_name) AS patient_name,
+                i.invoice_state, i.currency_code, i.subtotal_amount,
+                i.approved_insurance_amount, i.patient_liability_amount,
+                i.patient_paid_amount, i.insurer_paid_amount,
+                i.patient_payment_status, i.issued_at,
+                coalesce(
+                  jsonb_agg(
+                    jsonb_build_object(
+                      'claimId', c.claim_id,
+                      'claimNumber', c.claim_number,
+                      'claimStatus', c.claim_status,
+                      'approvedAmount', c.approved_amount::text,
+                      'policyNumber', ip.policy_number::text,
+                      'providerName', prov.name
+                    ) ORDER BY c.claim_id
+                  ) FILTER (WHERE c.claim_id IS NOT NULL),
+                  '[]'::jsonb
+                ) AS approved_claims
+         FROM catms.invoice i
+         JOIN catms.appointment a ON a.appointment_id = i.appointment_id
+         JOIN catms.patient p ON p.patient_id = a.patient_id
+         LEFT JOIN catms.insurance_claim c
+           ON c.invoice_id = i.invoice_id
+          AND c.claim_status IN ('Approved', 'PartiallyApproved')
+         LEFT JOIN catms.insurance_policy ip ON ip.policy_id = c.policy_id
+         LEFT JOIN catms.insurance_provider prov ON prov.provider_id = ip.provider_id
+         GROUP BY i.invoice_id, i.invoice_number, i.appointment_id, a.appointment_number,
+                  a.patient_id, p.patient_number, p.first_name, p.last_name,
+                  i.invoice_state, i.currency_code, i.subtotal_amount,
+                  i.approved_insurance_amount, i.patient_liability_amount,
+                  i.patient_paid_amount, i.insurer_paid_amount,
+                  i.patient_payment_status, i.issued_at
+         ORDER BY i.issued_at DESC, i.invoice_id DESC`,
+      );
+      return result.rows.map((row) => ({
+        invoiceId: String(row['invoice_id']),
+        invoiceNumber: String(row['invoice_number']),
+        appointmentId: String(row['appointment_id']),
+        appointmentNumber: String(row['appointment_number']),
+        patientId: String(row['patient_id']),
+        patientNumber: String(row['patient_number']),
+        patientName: String(row['patient_name']),
+        invoiceState: String(row['invoice_state']),
+        currencyCode: String(row['currency_code']),
+        subtotalAmount: String(row['subtotal_amount']),
+        approvedInsuranceAmount: String(row['approved_insurance_amount']),
+        patientLiabilityAmount: String(row['patient_liability_amount']),
+        patientPaidAmount: String(row['patient_paid_amount']),
+        insurerPaidAmount: String(row['insurer_paid_amount']),
+        patientPaymentStatus: String(row['patient_payment_status']),
+        issuedAt: new Date(String(row['issued_at'])).toISOString(),
+        approvedClaims: (row['approved_claims'] as Array<Record<string, unknown>>).map((claim) => ({
+          claimId: String(claim['claimId']),
+          claimNumber: String(claim['claimNumber']),
+          claimStatus: String(claim['claimStatus']),
+          approvedAmount: String(claim['approvedAmount']),
+          policyNumber: String(claim['policyNumber']),
+          providerName: String(claim['providerName']),
+        })),
+      }));
+    }, 'catms_admin');
   }
 
   private async assertAppointmentAccess(

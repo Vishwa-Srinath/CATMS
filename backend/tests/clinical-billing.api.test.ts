@@ -14,6 +14,7 @@ const { clinicalService, paymentsService } = vi.hoisted(() => ({
     createTreatment: vi.fn(),
     updateTreatment: vi.fn(),
     deactivateTreatment: vi.fn(),
+    listInvoices: vi.fn(),
     getInvoice: vi.fn(),
   },
   paymentsService: {
@@ -223,6 +224,44 @@ describe('clinical, invoice, catalogue and payment APIs (CATMS-052 through CATMS
 
     expect(response.status).toBe(200);
     expect(response.body.data).toEqual(invoice);
+  });
+
+  it('lists invoice summaries only for Admin finance sessions', async () => {
+    clinicalService.listInvoices.mockResolvedValue([{
+      invoiceId: '100',
+      invoiceNumber: 'INV-100',
+      appointmentId: '101',
+      appointmentNumber: 'APT-101',
+      patientId: '22',
+      patientNumber: 'PAT-22',
+      patientName: 'Test Patient',
+      invoiceState: 'Issued',
+      currencyCode: 'LKR',
+      subtotalAmount: '3500.00',
+      approvedInsuranceAmount: '500.00',
+      patientLiabilityAmount: '3000.00',
+      patientPaidAmount: '1000.00',
+      insurerPaidAmount: '0.00',
+      patientPaymentStatus: 'PartiallyPaid',
+      issuedAt: '2026-10-01T10:00:00.000Z',
+      approvedClaims: [],
+    }]);
+
+    const response = await request(app)
+      .get('/api/v1/invoices/')
+      .set('Cookie', `catms_session=${token('Admin')}`)
+      .set('Authorization', 'Bearer ' + token('Admin'));
+
+    expect(response.status, JSON.stringify(response.body)).toBe(200);
+    expect(response.body.data[0].patientLiabilityAmount).toBe('3000.00');
+    expect(clinicalService.listInvoices).toHaveBeenCalledOnce();
+
+    const denied = await request(app)
+      .get('/api/v1/invoices/')
+      .set('Cookie', `catms_session=${token('Clinician')}`)
+      .set('Authorization', 'Bearer ' + token('Clinician'));
+    expect(denied.status).toBe(403);
+    expect(clinicalService.listInvoices).toHaveBeenCalledOnce();
   });
 
   it('denies Reception payment preview/post/reversal operations', async () => {

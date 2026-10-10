@@ -6,6 +6,7 @@ import type { Claim, Invoice } from '../types';
 import { Button, PageHeader, StatCard } from '../components/ui';
 import financeImage from '../assets/clinical/finance-calculator.webp';
 import medicationImage from '../assets/clinical/medication-flatlay.webp';
+import ApiFinancePage from './ApiFinancePage'
 
 // Feature boundary split — Dev4 (Clinical/Billing/Catalogue) & Dev3 (Claims/Insurance)
 import {
@@ -24,6 +25,13 @@ import {
 type Tab = 'invoices' | 'claims' | 'catalogue';
 
 export default function FinancePage() {
+  const [showApi, setShowApi] = useState(true)
+  return showApi
+    ? <ApiFinancePage onBack={() => setShowApi(false)} />
+    : <DemoFinancePage onOpenApi={() => setShowApi(true)} />
+}
+
+function DemoFinancePage({ onOpenApi }: { onOpenApi: () => void }) {
   const { data, user, postPayment, addTreatment, toggleTreatment, notify } = useClinic();
   const [tab, setTab] = useState<Tab>('invoices');
   const [query, setQuery] = useState('');
@@ -104,6 +112,7 @@ export default function FinancePage() {
 
   return (
     <>
+      <div className="mb-3 flex justify-end"><Button variant="secondary" onClick={onOpenApi}>Open live API billing</Button></div>
       <PageHeader
         image={tab === 'catalogue' ? medicationImage : financeImage}
         eyebrow="Finance workspace"

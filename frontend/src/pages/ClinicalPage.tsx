@@ -5,8 +5,16 @@ import { ClinicRuleError, DEMO_TODAY, formatCurrency, formatDate } from '../lib/
 import type { Appointment } from '../types'
 import { Avatar, Badge, Button, EmptyState, Field, InfoNote, Modal, PageHeader, RuleError, SearchInput } from '../components/ui'
 import clinicianImage from '../assets/clinical/clinician-stethoscope.webp'
+import ApiClinicalPage from './ApiClinicalPage'
 
 export default function ClinicalPage() {
+  const [showApi, setShowApi] = useState(true)
+  return showApi
+    ? <ApiClinicalPage onBack={() => setShowApi(false)} />
+    : <DemoClinicalPage onOpenApi={() => setShowApi(true)} />
+}
+
+function DemoClinicalPage({ onOpenApi }: { onOpenApi: () => void }) {
   const { data, user, saveClinicalRecord, notify } = useClinic()
   const [tab, setTab] = useState<'worklist' | 'records'>('worklist')
   const [query, setQuery] = useState('')
@@ -40,7 +48,7 @@ export default function ClinicalPage() {
   const total = selectedTreatments.reduce((sum, id) => sum + (data.treatments.find((item) => item.id === id)?.price ?? 0), 0)
 
   return <>
-    <PageHeader image={clinicianImage} eyebrow="Clinician workspace" title="Clinical worklist" description="Record one consultation note and the treatments delivered after a visit has been completed." />
+    <PageHeader image={clinicianImage} eyebrow="Clinician workspace" title="Clinical worklist" description="Record one consultation note and the treatments delivered after a visit has been completed." actions={<Button variant="secondary" onClick={onOpenApi}>Open live API worklist</Button>} />
 
     <div className="mb-6 flex max-w-sm tab-list"><button onClick={() => setTab('worklist')} className={`tab-button flex-1 ${tab === 'worklist' ? 'tab-button-active' : ''}`}>Active worklist <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-800">{pending.length}</span></button><button onClick={() => setTab('records')} className={`tab-button flex-1 ${tab === 'records' ? 'tab-button-active' : ''}`}>Recorded care</button></div>
 
