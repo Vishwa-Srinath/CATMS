@@ -13,7 +13,10 @@ import receptionCareImage from '../assets/clinical/appointment-care.webp'
 import clinicianCareImage from '../assets/clinical/patient-consultation.webp'
 import managerCareImage from '../assets/clinical/reception-corridor.webp'
 import financeCareImage from '../assets/clinical/finance-calculator.webp'
+import { useQuery } from '@tanstack/react-query'
 import { useAppointments, mapDtoToAppointment, parseNumericId } from '../features/appointments'
+import { fetchInvoices, fetchClinicalWorklist } from '../api/clinical-billing'
+import { useClaims } from '../features/patients-insurance'
 
 const weeklyData = [
   { day: 'Mon', visits: 31 }, { day: 'Tue', visits: 38 }, { day: 'Wed', visits: 29 },
@@ -59,26 +62,30 @@ export default function DashboardPage() {
     doctorId: user?.role === 'Clinician' ? parseNumericId(user.id) : undefined,
   }, { enabled: Boolean(user) })
 
-  const visibleAppointments = useMemo(() => {
-    if (appointmentsQuery.data && appointmentsQuery.data.length > 0) {
-      return appointmentsQuery.data.map(mapDtoToAppointment)
-    }
-    if (!user) return []
-    return data.appointments.filter(
-      (appointment) =>
-        appointment.date === DEMO_TODAY &&
-        (user.role !== 'Clinician' || appointment.doctorId === user.id) &&
-        (user.branchId === 'all' || user.role === 'Clinician' || appointment.branchId === user.branchId),
-    )
-  }, [appointmentsQuery.data, data.appointments, user])
+  const invoicesQuery = useQuery({ queryKey: ['invoices'], queryFn: fetchInvoices, enabled: Boolean(user) });
+  const worklistQuery = useQuery({ queryKey: ['clinical-worklist'], queryFn: () => fetchClinicalWorklist(), enabled: Boolean(user) });
+  const { claims: liveClaims } = useClaims();
 
-  if (!user) return null
-  const todayScheduled = visibleAppointments.filter((item) => item.status === 'Scheduled').length
-  const todayCompleted = visibleAppointments.filter((item) => item.status === 'Completed').length
-  const walkIns = visibleAppointments.filter((item) => item.source === 'Walk-in').length
-  const outstandingTotal = data.invoices.reduce((sum, invoice) => sum + invoice.patientPayable - invoice.amountPaid, 0)
-  const pendingClaims = data.invoices.flatMap((invoice) => invoice.claims).filter((claim) => claim.status === 'Pending').length
-  const clinicalAwaiting = data.appointments.filter((appointment) => appointment.status === 'Completed' && !data.clinicalRecords.some((record) => record.appointmentId === appointment.id) && (user.role !== 'Clinician' || appointment.doctorId === user.id)).length
+  const visibleAppointments = useMemo(() => {
+    if (appointmentsQuery.data) {
+      return appointmentsQuery.data.map(mapDtoToAppointment);
+    }
+    return [];
+  }, [appointmentsQuery.data]);
+
+  if (!user) return null;
+  const todayScheduled = visibleAppointments.filter((item) => item.status === 'Scheduled').length;
+  const todayCompleted = visibleAppointments.filter((item) => item.status === 'Completed').length;
+  const walkIns = visibleAppointments.filter((item) => item.source === 'Walk-in').length;
+
+  const outstandingTotal = (invoicesQuery.data ?? []).reduce(
+    (sum, item) => sum + Math.max(Number(item.patientLiabilityAmount) - Number(item.patientPaidAmount), 0),
+    0,
+  );
+  const pendingClaims = (liveClaims ?? []).filter((claim) => claim.claimStatus === 'Pending' || claim.status === 'Pending').length;
+  const clinicalAwaiting = (worklistQuery.data ?? []).filter(
+    (item) => item.consultationRevisionNo === null && (user.role !== 'Clinician' || item.doctorId === user.id),
+  ).length;
   const firstName = user.name.replace('Dr. ', '').split(' ')[0]
   const branchName = user.branchId === 'all' ? 'All branches' : data.branches.find((branch) => branch.id === user.branchId)?.name ?? 'MedSync Clinics'
   const copy = roleCopy[user.role]
