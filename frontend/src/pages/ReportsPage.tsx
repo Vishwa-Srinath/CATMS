@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react'
-import { BadgeDollarSign, BarChart3, Building2, CalendarDays, Download, FileBarChart2, ReceiptText, ShieldCheck, WalletCards } from 'lucide-react'
+import { useState } from 'react'
+import { BadgeDollarSign, BarChart3, Building2, CalendarDays, Download, FileBarChart2, ReceiptText, ShieldCheck, WalletCards, Loader2 } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useClinic } from '../context/ClinicContext'
-import { DEMO_TODAY, formatCurrency, formatDate, outstanding } from '../lib/domain'
+import { useSession } from '../app/useSession'
+import { useBranchSummary, useDoctorRevenue, usePatientBalances, useTreatmentCounts, useInsuranceReceipts } from '../features/reports/hooks/useReports'
+import { DEMO_TODAY, formatCurrency, formatDate } from '../lib/domain'
 import { Badge, Button, InfoNote, PageHeader } from '../components/ui'
 import digitalHealthImage from '../assets/clinical/digital-health.webp'
 
@@ -17,7 +19,9 @@ const reportMeta: Record<ReportKey, { label: string; shortLabel: string; descrip
 }
 
 export default function ReportsPage() {
-  const { data, user, notify } = useClinic()
+  const { user } = useSession()
+  const { data, notify } = useClinic()
+  
   const allowedReports: ReportKey[] = user?.role === 'Manager' ? ['appointments'] : ['appointments', 'revenue', 'outstanding', 'treatments', 'coverage']
   const [active, setActive] = useState<ReportKey>('appointments')
   const [date, setDate] = useState(DEMO_TODAY)
@@ -25,45 +29,21 @@ export default function ReportsPage() {
   const [to, setTo] = useState('2026-08-09')
   const meta = reportMeta[active]
 
-  const appointmentRows = data.branches.map((branch) => {
-    const items = data.appointments.filter((appointment) => appointment.branchId === branch.id && appointment.date === date)
-    return { branch: branch.name, scheduled: items.filter((item) => item.status === 'Scheduled').length, completed: items.filter((item) => item.status === 'Completed').length, cancelled: items.filter((item) => item.status === 'Cancelled').length, total: items.length }
-  }).filter((row) => user?.role !== 'Manager' || row.branch === data.branches.find((branch) => branch.id === user.branchId)?.name)
+  // BranchId passed if manager, though backend enforces it anyway
+  const branchSummaryQuery = useBranchSummary({ startDate: date, endDate: date, branchId: user?.role === 'Manager' && user.branchId !== 'all' ? (user.branchId as number) : undefined })
+  const doctorRevenueQuery = useDoctorRevenue({ startDate: from, endDate: to })
+  const patientBalancesQuery = usePatientBalances()
+  const treatmentCountsQuery = useTreatmentCounts({ startDate: from, endDate: to })
+  const insuranceReceiptsQuery = useInsuranceReceipts()
 
-  const revenueRows = data.staff.filter((staff) => staff.role === 'Doctor').map((doctor) => {
-    const doctorInvoices = data.invoices.filter((invoice) => {
-      const appointment = data.appointments.find((item) => item.id === invoice.appointmentId)
-      return appointment?.doctorId === doctor.id && appointment.date >= from && appointment.date <= to
-    })
-    return { doctor: doctor.name.replace('Dr. ', ''), specialty: doctor.specialties?.[0] ?? '—', gross: doctorInvoices.reduce((sum, item) => sum + item.subtotal, 0), collected: doctorInvoices.reduce((sum, item) => sum + item.amountPaid, 0), invoices: doctorInvoices.length }
-  }).filter((row) => row.invoices > 0).sort((a, b) => b.gross - a.gross)
+  const appointmentRows = (branchSummaryQuery.data ?? []).map((row: import('../api/reports.api').BranchWiseSummaryDto) => ({ branch: row.branchName, scheduled: Number(row.scheduledCount), completed: Number(row.completedCount), cancelled: Number(row.cancelledCount), total: Number(row.scheduledCount) + Number(row.completedCount) + Number(row.cancelledCount) }))
+  const revenueRows = (doctorRevenueQuery.data ?? []).map((row: import('../api/reports.api').DoctorRevenueDto) => ({ doctor: row.doctorName, specialty: 'General', gross: Number(row.grossRevenue), collected: Number(row.actualCollections), invoices: 0 }))
+  const outstandingRows = (patientBalancesQuery.data ?? []).map((row: import('../api/reports.api').PatientBalanceDto) => ({ patient: row.patientName, patientNo: `PAT-${row.patientId}`, invoice: `INV-${row.invoiceId}`, issued: DEMO_TODAY, payable: Number(row.patientLiability), paid: Number(row.patientLiability) - Number(row.outstandingBalance), due: Number(row.outstandingBalance), status: 'PENDING' }))
+  const treatmentRows = (treatmentCountsQuery.data ?? []).map((row: import('../api/reports.api').TreatmentCountDto) => ({ category: row.categoryName, count: Number(row.treatmentCount), value: 0 }))
+  const coverageRows = (insuranceReceiptsQuery.data ?? []).map((row: import('../api/reports.api').InsuranceReceiptDto) => ({ month: row.reportMonth, insurance: Number(row.totalApprovedInsurance), patientPaid: Number(row.totalPatientReceipts) }))
 
-  const outstandingRows = data.invoices.filter((invoice) => outstanding(invoice) > 0).map((invoice) => {
-    const appointment = data.appointments.find((item) => item.id === invoice.appointmentId)!
-    const patient = data.patients.find((item) => item.id === appointment.patientId)!
-    return { patient: patient.name, patientNo: patient.patientNo, invoice: invoice.invoiceNo, issued: invoice.issuedAt, payable: invoice.patientPayable, paid: invoice.amountPaid, due: outstanding(invoice), status: invoice.status }
-  }).sort((a, b) => b.due - a.due)
+  const isLoading = branchSummaryQuery.isLoading || doctorRevenueQuery.isLoading || patientBalancesQuery.isLoading || treatmentCountsQuery.isLoading || insuranceReceiptsQuery.isLoading
 
-  const treatmentRows = useMemo(() => {
-    const grouped = new Map<string, { category: string; count: number; value: number }>()
-    data.clinicalRecords.forEach((record) => {
-      const appointment = data.appointments.find((item) => item.id === record.appointmentId)
-      if (!appointment || appointment.date < from || appointment.date > to) return
-      record.treatments.forEach((line) => {
-        const treatment = data.treatments.find((item) => item.id === line.treatmentId)
-        if (!treatment) return
-        const current = grouped.get(treatment.category) ?? { category: treatment.category, count: 0, value: 0 }
-        current.count += line.quantity; current.value += line.quantity * line.unitPrice; grouped.set(treatment.category, current)
-      })
-    })
-    return [...grouped.values()].sort((a, b) => b.count - a.count)
-  }, [data, from, to])
-
-  const coverageRows = [
-    { month: 'Apr 2026', insurance: 32800, patientPaid: 56200 }, { month: 'May 2026', insurance: 41600, patientPaid: 68900 },
-    { month: 'Jun 2026', insurance: 38400, patientPaid: 72100 }, { month: 'Jul 2026', insurance: 46300, patientPaid: 84900 },
-    { month: 'Aug 2026', insurance: data.invoices.reduce((sum, invoice) => sum + invoice.insuranceCovered, 0), patientPaid: data.invoices.reduce((sum, invoice) => sum + invoice.amountPaid, 0) },
-  ]
 
   const exportReport = () => {
     const rows: Record<string, string | number>[] = active === 'appointments' ? appointmentRows : active === 'revenue' ? revenueRows : active === 'outstanding' ? outstandingRows : active === 'treatments' ? treatmentRows : coverageRows
@@ -92,11 +72,14 @@ export default function ReportsPage() {
           </div>
 
           <div className="mt-5 h-72" role="img" aria-label={`${meta.label} chart`}>
+            {isLoading ? <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin text-clinic-400" /></div> : <>
             {active === 'appointments' && <ResponsiveContainer width="100%" height="100%"><BarChart data={appointmentRows} margin={{ left: -20 }}><CartesianGrid vertical={false} stroke="#EAEFEF" /><XAxis dataKey="branch" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#4B5D66' }} /><YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#7C8B92' }} /><Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #DCE4E4', boxShadow: '0 8px 24px rgba(18,35,43,.08)', fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} /><Bar dataKey="scheduled" name="Scheduled" fill="#1E77B8" radius={[4,4,0,0]} /><Bar dataKey="completed" name="Completed" fill="#1E8A5F" radius={[4,4,0,0]} /><Bar dataKey="cancelled" name="Cancelled" fill="#8A97A0" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer>}
             {active === 'revenue' && <ResponsiveContainer width="100%" height="100%"><BarChart data={revenueRows} margin={{ left: 8 }}><CartesianGrid vertical={false} stroke="#EAEFEF" /><XAxis dataKey="doctor" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#4B5D66' }} /><YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `${value / 1000}k`} tick={{ fontSize: 10, fill: '#7C8B92' }} /><Tooltip formatter={(value) => formatCurrency(Number(value))} contentStyle={{ borderRadius: 12, border: '1px solid #DCE4E4', boxShadow: '0 8px 24px rgba(18,35,43,.08)', fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} /><Bar dataKey="gross" name="Gross revenue" fill="#0E5E5E" radius={[4,4,0,0]} /><Bar dataKey="collected" name="Collected" fill="#B5651D" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer>}
             {active === 'outstanding' && <ResponsiveContainer width="100%" height="100%"><BarChart data={outstandingRows} layout="vertical" margin={{ left: 38 }}><CartesianGrid horizontal={false} stroke="#EAEFEF" /><XAxis type="number" axisLine={false} tickLine={false} tickFormatter={(value) => `${value / 1000}k`} tick={{ fontSize: 10 }} /><YAxis type="category" dataKey="patient" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} width={90} /><Tooltip formatter={(value) => formatCurrency(Number(value))} contentStyle={{ borderRadius: 12, border: '1px solid #DCE4E4', boxShadow: '0 8px 24px rgba(18,35,43,.08)', fontSize: 12 }} /><Bar dataKey="due" name="Amount due" fill="#C4425A" radius={[0,5,5,0]} maxBarSize={28} /></BarChart></ResponsiveContainer>}
             {active === 'treatments' && <ResponsiveContainer width="100%" height="100%"><BarChart data={treatmentRows} margin={{ left: -20 }}><CartesianGrid vertical={false} stroke="#EAEFEF" /><XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#4B5D66' }} /><YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#7C8B92' }} /><Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #DCE4E4', boxShadow: '0 8px 24px rgba(18,35,43,.08)', fontSize: 12 }} /><Bar dataKey="count" name="Treatments" fill="#6C4AB6" radius={[5,5,0,0]} maxBarSize={48} /></BarChart></ResponsiveContainer>}
             {active === 'coverage' && <ResponsiveContainer width="100%" height="100%"><BarChart data={coverageRows} margin={{ left: 5 }}><CartesianGrid vertical={false} stroke="#EAEFEF" /><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#4B5D66' }} /><YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `${value / 1000}k`} tick={{ fontSize: 10, fill: '#7C8B92' }} /><Tooltip formatter={(value) => formatCurrency(Number(value))} contentStyle={{ borderRadius: 12, border: '1px solid #DCE4E4', boxShadow: '0 8px 24px rgba(18,35,43,.08)', fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} /><Bar dataKey="insurance" name="Insurance covered" stackId="a" fill="#3B6EA5" /><Bar dataKey="patientPaid" name="Out of pocket" stackId="a" fill="#1E8A5F" radius={[5,5,0,0]} /></BarChart></ResponsiveContainer>}
+          </>
+            }
           </div>
         </section>
 
