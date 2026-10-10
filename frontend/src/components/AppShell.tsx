@@ -28,7 +28,7 @@ function Brand() {
   return (
     <div className="flex items-center gap-2.5 px-1 py-1">
       <div className="flex items-center justify-center">
-        <img src={medSyncMark} alt="MedSync" className="w-8 h-8 object-contain" />
+        <img src={medSyncMark} alt="MedSync" className="w-12 h-12 object-contain" />
       </div>
       <span className="font-bold text-[20px] tracking-tight text-slate-900 font-sans">MedSync</span>
     </div>
@@ -41,7 +41,7 @@ function Sidebar({ close }: { close?: () => void }) {
   const staffMember = data.staff.find((s) => s.name === user.name)
 
   return (
-    <div className="flex h-full flex-col justify-between p-5 text-slate-800">
+    <div className="relative z-10 flex h-full flex-col justify-between p-5 text-slate-800">
       <div>
         <Brand />
         <nav className="mt-8 space-y-1.5" aria-label="Main navigation">
@@ -53,10 +53,9 @@ function Sidebar({ close }: { close?: () => void }) {
                 to={item.to}
                 onClick={close}
                 className={({ isActive }) =>
-                  `group flex items-center gap-3.5 rounded-2xl px-4 py-2.5 text-[14px] font-medium transition-all ${
-                    isActive
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'
+                  `group flex items-center gap-3.5 rounded-2xl px-4 py-2.5 text-[14px] font-medium transition-all ${isActive
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/65 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] backdrop-blur-xs'
                   }`
                 }
                 end={item.to === '/'}
@@ -77,21 +76,21 @@ function Sidebar({ close }: { close?: () => void }) {
 
       <div className="space-y-4 pt-4">
         {/* User profile row */}
-        <div className="flex items-center gap-3 px-1 pt-2 border-t border-slate-100">
+        <div className="flex items-center gap-3 px-1 pt-3 border-t border-white/70">
           <Avatar name={user.name} size="sm" className="ring-2 ring-emerald-500/20" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-bold text-slate-800 leading-tight">{user.name}</p>
-            <p className="text-[10px] text-slate-400 font-mono mt-0.5">ID: {staffMember?.employeeNo || '72630284'}</p>
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {staffMember?.employeeNo || '72630284'}</p>
           </div>
         </div>
 
         {/* AI Health Update promo card */}
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-100/80 bg-gradient-to-br from-emerald-50/90 via-teal-50/60 to-emerald-100/30 p-3.5 shadow-xs">
+        <div className="relative overflow-hidden rounded-2xl border border-white/80 bg-gradient-to-br from-emerald-50/70 via-white/50 to-teal-50/35 p-3.5 shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_4px_16px_rgba(16,185,129,0.06)] backdrop-blur-md">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-800">AI Health Update</span>
             <button
               type="button"
-              className="rounded-full p-1 text-slate-400 hover:bg-white/60 hover:text-slate-600 transition"
+              className="rounded-full p-1 text-slate-400 hover:bg-white/70 hover:text-slate-600 transition"
               aria-label="Close update"
             >
               <X size={12} />
@@ -99,11 +98,11 @@ function Sidebar({ close }: { close?: () => void }) {
           </div>
           <div className="mt-2">
             <p className="text-[11px] font-bold text-slate-700">Advantages</p>
-            <p className="mt-0.5 text-[10px] leading-relaxed text-slate-500">
+            <p className="mt-0.5 text-[10px] leading-relaxed text-slate-600">
               New AI engine improves diagnosis accuracy by 27%
             </p>
           </div>
-          <div className="mt-2 text-emerald-500/70">
+          <div className="mt-2 text-emerald-500/80">
             <svg viewBox="0 0 160 26" fill="none" className="w-full h-4 stroke-current stroke-[1.8]">
               <path d="M0 18 Q 20 4, 40 16 T 80 10 T 120 20 T 160 8" />
             </svg>
@@ -113,7 +112,7 @@ function Sidebar({ close }: { close?: () => void }) {
         <button
           type="button"
           onClick={signOut}
-          className="flex w-full items-center justify-center gap-2 rounded-xl py-1 text-xs font-medium text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition"
+          className="flex w-full items-center justify-center gap-2 rounded-xl py-1 text-xs font-medium text-slate-500 hover:text-rose-600 hover:bg-white/60 transition backdrop-blur-xs"
         >
           <LogOut size={13} />
           <span>Sign out</span>
@@ -158,7 +157,17 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Floating rounded Sidebar on Desktop */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:block p-3 sm:p-4">
-        <div className="h-full rounded-3xl bg-white/90 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04)] backdrop-blur-xl overflow-y-auto">
+        <div className="glass-sidebar relative h-full rounded-[28px] overflow-hidden overflow-y-auto">
+          {/* Top specular refraction highlight sheen */}
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/95 to-transparent z-10"
+            aria-hidden="true"
+          />
+          {/* Top-left specular refraction glare */}
+          <div
+            className="pointer-events-none absolute -top-12 -left-12 h-36 w-36 rounded-full bg-gradient-to-br from-white/50 via-white/15 to-transparent blur-md z-10"
+            aria-hidden="true"
+          />
           <Sidebar />
         </div>
       </aside>
@@ -168,9 +177,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="fixed inset-0 z-50 lg:hidden">
           <button className="absolute inset-0 bg-slate-950/40 backdrop-blur-xs" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />
           <aside className="relative h-full w-[min(86vw,19rem)] p-3">
-            <div className="h-full rounded-3xl bg-white shadow-xl overflow-y-auto">
+            <div className="glass-sidebar relative h-full rounded-[28px] overflow-hidden overflow-y-auto">
+              {/* Top specular refraction highlight sheen */}
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/95 to-transparent z-10"
+                aria-hidden="true"
+              />
               <button
-                className="absolute right-6 top-6 z-10 rounded-full p-1.5 text-slate-500 hover:bg-slate-100"
+                className="absolute right-5 top-5 z-20 rounded-full p-1.5 text-slate-500 hover:bg-white/60 hover:text-slate-800 transition backdrop-blur-xs"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close navigation"
               >
@@ -316,85 +330,85 @@ export function AppShell({ children }: { children: ReactNode }) {
         </footer>
       </div>
 
-    <Modal open={searchOpen} onClose={() => { setSearchOpen(false); setSearchQuery(''); }} title="Search records" description="Find patients, appointments, and staff members across the network.">
-      <SearchInput placeholder="Search patients, appointments, or staff by name, ID, or phone…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="w-full" />
-      <div className="mt-4 max-h-[60vh] overflow-y-auto">
-        {searchQuery.trim() ? (
-          <div className="space-y-2">
-            {/* Patients matches */}
-            {data.patients
-              .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.patientNo.toLowerCase().includes(searchQuery.toLowerCase()) || p.nic.toLowerCase().includes(searchQuery.toLowerCase()))
-              .slice(0, 4)
-              .map(p => (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 p-3 hover:border-clinic-500 hover:bg-slate-50 cursor-pointer transition"
-                  onClick={() => { setSearchOpen(false); setSearchQuery(''); navigate('/patients'); }}
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar name={p.name} size="sm" />
-                    <div>
-                      <div className="text-sm font-semibold text-slate-800">{p.name}</div>
-                      <div className="text-xs text-slate-500 font-mono">{p.patientNo} · {p.phone}</div>
-                    </div>
-                  </div>
-                  <Badge tone="Active">Patient</Badge>
-                </div>
-              ))}
-
-            {/* Appointments matches */}
-            {data.appointments
-              .filter(a => a.reference.toLowerCase().includes(searchQuery.toLowerCase()) || a.reason.toLowerCase().includes(searchQuery.toLowerCase()))
-              .slice(0, 3)
-              .map(a => {
-                const patient = data.patients.find(p => p.id === a.patientId)
-                return (
+      <Modal open={searchOpen} onClose={() => { setSearchOpen(false); setSearchQuery(''); }} title="Search records" description="Find patients, appointments, and staff members across the network.">
+        <SearchInput placeholder="Search patients, appointments, or staff by name, ID, or phone…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="w-full" />
+        <div className="mt-4 max-h-[60vh] overflow-y-auto">
+          {searchQuery.trim() ? (
+            <div className="space-y-2">
+              {/* Patients matches */}
+              {data.patients
+                .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.patientNo.toLowerCase().includes(searchQuery.toLowerCase()) || p.nic.toLowerCase().includes(searchQuery.toLowerCase()))
+                .slice(0, 4)
+                .map(p => (
                   <div
-                    key={a.id}
+                    key={p.id}
                     className="flex items-center justify-between rounded-xl border border-slate-200 p-3 hover:border-clinic-500 hover:bg-slate-50 cursor-pointer transition"
-                    onClick={() => { setSearchOpen(false); setSearchQuery(''); navigate('/appointments'); }}
+                    onClick={() => { setSearchOpen(false); setSearchQuery(''); navigate('/patients'); }}
                   >
-                    <div>
-                      <div className="text-sm font-semibold text-slate-800">{a.reference} · {patient?.name}</div>
-                      <div className="text-xs text-slate-500">{a.date} · {a.start}–{a.end} · {a.reason}</div>
+                    <div className="flex items-center gap-3">
+                      <Avatar name={p.name} size="sm" />
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">{p.name}</div>
+                        <div className="text-xs text-slate-500 font-mono">{p.patientNo} · {p.phone}</div>
+                      </div>
                     </div>
-                    <Badge tone={a.status}>{a.status}</Badge>
+                    <Badge tone="Active">Patient</Badge>
                   </div>
-                )
-              })}
+                ))}
 
-            {/* Staff matches */}
-            {data.staff
-              .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.employeeNo.toLowerCase().includes(searchQuery.toLowerCase()) || s.role.toLowerCase().includes(searchQuery.toLowerCase()))
-              .slice(0, 3)
-              .map(s => (
-                <div
-                  key={s.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 p-3 hover:border-clinic-500 hover:bg-slate-50 cursor-pointer transition"
-                  onClick={() => { setSearchOpen(false); setSearchQuery(''); navigate('/administration'); }}
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar name={s.name} size="sm" />
-                    <div>
-                      <div className="text-sm font-semibold text-slate-800">{s.name}</div>
-                      <div className="text-xs text-slate-500 font-mono">{s.employeeNo} · {s.role}</div>
+              {/* Appointments matches */}
+              {data.appointments
+                .filter(a => a.reference.toLowerCase().includes(searchQuery.toLowerCase()) || a.reason.toLowerCase().includes(searchQuery.toLowerCase()))
+                .slice(0, 3)
+                .map(a => {
+                  const patient = data.patients.find(p => p.id === a.patientId)
+                  return (
+                    <div
+                      key={a.id}
+                      className="flex items-center justify-between rounded-xl border border-slate-200 p-3 hover:border-clinic-500 hover:bg-slate-50 cursor-pointer transition"
+                      onClick={() => { setSearchOpen(false); setSearchQuery(''); navigate('/appointments'); }}
+                    >
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">{a.reference} · {patient?.name}</div>
+                        <div className="text-xs text-slate-500">{a.date} · {a.start}–{a.end} · {a.reason}</div>
+                      </div>
+                      <Badge tone={a.status}>{a.status}</Badge>
                     </div>
-                  </div>
-                  <Badge tone={s.isActive ? 'Active' : 'Inactive'}>{s.role}</Badge>
-                </div>
-              ))}
+                  )
+                })}
 
-            {data.patients.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.patientNo.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
-             data.appointments.filter(a => a.reference.toLowerCase().includes(searchQuery.toLowerCase()) || a.reason.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
-             data.staff.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.employeeNo.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-              <div className="py-12 text-center text-sm text-slate-500">No matching records found for "{searchQuery}"</div>
-            )}
-          </div>
-        ) : (
-          <div className="py-12 text-center text-sm text-slate-500">Type a name, patient ID, reference, or doctor to search.</div>
-        )}
-      </div>
-    </Modal>
+              {/* Staff matches */}
+              {data.staff
+                .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.employeeNo.toLowerCase().includes(searchQuery.toLowerCase()) || s.role.toLowerCase().includes(searchQuery.toLowerCase()))
+                .slice(0, 3)
+                .map(s => (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between rounded-xl border border-slate-200 p-3 hover:border-clinic-500 hover:bg-slate-50 cursor-pointer transition"
+                    onClick={() => { setSearchOpen(false); setSearchQuery(''); navigate('/administration'); }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar name={s.name} size="sm" />
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">{s.name}</div>
+                        <div className="text-xs text-slate-500 font-mono">{s.employeeNo} · {s.role}</div>
+                      </div>
+                    </div>
+                    <Badge tone={s.isActive ? 'Active' : 'Inactive'}>{s.role}</Badge>
+                  </div>
+                ))}
+
+              {data.patients.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.patientNo.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
+                data.appointments.filter(a => a.reference.toLowerCase().includes(searchQuery.toLowerCase()) || a.reason.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
+                data.staff.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.employeeNo.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                  <div className="py-12 text-center text-sm text-slate-500">No matching records found for "{searchQuery}"</div>
+                )}
+            </div>
+          ) : (
+            <div className="py-12 text-center text-sm text-slate-500">Type a name, patient ID, reference, or doctor to search.</div>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }
