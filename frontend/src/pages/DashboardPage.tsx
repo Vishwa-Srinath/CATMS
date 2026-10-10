@@ -2,8 +2,8 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowUpRight, BarChart3, CalendarClock, CalendarDays, CheckCircle2, CircleDollarSign,
-  ClipboardPlus, Clock3, CreditCard, HeartPulse, MapPin, Plus, ReceiptText,
-  Sparkles, Stethoscope, TrendingUp, UserPlus, UsersRound, WalletCards,
+  ClipboardPlus, Clock3, CreditCard, HeartPulse, Plus, ReceiptText,
+  Stethoscope, TrendingUp, UserPlus, UsersRound, WalletCards,
 } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useClinic } from '../context/ClinicContext'
@@ -43,6 +43,13 @@ const roleCopy = {
 } as const
 
 
+
+function getTimeGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good Morning'
+  if (hour < 17) return 'Good Afternoon'
+  return 'Good Evening'
+}
 
 export default function DashboardPage() {
   const { data, user } = useClinic()
@@ -117,26 +124,16 @@ export default function DashboardPage() {
     <section className={`role-home-hero role-home-${user.role.toLowerCase()}`}>
       <span className="hero-orbit hero-orbit-one" aria-hidden="true" />
       <span className="hero-orbit hero-orbit-two" aria-hidden="true" />
-      <div className="role-home-copy">
-        <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.13em] text-[var(--portal-accent)]">
-          <span className="live-pulse" />{copy.eyebrow} · Sunday, 9 August
-        </div>
-        <p className="mt-4 text-sm font-semibold text-slate-500">Good morning, {firstName}</p>
-        <h1 className="mt-1 max-w-[680px] font-display text-[38px] font-semibold leading-[1.04] tracking-[-.035em] text-slate-900 sm:text-[48px]">{copy.title}</h1>
-        <p className="mt-4 max-w-[590px] text-[14px] leading-6 text-slate-600 sm:text-[15px]">{copy.description}</p>
+      <div className="role-home-copy flex flex-col justify-center">
+        <p className="text-sm font-semibold text-slate-500">{getTimeGreeting()}, {firstName}</p>
+        <h1 className="mt-1.5 max-w-[680px] font-display text-[38px] font-semibold leading-[1.04] tracking-[-.035em] text-slate-900 sm:text-[48px]">{copy.title}</h1>
         <div className="mt-6 flex flex-wrap gap-2.5">
           {quickActions.map(({ label, to, icon: Icon }, index) => <Link key={to + label} to={to}><Button variant={index === 0 ? 'primary' : 'secondary'}><Icon size={16} />{label}{index === 0 && <ArrowUpRight size={15} />}</Button></Link>)}
-        </div>
-        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] font-medium text-slate-500">
-          <span className="inline-flex items-center gap-1.5"><MapPin size={13} className="text-[var(--portal-accent)]" />{branchName}</span>
-          <span className="inline-flex items-center gap-1.5"><CheckCircle2 size={13} className="text-emerald-600" />Systems operating normally</span>
         </div>
       </div>
 
       <div className="role-showcase" aria-label={`${user.role} live overview`}>
         {user.role === 'Receptionist' && <>
-          <div className="showcase-heading"><span><Sparkles size={14} />Front desk now</span><strong>{visibleAppointments.length} visits</strong></div>
-          <div className="schedule-thread" aria-hidden="true" />
           {visibleAppointments.slice(0, 3).map((appointment, index) => {
             const patient = data.patients.find((item) => item.id === appointment.patientId)
             return <div className={`floating-appointment appointment-${index + 1}`} key={appointment.id}>
@@ -146,7 +143,6 @@ export default function DashboardPage() {
               <Badge>{appointment.status}</Badge>
             </div>
           })}
-          <div className="showcase-foot"><span><span className="live-pulse" /> Arrival board synced</span><strong>Next gap 11:30</strong></div>
         </>}
 
         {user.role === 'Clinician' && <>

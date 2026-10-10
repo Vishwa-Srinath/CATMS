@@ -84,30 +84,6 @@ function Sidebar({ close }: { close?: () => void }) {
           </div>
         </div>
 
-        {/* AI Health Update promo card */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50/70 via-white/50 to-teal-50/35 p-3.5 shadow-[0_4px_16px_rgba(16,185,129,0.06)] backdrop-blur-md">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-800">AI Health Update</span>
-            <button
-              type="button"
-              className="rounded-full p-1 text-slate-400 hover:bg-white/70 hover:text-slate-600 transition"
-              aria-label="Close update"
-            >
-              <X size={12} />
-            </button>
-          </div>
-          <div className="mt-2">
-            <p className="text-[11px] font-bold text-slate-700">Advantages</p>
-            <p className="mt-0.5 text-[10px] leading-relaxed text-slate-600">
-              New AI engine improves diagnosis accuracy by 27%
-            </p>
-          </div>
-          <div className="mt-2 text-emerald-500/80">
-            <svg viewBox="0 0 160 26" fill="none" className="w-full h-4 stroke-current stroke-[1.8]">
-              <path d="M0 18 Q 20 4, 40 16 T 80 10 T 120 20 T 160 8" />
-            </svg>
-          </div>
-        </div>
 
         <button
           type="button"

@@ -519,27 +519,11 @@
   position: relative;
   align-self: center;
   min-height: 300px;
-  overflow: hidden;
-  border-radius: 14px;
-  color: white;
+  border-radius: 16px;
+  color: var(--ink);
   border: none;
-  background:
-    radial-gradient(circle at 86% 3%, rgba(255, 255, 255, 0.22), transparent 13rem),
-    linear-gradient(145deg, color-mix(in srgb, var(--portal-accent) 78%, rgba(18, 35, 43, 0.85)), color-mix(in srgb, var(--portal-accent-deep) 60%, rgba(18, 35, 43, 0.90)));
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow:
-    0 12px 32px color-mix(in srgb, var(--portal-accent) 22%, rgba(18, 35, 43, 0.16));
-}
-.role-showcase-photo {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.18;
-  mix-blend-mode: luminosity;
+  background: transparent;
+  box-shadow: none;
 }
 .showcase-heading {
   position: relative;
@@ -549,16 +533,18 @@
   justify-content: space-between;
   padding: 18px 20px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  color: #475569;
 }
 .showcase-heading strong {
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.20);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 3px rgba(18, 35, 43, 0.08);
   backdrop-filter: blur(8px);
   padding: 4px 8px;
   font-size: 10px;
   letter-spacing: 0.04em;
-  color: white;
+  color: #0f172a;
 }
 .showcase-foot {
   position: absolute;
@@ -569,9 +555,112 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: rgba(255, 255, 255, 0.8);
+  color: #64748b;
   font-size: 10px;
+  font-weight: 500;
 }
+.showcase-foot strong {
+  color: #0f172a;
+}
+.next-patient-note {
+  position: absolute;
+  right: 18px;
+  bottom: 44px;
+  left: 18px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(18, 35, 43, 0.06);
+  display: flex;
+  flex-direction: column;
+}
+.next-patient-note span { font-size: 11px; color: #64748b; }
+.next-patient-note strong { font-size: 13px; color: #0f172a; margin-top: 2px; }
+.next-patient-note small { font-size: 11px; color: #64748b; margin-top: 2px; }
+.clinical-focus {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+}
+.clinical-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 16px rgba(18, 35, 43, 0.06);
+  color: var(--portal-accent);
+}
+.clinical-ring span { font-size: 14px; font-weight: 700; color: #0f172a; }
+.clinical-ring small { font-size: 10px; color: #64748b; }
+.clinical-wave { flex: 1; color: var(--portal-accent); opacity: 0.8; }
+.manager-insight {
+  display: grid;
+  grid-template-columns: 115px 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+}
+.completion-dial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 16px rgba(18, 35, 43, 0.06);
+  text-align: center;
+}
+.completion-dial strong { display: block; font-size: 20px; color: #0f172a; }
+.completion-dial span { display: block; font-size: 9px; color: #64748b; }
+.flow-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 100px;
+}
+.flow-bars div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.flow-bars span { font-size: 10px; color: #64748b; }
+.flow-bars i {
+  width: 100%;
+  max-width: 18px;
+  background: var(--portal-accent);
+  border-radius: 4px 4px 0 0;
+}
+.flow-bars strong { font-size: 10px; color: #0f172a; }
+.finance-figure {
+  padding: 10px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.finance-figure span { font-size: 12px; color: #64748b; }
+.finance-figure strong { font-size: 26px; font-weight: 700; color: #0f172a; margin-top: 4px; }
+.finance-figure small { font-size: 11px; color: #059669; display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+.finance-spark {
+  width: 100%;
+  height: 90px;
+  color: var(--portal-accent);
+}
+.finance-notes {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 20px;
+  font-size: 11px;
+  color: #64748b;
+}
+.finance-notes strong { color: #0f172a; }
 .floating-appointment {
   position: absolute;
   z-index: 2;
@@ -590,9 +679,9 @@
   box-shadow:
     0 8px 24px rgba(9, 24, 29, 0.16);
 }
-.floating-appointment.appointment-1 { left: 45px; top: 62px; }
-.floating-appointment.appointment-2 { left: 35px; top: 130px; width: calc(100% - 70px); }
-.floating-appointment.appointment-3 { left: 45px; top: 198px; width: calc(100% - 90px); }
+.floating-appointment.appointment-1 { left: 45px; top: 36px; }
+.floating-appointment.appointment-2 { left: 35px; top: 106px; width: calc(100% - 70px); }
+.floating-appointment.appointment-3 { left: 45px; top: 176px; width: calc(100% - 90px); }
 
 /* Dashboard Surface Panels with Frosted Glassmorphism */
 .flow-surface,
