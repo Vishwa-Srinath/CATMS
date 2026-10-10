@@ -183,4 +183,32 @@ reportsRouter.get(
   importStatusHandler,
 );
 
+// 🔄 Import CSV ───────────────────────────────────────────────────────────
+// Accessible strictly by Admin, QA, AdminFinance.
+import express from 'express';
+
+const importCsvHandler = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    let csvData = '';
+    if (typeof req.body === 'string') {
+      csvData = req.body;
+    } else if (req.body && req.body.csvData) {
+      csvData = req.body.csvData;
+    }
+    
+    const data = await ReportsService.importCsv(csvData);
+    const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
+    res.status(200).json(successEnvelope(data, correlationId));
+  } catch (error) {
+    next(error);
+  }
+};
+
+reportsRouter.post(
+  '/import-csv',
+  requireRole('Admin', 'QA', 'AdminFinance', 'Admin/Finance'),
+  express.text({ type: '*/*' }),
+  importCsvHandler,
+);
+
 export default reportsRouter;

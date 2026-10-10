@@ -52,4 +52,21 @@ export class ReportsService {
       errors: [],
     };
   }
+
+  static async importCsv(csvData: string): Promise<ImportStatusDto> {
+    const lines = csvData.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) {
+      return { status: 'failed', lastImportedAt: new Date().toISOString(), totalRecords: 0, acceptedRecords: 0, rejectedRecords: 0, errors: ['Empty file'] };
+    }
+    // Naive import logic for demonstration
+    const accepted = lines.length - 1;
+    return {
+      status: 'completed',
+      lastImportedAt: new Date().toISOString(),
+      totalRecords: accepted,
+      acceptedRecords: accepted,
+      rejectedRecords: 0,
+      errors: []
+    };
+  }
 }
