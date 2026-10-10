@@ -36,7 +36,7 @@ export default function LoginPage() {
       {/* Brand logo in top left corner */}
       <div className="absolute top-5 left-5 sm:top-8 sm:left-8 lg:top-10 lg:left-12 z-20">
         <img
-          className="h-8 sm:h-9 lg:h-10 w-auto object-contain drop-shadow-xs"
+          className="h-16 sm:h-16 lg:h-24 w-auto object-contain drop-shadow-xs"
           src={medSyncLogo}
           alt="MedSync Medical Network"
         />
