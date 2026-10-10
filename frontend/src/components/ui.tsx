@@ -161,33 +161,89 @@ export function StatCard({
   detail,
   icon: Icon,
   accent = 'teal',
+  subStats,
 }: {
   label: string
   value: ReactNode
   detail: string
   icon: LucideIcon
   accent?: 'teal' | 'blue' | 'amber' | 'coral'
-}) {
-  const colors = {
-    teal: 'bg-[#E7F5EE] text-[#1E8A5F]',
-    blue: 'bg-[#EAF4FB] text-[#1E77B8]',
-    amber: 'bg-[#FBF2E3] text-[#C0872A]',
-    coral: 'bg-[#FBEAEE] text-[#C4425A]',
+  subStats?: {
+    label1: string
+    val1: string | number
+    label2: string
+    val2: string | number
   }
+}) {
+  const accentColors = {
+    teal: { bar: 'bg-emerald-500', text: 'text-emerald-600', icon: 'text-emerald-600 bg-emerald-50' },
+    blue: { bar: 'bg-sky-500', text: 'text-sky-600', icon: 'text-sky-600 bg-sky-50' },
+    amber: { bar: 'bg-amber-500', text: 'text-amber-600', icon: 'text-amber-600 bg-amber-50' },
+    coral: { bar: 'bg-rose-500', text: 'text-rose-600', icon: 'text-rose-600 bg-rose-50' },
+  }
+
+  const leftBars = [14, 18, 12, 20, 16, 22, 15, 19, 17, 21]
+  const rightBars = [14, 16, 12, 15, 10, 13, 11, 14]
+
   return (
-    <div className="metric-card">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[12px] font-semibold text-slate-500">{label}</p>
-          <p className="mt-2 font-mono text-[24px] font-bold tracking-tight text-slate-900 sm:text-[26px]">
-            {value}
-          </p>
+    <div className="metric-card rounded-2xl bg-white/90 p-5 border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.03)] backdrop-blur-md flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[13px] font-medium text-slate-500">{label}</span>
+          <div className="h-9 w-9 rounded-full border border-slate-100 bg-white flex items-center justify-center text-slate-600 shadow-xs">
+            <Icon size={17} />
+          </div>
         </div>
-        <span className={`rounded-xl p-2.5 ${colors[accent]}`}>
-          <Icon size={18} aria-hidden="true" />
-        </span>
+        <div className="my-2 font-display text-[30px] sm:text-[34px] font-bold tracking-tight text-slate-900 leading-none">
+          {value}
+        </div>
       </div>
-      <p className="mt-3 text-[12px] leading-5 text-slate-500">{detail}</p>
+
+      <div className="mt-2 pt-2.5 border-t border-slate-100/90">
+        {subStats ? (
+          <div className="grid grid-cols-2 gap-3 items-end">
+            <div>
+              <div className="text-[10px] font-medium text-slate-500 mb-1">{subStats.label1}</div>
+              <div className="flex items-end gap-[2px] h-5 mb-1">
+                {leftBars.map((h, i) => (
+                  <div
+                    key={i}
+                    className={`w-[2.5px] rounded-full ${accentColors[accent].bar}`}
+                    style={{ height: `${h * 0.8}px` }}
+                  />
+                ))}
+              </div>
+              <div className="text-[11px] font-bold text-slate-700">{subStats.val1}</div>
+            </div>
+            <div>
+              <div className="text-[10px] font-medium text-slate-400 mb-1">{subStats.label2}</div>
+              <div className="flex items-end gap-[2px] h-5 mb-1">
+                {rightBars.map((h, i) => (
+                  <div
+                    key={i}
+                    className="w-[2.5px] rounded-full bg-slate-200"
+                    style={{ height: `${h * 0.8}px` }}
+                  />
+                ))}
+              </div>
+              <div className="text-[11px] font-medium text-slate-400">{subStats.val2}</div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-end gap-[3px] h-5 mb-1.5">
+              {[...leftBars, ...rightBars].slice(0, 14).map((h, i) => (
+                <div
+                  key={i}
+                  className={`w-[2.5px] rounded-full ${i < 8 ? accentColors[accent].bar : 'bg-slate-200'}`}
+                  style={{ height: `${h * 0.8}px` }}
+                />
+              ))}
+            </div>
+            <p className="text-[11px] font-medium text-slate-500 truncate">{detail}</p>
+          </>
+        )}
+      </div>
     </div>
   )
 }

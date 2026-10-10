@@ -1,54 +1,130 @@
 import { useState, useEffect, type ReactNode } from 'react'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  BarChart3, Bell, Building2, CalendarDays, ChevronDown, CircleHelp,
-  ClipboardPlus, CreditCard, LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck, Sun, UsersRound, X,
+  BarChart3, Bell, Building2, CalendarDays,
+  CreditCard, FileText, LayoutDashboard, LogOut, Menu, Moon, Search, Settings, ShieldCheck,
+  Stethoscope, Sun, User, UsersRound, X,
   type LucideIcon,
 } from 'lucide-react'
 import { useClinic } from '../context/ClinicContext'
 import type { Role } from '../types'
 import { Avatar, Modal, SearchInput, Badge } from './ui'
 import { AmbientGlowSpheres } from './AmbientGlowSpheres'
-import medSyncLogo from '../assets/brand/medsync-logo.png'
-import medSyncMark from '../assets/brand/medsync-mark.png'
 
 interface NavItem { label: string; to: string; icon: LucideIcon; roles: Role[] }
 
 const navItems: NavItem[] = [
-  { label: 'Overview', to: '/', icon: LayoutDashboard, roles: ['Receptionist', 'Clinician', 'Manager', 'Admin'] },
+  { label: 'Dashboard', to: '/', icon: LayoutDashboard, roles: ['Receptionist', 'Clinician', 'Manager', 'Admin'] },
+  { label: 'Doctor', to: '/clinical', icon: Stethoscope, roles: ['Clinician', 'Admin'] },
   { label: 'Patients', to: '/patients', icon: UsersRound, roles: ['Receptionist', 'Clinician', 'Admin'] },
   { label: 'Appointments', to: '/appointments', icon: CalendarDays, roles: ['Receptionist', 'Clinician', 'Manager', 'Admin'] },
-  { label: 'Clinical workspace', to: '/clinical', icon: ClipboardPlus, roles: ['Clinician', 'Admin'] },
-  { label: 'Billing & claims', to: '/finance', icon: CreditCard, roles: ['Admin'] },
+  { label: 'Billing', to: '/finance', icon: CreditCard, roles: ['Admin'] },
   { label: 'Reports', to: '/reports', icon: BarChart3, roles: ['Manager', 'Admin'] },
-  { label: 'Branches & staff', to: '/administration', icon: Building2, roles: ['Admin'] },
+  { label: 'Settings', to: '/administration', icon: Settings, roles: ['Admin', 'Manager', 'Receptionist', 'Clinician'] },
 ]
 
-const roleLabels: Record<Role, string> = { Receptionist: 'Reception', Clinician: 'Clinical', Manager: 'Branch management', Admin: 'Admin & Finance' }
-
 function Brand() {
-  return <div className="sidebar-brand flex items-center justify-center">
-    <img className="sidebar-brand-logo" src={medSyncLogo} alt="MedSync Medical Network" />
-  </div>
+  return (
+    <div className="flex items-center gap-2.5 px-1 py-1">
+      <div className="flex items-center justify-center">
+        <svg className="w-8 h-8 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="8" cy="8" r="3.2" className="text-emerald-500 fill-emerald-500" />
+          <circle cx="16" cy="8" r="3.2" className="text-emerald-600 fill-emerald-600" />
+          <circle cx="8" cy="16" r="3.2" className="text-emerald-400 fill-emerald-400" />
+          <circle cx="16" cy="16" r="3.2" className="text-emerald-500 fill-emerald-500" />
+        </svg>
+      </div>
+      <span className="font-bold text-[20px] tracking-tight text-slate-900 font-sans">DocuVerse</span>
+    </div>
+  )
 }
 
 function Sidebar({ close }: { close?: () => void }) {
-  const { user, signOut } = useClinic()
+  const { user, data, signOut } = useClinic()
   if (!user) return null
-  return <div className="portal-sidebar flex h-full flex-col px-4 py-5 text-slate-800">
-    <div className="px-2"><Brand /></div>
-    <div className="workspace-switcher mt-4 rounded-2xl border px-3.5 py-3">
-      <p className="font-mono text-[9px] font-medium uppercase tracking-[.1em] text-slate-400">Authorized work area</p>
-      <div className="mt-1.5 flex items-center gap-2 text-sm font-semibold text-[var(--portal-accent)]"><ShieldCheck size={15} />{roleLabels[user.role]}</div>
+  const staffMember = data.staff.find((s) => s.name === user.name)
+
+  return (
+    <div className="flex h-full flex-col justify-between p-5 text-slate-800">
+      <div>
+        <Brand />
+        <nav className="mt-8 space-y-1.5" aria-label="Main navigation">
+          {navItems
+            .filter((item) => item.roles.includes(user.role))
+            .map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={close}
+                className={({ isActive }) =>
+                  `group flex items-center gap-3.5 rounded-2xl px-4 py-2.5 text-[14px] font-medium transition-all ${
+                    isActive
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'
+                  }`
+                }
+                end={item.to === '/'}
+              >
+                {({ isActive }) => (
+                  <>
+                    <item.icon
+                      size={18}
+                      className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-700'}
+                    />
+                    <span>{item.label}</span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+        </nav>
+      </div>
+
+      <div className="space-y-4 pt-4">
+        {/* User profile row */}
+        <div className="flex items-center gap-3 px-1 pt-2 border-t border-slate-100">
+          <Avatar name={user.name} size="sm" className="ring-2 ring-emerald-500/20" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold text-slate-800 leading-tight">{user.name}</p>
+            <p className="text-[10px] text-slate-400 font-mono mt-0.5">ID: {staffMember?.employeeNo || '72630284'}</p>
+          </div>
+        </div>
+
+        {/* AI Health Update promo card */}
+        <div className="relative overflow-hidden rounded-2xl border border-emerald-100/80 bg-gradient-to-br from-emerald-50/90 via-teal-50/60 to-emerald-100/30 p-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-800">AI Health Update</span>
+            <button
+              type="button"
+              className="rounded-full p-1 text-slate-400 hover:bg-white/60 hover:text-slate-600 transition"
+              aria-label="Close update"
+            >
+              <X size={12} />
+            </button>
+          </div>
+          <div className="mt-2">
+            <p className="text-[11px] font-bold text-slate-700">Advantages</p>
+            <p className="mt-0.5 text-[10px] leading-relaxed text-slate-500">
+              New AI engine improves diagnosis accuracy by 27%
+            </p>
+          </div>
+          <div className="mt-2 text-emerald-500/70">
+            <svg viewBox="0 0 160 26" fill="none" className="w-full h-4 stroke-current stroke-[1.8]">
+              <path d="M0 18 Q 20 4, 40 16 T 80 10 T 120 20 T 160 8" />
+            </svg>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={signOut}
+          className="flex w-full items-center justify-center gap-2 rounded-xl py-1 text-xs font-medium text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition"
+        >
+          <LogOut size={13} />
+          <span>Sign out</span>
+        </button>
+      </div>
     </div>
-    <nav className="mt-5 flex-1 space-y-1" aria-label="Main navigation">
-      {navItems.filter((item) => item.roles.includes(user.role)).map((item) => <NavLink key={item.to} to={item.to} onClick={close} className={({ isActive }) => `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition ${isActive ? 'portal-nav-active' : 'portal-nav-idle'}`} end={item.to === '/'}><item.icon size={17} /><span>{item.label}</span></NavLink>)}
-    </nav>
-    <div className="sidebar-footer space-y-1 border-t pt-4">
-      <button type="button" className="portal-nav-idle flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium"><CircleHelp size={17} />Help & shortcuts</button>
-      <button type="button" onClick={signOut} className="portal-nav-idle flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium"><LogOut size={17} />Sign out</button>
-    </div>
-  </div>
+  )
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -71,11 +147,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
-  const location = useLocation()
-  const currentPage = navItems.find((item) => item.to === location.pathname)?.label ?? 'MedSync workspace'
+
   if (!user) return null
   const branchName = user.branchId === 'all' ? 'All clinic branches' : data.branches.find((branch) => branch.id === user.branchId)?.name ?? 'MedSync Clinics'
   const portalClass = 'portal-reception'
+
   return (
     <div
       className={`portal-shell ${portalClass} min-h-screen relative overflow-x-hidden`}
@@ -83,77 +159,166 @@ export function AppShell({ children }: { children: ReactNode }) {
     >
       {/* Ambient background glowing spheres across all dashboards for glass refraction */}
       <AmbientGlowSpheres role="Receptionist" interactive intensity="subtle" className="z-0 fixed" />
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:block"><Sidebar /></aside>
-      {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><button className="absolute inset-0 bg-slate-950/50" aria-label="Close navigation" onClick={() => setMobileOpen(false)} /><aside className="floating-surface relative h-full w-[min(86vw,20rem)]"><button className="absolute right-3 top-3 z-10 rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X size={20} /></button><Sidebar close={() => setMobileOpen(false)} /></aside></div>}
+
+      {/* Floating rounded Sidebar on Desktop */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:block p-3 sm:p-4">
+        <div className="h-full rounded-3xl bg-white/90 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04)] backdrop-blur-xl overflow-y-auto">
+          <Sidebar />
+        </div>
+      </aside>
+
+      {/* Mobile Drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button className="absolute inset-0 bg-slate-950/40 backdrop-blur-xs" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />
+          <aside className="relative h-full w-[min(86vw,19rem)] p-3">
+            <div className="h-full rounded-3xl bg-white shadow-xl overflow-y-auto">
+              <button
+                className="absolute right-6 top-6 z-10 rounded-full p-1.5 text-slate-500 hover:bg-slate-100"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close navigation"
+              >
+                <X size={18} />
+              </button>
+              <Sidebar close={() => setMobileOpen(false)} />
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Main layout container */}
       <div className="lg:pl-64 relative z-10">
-      <header className="portal-topbar sticky top-0 z-30 flex h-[60px] items-center justify-between border-b bg-white/95 px-4 sm:px-5 lg:px-6">
-        <div className="flex items-center gap-3"><button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" aria-label="Open navigation"><Menu size={21} /></button><img className="h-9 w-9 object-contain lg:hidden" src={medSyncMark} alt="MedSync" /><div className="hidden sm:block"><p className="text-sm font-bold text-slate-800">{currentPage}</p><p className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium text-slate-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{branchName} · Live workspace</p></div></div>
-        <div className="flex items-center gap-2 sm:gap-3">
-          {user.role === 'Clinician' && <button type="button" onClick={() => setNightCharting((active) => !active)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label={nightCharting ? 'Turn off Night Charting' : 'Turn on Night Charting'} title={nightCharting ? 'Use light charting mode' : 'Night Charting'}>{nightCharting ? <Sun size={18} /> : <Moon size={18} />}</button>}
-          <button type="button" onClick={() => setSearchOpen(true)} className="topbar-search hidden items-center gap-2 rounded-xl border px-3 py-1.5 text-slate-500 transition hover:text-slate-800 sm:flex" aria-label="Search workspace"><Search size={16} /><span className="text-xs font-medium">Search records</span><kbd className="ml-3 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[9px] text-slate-400">Ctrl K</kbd></button>
-          <div className="relative">
-            <button type="button" onClick={() => setNotificationsOpen(!notificationsOpen)} className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Notifications"><Bell size={19} /><span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-coral ring-2 ring-white" /></button>
-            {notificationsOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setNotificationsOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-slate-200 bg-white p-2 shadow-lg z-50">
-                  <div className="flex items-center justify-between px-2 pb-2 mb-2 border-b border-slate-100">
-                    <span className="font-semibold text-sm text-slate-800">Notifications</span>
-                    <button type="button" className="text-xs font-medium text-slate-500 hover:text-slate-800 transition">Mark all as read</button>
-                  </div>
-                  <div className="flex flex-col gap-1 max-h-[60vh] overflow-y-auto px-1">
-                    <button type="button" className="flex items-start gap-3 rounded-lg p-2 text-left hover:bg-slate-50 transition">
-                      <div className="mt-0.5 rounded-full bg-coral/10 p-1.5 text-coral"><Bell size={14} /></div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">System update</p>
-                        <p className="mt-0.5 text-xs text-slate-500">Scheduled maintenance in 2 hours.</p>
-                        <p className="text-[10px] text-slate-400 mt-1.5 font-medium">10 mins ago</p>
-                      </div>
-                    </button>
-                    <button type="button" className="flex items-start gap-3 rounded-lg p-2 text-left hover:bg-slate-50 transition">
-                      <div className="mt-0.5 rounded-full bg-blue-50 p-1.5 text-blue-600"><CalendarDays size={14} /></div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">New appointment</p>
-                        <p className="mt-0.5 text-xs text-slate-500">Sarah Jenkins booked a consultation for 14:30 today.</p>
-                        <p className="text-[10px] text-slate-400 mt-1.5 font-medium">1 hour ago</p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
+        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between px-4 sm:px-6 lg:px-8 py-3 bg-white/40 backdrop-blur-md">
+          {/* Left: Mobile toggle + Pill Search input */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="rounded-xl p-2 text-slate-600 hover:bg-white/80 lg:hidden"
+              aria-label="Open navigation"
+            >
+              <Menu size={22} />
+            </button>
+
+            <div
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-2.5 rounded-full bg-white/90 border border-slate-200/80 shadow-xs px-4 py-2 w-64 sm:w-80 cursor-pointer hover:border-slate-300 transition"
+              role="search"
+            >
+              <Search size={15} className="text-slate-400" />
+              <span className="text-xs text-slate-400 font-medium">Search</span>
+            </div>
           </div>
-          <span className="mx-1 hidden h-7 w-px bg-slate-200 sm:block" />
-          <div className="relative">
-            <button type="button" onClick={() => setProfileOpen(!profileOpen)} className="flex items-center gap-2 rounded-lg p-1.5 text-left hover:bg-slate-100"><Avatar name={user.name} size="sm" className="portal-avatar" /><span className="hidden md:block"><span className="block text-xs font-bold text-slate-800">{user.name}</span><span className="block text-[10px] text-slate-500">{user.jobTitle}</span></span><ChevronDown size={14} className="hidden text-slate-400 md:block" /></button>
-            {profileOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg z-50">
-                  <div className="px-3 py-3 border-b border-slate-100 mb-1">
-                    <p className="text-sm font-bold text-slate-800">{user.name}</p>
-                    <p className="text-xs text-slate-500">{user.jobTitle}</p>
-                    <div className="mt-3 space-y-2">
-                      <p className="flex items-center gap-2 text-xs text-slate-600">
-                        <ShieldCheck size={14} className="text-emerald-500" />
-                        <span>{user.role}</span>
-                      </p>
-                      <p className="flex items-center gap-2 text-xs text-slate-600">
-                        <Building2 size={14} className="text-blue-500" />
-                        <span className="truncate">{branchName}</span>
-                      </p>
+
+          {/* Right: Actions and Status Pills */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {user.role === 'Clinician' && (
+              <button
+                type="button"
+                onClick={() => setNightCharting((active) => !active)}
+                className="h-10 w-10 rounded-full bg-white/90 border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-500 hover:bg-white"
+                aria-label={nightCharting ? 'Turn off Night Charting' : 'Turn on Night Charting'}
+              >
+                {nightCharting ? <Sun size={17} /> : <Moon size={17} />}
+              </button>
+            )}
+
+            {/* Notification Button */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className="h-10 w-10 rounded-full bg-white/90 border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-600 hover:bg-white relative transition"
+                aria-label="Notifications"
+              >
+                <Bell size={17} />
+                <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
+              </button>
+              {notificationsOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setNotificationsOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl z-50">
+                    <div className="flex items-center justify-between px-3 pb-2 pt-1 border-b border-slate-100">
+                      <span className="font-semibold text-xs text-slate-800">Notifications</span>
+                      <button type="button" className="text-[11px] font-medium text-slate-400 hover:text-slate-700">Mark all read</button>
+                    </div>
+                    <div className="flex flex-col gap-1 max-h-[60vh] overflow-y-auto px-1 pt-1">
+                      <div className="rounded-xl p-2.5 text-left hover:bg-slate-50 transition flex items-start gap-2.5">
+                        <div className="rounded-full bg-rose-50 p-1.5 text-rose-600"><Bell size={13} /></div>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-800">System update</p>
+                          <p className="text-[11px] text-slate-500">Scheduled maintenance in 2 hours.</p>
+                        </div>
+                      </div>
+                      <div className="rounded-xl p-2.5 text-left hover:bg-slate-50 transition flex items-start gap-2.5">
+                        <div className="rounded-full bg-sky-50 p-1.5 text-sky-600"><CalendarDays size={13} /></div>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-800">New appointment</p>
+                          <p className="text-[11px] text-slate-500">Sarah Jenkins booked for 14:30 today.</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <button type="button" onClick={() => { setProfileOpen(false); signOut(); }} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition"><LogOut size={16} />Sign out</button>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
+
+            {/* Profile circular button */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="h-10 w-10 rounded-full bg-white/90 border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-600 hover:bg-white transition"
+                aria-label="User profile"
+              >
+                <User size={17} />
+              </button>
+              {profileOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl z-50">
+                    <div className="px-3 py-2 border-b border-slate-100">
+                      <p className="text-xs font-bold text-slate-800">{user.name}</p>
+                      <p className="text-[11px] text-slate-500">{user.jobTitle}</p>
+                      <div className="mt-2 space-y-1 text-[11px] text-slate-600">
+                        <p className="flex items-center gap-1.5"><ShieldCheck size={13} className="text-emerald-500" />{user.role}</p>
+                        <p className="flex items-center gap-1.5"><Building2 size={13} className="text-blue-500" />{branchName}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setProfileOpen(false); signOut(); }}
+                      className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition"
+                    >
+                      <LogOut size={14} />Sign out
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Date Pill badge */}
+            <div className="hidden sm:flex items-center gap-2 rounded-full bg-white/90 border border-slate-200/80 shadow-xs px-4 py-2 text-xs font-semibold text-slate-700">
+              <CalendarDays size={14} className="text-slate-400" />
+              <span>October 23, 2025</span>
+            </div>
+
+            {/* Generate Report Pill Button */}
+            <button
+              type="button"
+              onClick={() => navigate(user.role === 'Receptionist' ? '/appointments' : '/reports')}
+              className="hidden sm:flex items-center gap-2 rounded-full bg-[#1E8A5F] hover:bg-[#187550] text-white font-semibold text-xs px-5 py-2.5 shadow-sm transition"
+            >
+              <FileText size={14} />
+              <span>Generate Report</span>
+            </button>
           </div>
-        </div>
-      </header>
-      <main id="main-content" className="mx-auto max-w-[1560px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6">{children}</main>
-      <footer className="px-6 pb-4 text-center text-[11px] text-slate-400"><span className="inline-flex items-center gap-1.5"><ShieldCheck size={12} />MedSync CATMS · Local staff system · Demonstration data</span></footer>
-    </div>
+        </header>
+
+        <main id="main-content" className="mx-auto max-w-[1560px] px-4 sm:px-6 lg:px-8 py-4 sm:py-5">{children}</main>
+        <footer className="px-6 pb-6 text-center text-[11px] text-slate-400">
+          <span className="inline-flex items-center gap-1.5"><ShieldCheck size={12} />DocuVerse · MedSync CATMS · Live System</span>
+        </footer>
+      </div>
 
     <Modal open={searchOpen} onClose={() => { setSearchOpen(false); setSearchQuery(''); }} title="Search records" description="Find patients, appointments, and staff members across the network.">
       <SearchInput placeholder="Search patients, appointments, or staff by name, ID, or phone…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="w-full" />
