@@ -18,7 +18,11 @@ export interface SessionUserDto {
   employeeId: number;
   username: string;
   role: string;
+  roleDisplayName?: string;
+  positionCode?: string;
   branchId: number | 'all';
+  branchCode?: string | null;
+  branchName?: string | null;
   fullName: string;
 }
 

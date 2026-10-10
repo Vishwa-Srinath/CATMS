@@ -29,6 +29,8 @@ import type {
   SpecialtyDto,
   AdminUserDto,
   CreateAdminUserInput,
+  UpdateUserRoleInput,
+  AuditLogDto,
 } from '../../contracts/staff.contract';
 
 export class StaffService {
@@ -642,6 +644,131 @@ export class StaffService {
         ],
       };
     }, 'catms_admin');
+  }
+
+  async unlockUserAccount(userAccountId: number, actorUserId?: number): Promise<AdminUserDto> {
+    return withTransaction(async (client) => {
+      const userRes = await client.query(
+        `SELECT user_account_id, username, account_status FROM catms.user_account WHERE user_account_id = $1`,
+        [userAccountId],
+      );
+      if (userRes.rows.length === 0) {
+        throw AppError.notFound('User account');
+      }
+
+      await client.query(
+        `UPDATE catms.user_account
+         SET failed_login_count = 0, account_status = 'Active', updated_at = now()
+         WHERE user_account_id = $1`,
+        [userAccountId],
+      );
+
+      await client.query(
+        `INSERT INTO catms.audit_event (
+           actor_user_id, entity_type, entity_id, action_code, payload
+         ) VALUES ($1, 'USER_ACCOUNT', $2, 'ACCOUNT_UNLOCKED', $3)`,
+        [actorUserId ?? null, String(userAccountId), JSON.stringify({ userAccountId, username: userRes.rows[0].username })],
+      );
+
+      const allUsers = await this.listAdminUsers();
+      const updated = allUsers.find((u) => u.userAccountId === userAccountId);
+      if (!updated) {
+        throw AppError.notFound('User account');
+      }
+      return updated;
+    }, 'catms_admin');
+  }
+
+  async updateUserRole(
+    userAccountId: number,
+    input: UpdateUserRoleInput,
+    actorUserId?: number,
+  ): Promise<AdminUserDto> {
+    return withTransaction(async (client) => {
+      const userRes = await client.query(
+        `SELECT user_account_id, username FROM catms.user_account WHERE user_account_id = $1`,
+        [userAccountId],
+      );
+      if (userRes.rows.length === 0) {
+        throw AppError.notFound('User account');
+      }
+
+      const roleRes = await client.query(
+        `SELECT app_role_id FROM catms.app_role WHERE UPPER(role_code) = UPPER($1)`,
+        [input.roleCode.trim()],
+      );
+      if (roleRes.rows.length === 0) {
+        throw AppError.validationError(`Unknown application role: ${input.roleCode}`);
+      }
+      const appRoleId = roleRes.rows[0].app_role_id;
+
+      // Close current active roles
+      await client.query(
+        `UPDATE catms.user_account_role
+         SET valid_to = now()
+         WHERE user_account_id = $1 AND (valid_to IS NULL OR valid_to > now())`,
+        [userAccountId],
+      );
+
+      // Insert new active role
+      await client.query(
+        `INSERT INTO catms.user_account_role (
+           user_account_id, app_role_id, branch_scope_id, assigned_by_user_id
+         ) VALUES ($1, $2, $3, $4)`,
+        [userAccountId, appRoleId, input.branchScopeId ?? null, actorUserId ?? null],
+      );
+
+      // Audit event
+      await client.query(
+        `INSERT INTO catms.audit_event (
+           actor_user_id, entity_type, entity_id, action_code, payload
+         ) VALUES ($1, 'USER_ACCOUNT', $2, 'ROLE_CHANGED', $3)`,
+        [actorUserId ?? null, String(userAccountId), JSON.stringify({ role: input.roleCode, branchScopeId: input.branchScopeId })],
+      );
+
+      const allUsers = await this.listAdminUsers();
+      const updated = allUsers.find((u) => u.userAccountId === userAccountId);
+      if (!updated) {
+        throw AppError.notFound('User account');
+      }
+      return updated;
+    }, 'catms_admin');
+  }
+
+  // ── Audit Logs ─────────────────────────────────────────────────────────────
+  async listAuditLogs(limit = 100): Promise<AuditLogDto[]> {
+    const res = await pool.query(
+      `SELECT
+         a.audit_event_id,
+         a.actor_user_id,
+         COALESCE(u.username, 'System') AS actor_username,
+         COALESCE(e.full_name, 'System') AS actor_name,
+         a.entity_type,
+         a.entity_id,
+         a.action_code,
+         a.occurred_at,
+         a.payload,
+         a.client_ip::text AS client_ip
+       FROM catms.audit_event a
+       LEFT JOIN catms.user_account u ON u.user_account_id = a.actor_user_id
+       LEFT JOIN catms.employee e ON e.employee_id = u.employee_id
+       ORDER BY a.audit_event_id DESC
+       LIMIT $1`,
+      [limit],
+    );
+
+    return res.rows.map((r) => ({
+      auditEventId: Number(r.audit_event_id),
+      actorUserId: r.actor_user_id ? Number(r.actor_user_id) : null,
+      actorUsername: r.actor_username,
+      actorName: r.actor_name,
+      entityType: r.entity_type,
+      entityId: r.entity_id,
+      actionCode: r.action_code,
+      occurredAt: r.occurred_at ? new Date(r.occurred_at).toISOString() : new Date().toISOString(),
+      payload: r.payload,
+      clientIp: r.client_ip ?? null,
+    }));
   }
 }
 

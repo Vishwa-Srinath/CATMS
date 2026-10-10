@@ -109,10 +109,25 @@ export function EmptyState({ icon: Icon, title, description, action }: { icon: L
 
 export function RuleError({ error }: { error: unknown }) {
   if (!error) return null
-  const isRule = error instanceof ClinicRuleError
+  const code = (error instanceof ClinicRuleError && error.code) || (typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code) : undefined)
+  const message = error instanceof Error ? error.message : 'The operation could not be completed.'
   return <div className="rule-error rounded-xl border border-[#E8C2CA] bg-[#FBEAEE] p-4" role="alert">
-    <div className="flex gap-3"><AlertTriangle className="mt-0.5 shrink-0 text-[#C4425A]" size={18} /><div><p className="font-bold text-[#962C41]">Operation rejected</p><p className="mt-1 text-sm leading-5 text-[#962C41]">{error instanceof Error ? error.message : 'The operation could not be completed.'}</p>{isRule && <code className="mt-2 inline-block rounded-md bg-white/60 px-2 py-1 text-[11px] font-medium text-[#962C41]">{error.code}</code>}</div></div>
+    <div className="flex gap-3"><AlertTriangle className="mt-0.5 shrink-0 text-[#C4425A]" size={18} /><div><p className="font-bold text-[#962C41]">Operation rejected</p><p className="mt-1 text-sm leading-5 text-[#962C41]">{message}</p>{code && <code className="mt-2 inline-block rounded-md bg-white/60 px-2 py-1 text-[11px] font-medium text-[#962C41]">{code}</code>}</div></div>
   </div>
+}
+
+export function DisabledAction({ reason, children, className = '' }: { reason: string; children: ReactNode; className?: string }) {
+  return (
+    <span className={`relative group inline-block ${className}`} title={reason}>
+      {children}
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex group-focus-within:flex z-50 whitespace-normal w-max max-w-xs rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-white shadow-lg transition-all"
+      >
+        {reason}
+      </span>
+    </span>
+  )
 }
 
 export function LoadingBlock({ label = 'Loading records' }: { label?: string }) {

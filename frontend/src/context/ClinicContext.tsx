@@ -2,6 +2,8 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import { demoUsers, initialData } from '../data/demoData'
 import { ClinicRuleError, findAppointmentConflict, invoiceStatus, timeToMinutes } from '../lib/domain'
+import { useSession } from '../app/useSession'
+import type { SessionUserDto } from '../api/auth.api'
 import type {
   Appointment,
   Branch,
@@ -9,6 +11,7 @@ import type {
   ClinicData,
   InsurancePolicy,
   Patient,
+  Role,
   SessionUser,
   StaffMember,
   Treatment,
@@ -28,10 +31,11 @@ interface ToastMessage {
 interface ClinicContextValue {
   data: ClinicData
   user: SessionUser | null
+  isLoadingSession: boolean
   demoUsers: SessionUser[]
   toasts: ToastMessage[]
   signIn: (user: SessionUser) => void
-  signOut: () => void
+  signOut: () => Promise<void> | void
   dismissToast: (id: number) => void
   notify: (toast: Omit<ToastMessage, 'id'>) => void
   addPatient: (patient: PatientInput) => Patient
@@ -54,13 +58,49 @@ const ClinicContext = createContext<ClinicContextValue | null>(null)
 
 const cloneData = () => structuredClone(initialData)
 
+function mapSessionDtoToUser(dto: SessionUserDto): SessionUser {
+  let role: Role = 'Admin'
+  const normalized = (dto.role || '').toLowerCase()
+  if (normalized.includes('reception')) {
+    role = 'Receptionist'
+  } else if (normalized.includes('clinic') || normalized.includes('doctor')) {
+    role = 'Clinician'
+  } else if (normalized.includes('manager')) {
+    role = 'Manager'
+  } else if (normalized.includes('admin')) {
+    role = 'Admin'
+  }
+
+  const names = dto.fullName ? dto.fullName.trim().split(/\s+/) : ['User']
+  const initials = names.length >= 2
+    ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
+    : (dto.fullName ? dto.fullName.slice(0, 2).toUpperCase() : 'US')
+
+  return {
+    id: String(dto.userId),
+    name: dto.fullName || dto.username,
+    role,
+    jobTitle: dto.roleDisplayName || dto.positionCode || dto.role,
+    branchId: dto.branchId === 'all' ? 'all' : String(dto.branchId),
+    initials,
+  }
+}
+
 export function ClinicProvider({ children }: { children: ReactNode }) {
+  const session = useSession()
   const [data, setData] = useState<ClinicData>(cloneData)
-  const [user, setUser] = useState<SessionUser | null>(() => {
+  const [demoUser, setDemoUser] = useState<SessionUser | null>(() => {
     const storedRole = sessionStorage.getItem('catms-demo-role')
     return demoUsers.find((candidate) => candidate.role === storedRole) ?? null
   })
   const [toasts, setToasts] = useState<ToastMessage[]>([])
+
+  const user = useMemo<SessionUser | null>(() => {
+    if (session.user) {
+      return mapSessionDtoToUser(session.user)
+    }
+    return demoUser
+  }, [session.user, demoUser])
 
   const dismissToast = useCallback((id: number) => {
     setToasts((current) => current.filter((toast) => toast.id !== id))
@@ -74,13 +114,18 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
 
   const signIn = (selectedUser: SessionUser) => {
     sessionStorage.setItem('catms-demo-role', selectedUser.role)
-    setUser(selectedUser)
+    setDemoUser(selectedUser)
     notify({ type: 'success', title: `Welcome, ${selectedUser.name.split(' ')[0]}`, message: `${selectedUser.role} workspace is ready.` })
   }
 
-  const signOut = () => {
+  const signOut = async () => {
     sessionStorage.removeItem('catms-demo-role')
-    setUser(null)
+    setDemoUser(null)
+    try {
+      await session.logout()
+    } catch {
+      // Ignored if session already ended or server unreachable
+    }
   }
 
   const addPatient = (input: PatientInput) => {
@@ -252,11 +297,11 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
   }
 
   const value = useMemo<ClinicContextValue>(() => ({
-    data, user, demoUsers, toasts, signIn, signOut, dismissToast, notify,
+    data, user, isLoadingSession: session.isLoading, demoUsers, toasts, signIn, signOut, dismissToast, notify,
     addPatient, addPolicy, addAppointment, rescheduleAppointment, updateAppointmentStatus, saveClinicalRecord,
     postPayment, submitClaim, updateClaimStatus, addStaff, toggleStaff, addBranch, addTreatment, toggleTreatment,
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [data, user, toasts])
+  }), [data, user, session.isLoading, toasts])
 
   return <ClinicContext.Provider value={value}>{children}</ClinicContext.Provider>
 }
