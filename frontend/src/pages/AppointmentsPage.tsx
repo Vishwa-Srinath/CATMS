@@ -23,7 +23,6 @@ import { useClinic } from '../context/ClinicContext';
 import { DEMO_TODAY, formatDate } from '../lib/domain';
 import type { Appointment, StaffMember } from '../types';
 import { Avatar, Badge, Button, LoadingBlock, PageHeader, RuleError } from '../components/ui';
-import appointmentCareImage from '../assets/clinical/appointment-care.webp';
 import {
   useAppointments,
   useBookAppointment,
@@ -259,7 +258,6 @@ export default function AppointmentsPage() {
   return (
     <>
       <PageHeader
-        image={appointmentCareImage}
         eyebrow="Scheduling workbench"
         title="Appointments"
         description="Coordinate booked visits and walk-ins. Doctor availability is checked clinic-wide before every commit."

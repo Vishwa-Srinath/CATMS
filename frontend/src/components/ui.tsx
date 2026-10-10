@@ -40,8 +40,8 @@ export function Avatar({ name, size = 'md', className = '' }: { name: string; si
   return <span aria-hidden="true" className={`inline-flex shrink-0 items-center justify-center rounded-full bg-[#EFF3F3] font-semibold text-[#4B5D66] ring-1 ring-[#DCE4E4] ${sizes[size]} ${className}`}>{letters}</span>
 }
 
-export function PageHeader({ eyebrow, title, description, actions, image }: { eyebrow?: string; title: string; description?: string; actions?: ReactNode; image?: string }) {
-  return <header className={`page-hero mb-7 overflow-hidden ${image ? 'page-hero-has-image' : ''}`}>
+export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: string; title: string; description?: string; actions?: ReactNode; image?: string }) {
+  return <header className="page-hero mb-7 overflow-hidden">
     <span className="page-hero-orbit" aria-hidden="true" />
     <div className="relative z-[1] flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
       <div className="page-hero-content">
@@ -49,9 +49,8 @@ export function PageHeader({ eyebrow, title, description, actions, image }: { ey
         <h1 className="font-display text-[28px] font-semibold leading-tight text-slate-900 sm:text-[34px]">{title}</h1>
         {description && <p className="mt-2 max-w-3xl text-[14px] leading-6 text-slate-500">{description}</p>}
       </div>
-      {(actions || image) && <div className="page-hero-end flex shrink-0 flex-col items-start gap-3 lg:items-end">
-        {image && <span className="page-hero-photo" aria-hidden="true"><img src={image} alt="" loading="eager" /></span>}
-        {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      {actions && <div className="page-hero-end flex shrink-0 flex-col items-start gap-3 lg:items-end">
+        <div className="flex flex-wrap gap-2">{actions}</div>
       </div>}
     </div>
   </header>

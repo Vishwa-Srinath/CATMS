@@ -8,7 +8,6 @@ import {
 } from 'lucide-react'
 import { useClinic } from '../context/ClinicContext'
 import { PageHeader } from '../components/ui'
-import receptionImage from '../assets/clinical/reception-corridor.webp'
 import {
   useBranches,
   useEmployees,
@@ -226,7 +225,6 @@ export default function AdministrationPage() {
   return (
     <>
       <PageHeader
-        image={receptionImage}
         eyebrow="System administration"
         title="Clinic network & access control"
         description="Live administrative control of clinic locations, staff assignments, clinician specialties, user accounts, and immutable audit logs."

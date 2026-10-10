@@ -56,8 +56,6 @@ import {
 } from '../components/ui';
 import { formatCurrency, formatDate } from '../lib/domain';
 import type { Claim, InsurancePolicy, Invoice, Patient } from '../types';
-import financeImage from '../assets/clinical/finance-calculator.webp';
-import medicationImage from '../assets/clinical/medication-flatlay.webp';
 
 type Tab = 'invoices' | 'claims' | 'catalogue';
 type PayerType = 'Patient' | 'Insurer';
@@ -352,7 +350,6 @@ export default function FinancePage() {
   return (
     <>
       <PageHeader
-        image={tab === 'catalogue' ? medicationImage : financeImage}
         eyebrow="Finance workspace"
         title="Billing & claims"
         description="Review database-generated invoices, post payer-specific payments, track internal insurance claims, and manage treatment catalogue."

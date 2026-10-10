@@ -9,10 +9,6 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { useClinic } from '../context/ClinicContext'
 import { DEMO_TODAY, formatCurrency } from '../lib/domain'
 import { Avatar, Badge, Button, StatCard } from '../components/ui'
-import receptionCareImage from '../assets/clinical/appointment-care.webp'
-import clinicianCareImage from '../assets/clinical/patient-consultation.webp'
-import managerCareImage from '../assets/clinical/reception-corridor.webp'
-import financeCareImage from '../assets/clinical/finance-calculator.webp'
 import { useQuery } from '@tanstack/react-query'
 import { useAppointments, mapDtoToAppointment, parseNumericId } from '../features/appointments'
 import { fetchInvoices, fetchClinicalWorklist } from '../api/clinical-billing'
@@ -46,12 +42,7 @@ const roleCopy = {
   },
 } as const
 
-const roleShowcaseImages = {
-  Receptionist: receptionCareImage,
-  Clinician: clinicianCareImage,
-  Manager: managerCareImage,
-  Admin: financeCareImage,
-} as const
+
 
 export default function DashboardPage() {
   const { data, user } = useClinic()
@@ -119,7 +110,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="role-showcase" aria-label={`${user.role} live overview`}>
-        <img className="role-showcase-photo" src={roleShowcaseImages[user.role]} alt="" aria-hidden="true" loading="eager" />
         {user.role === 'Receptionist' && <>
           <div className="showcase-heading"><span><Sparkles size={14} />Front desk now</span><strong>{visibleAppointments.length} visits</strong></div>
           <div className="schedule-thread" aria-hidden="true" />

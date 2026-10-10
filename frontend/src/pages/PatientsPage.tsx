@@ -12,7 +12,6 @@ import {
   RuleError,
   SearchInput,
 } from '../components/ui';
-import patientConsultationImage from '../assets/clinical/patient-consultation.webp';
 import {
   usePatients,
   useClinicBranches,
@@ -82,7 +81,6 @@ export default function PatientsPage() {
   return (
     <>
       <PageHeader
-        image={patientConsultationImage}
         eyebrow="Clinic-wide directory"
         title="Patients"
         description="Find a single patient record from any branch using a name, NIC or passport number, phone, or patient ID."

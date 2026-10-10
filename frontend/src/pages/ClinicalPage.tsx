@@ -11,7 +11,6 @@ import {
 } from '../api/clinical-billing'
 import { Avatar, Badge, Button, EmptyState, Field, InfoNote, Modal, PageHeader, RuleError } from '../components/ui'
 import { formatCurrency, formatDate } from '../lib/domain'
-import clinicianImage from '../assets/clinical/clinician-stethoscope.webp'
 
 /**
  * src/pages/ClinicalPage.tsx
@@ -87,7 +86,6 @@ export default function ClinicalPage() {
   return (
     <>
       <PageHeader
-        image={clinicianImage}
         eyebrow="Clinician workspace"
         title="Clinical worklist"
         description="Record care for completed visits. The server snapshots catalogue prices and generates the invoice."

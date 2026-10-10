@@ -6,7 +6,6 @@ import { useSession } from '../app/useSession'
 import { useBranchSummary, useDoctorRevenue, usePatientBalances, useTreatmentCounts, useInsuranceReceipts } from '../features/reports/hooks/useReports'
 import { DEMO_TODAY, formatCurrency, formatDate } from '../lib/domain'
 import { Badge, Button, InfoNote, PageHeader } from '../components/ui'
-import digitalHealthImage from '../assets/clinical/digital-health.webp'
 
 type ReportKey = 'appointments' | 'revenue' | 'outstanding' | 'treatments' | 'coverage'
 
@@ -54,7 +53,7 @@ export default function ReportsPage() {
   }
 
   return <>
-    <PageHeader image={digitalHealthImage} eyebrow="Management reporting" title="Reports" description="Verifiable management views backed by reporting objects. Every chart is paired with its raw rows." actions={<Button variant="secondary" onClick={exportReport}><Download size={16} />Export CSV</Button>} />
+    <PageHeader eyebrow="Management reporting" title="Reports" description="Verifiable management views backed by reporting objects. Every chart is paired with its raw rows." actions={<Button variant="secondary" onClick={exportReport}><Download size={16} />Export CSV</Button>} />
 
     {user?.role === 'Manager' && <div className="mb-5"><InfoNote title="Branch-manager access">You can view the daily appointment summary for {data.branches.find((branch) => branch.id === user.branchId)?.name}. Financial and clinic-wide reports require Admin / Finance access.</InfoNote></div>}
 
