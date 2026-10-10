@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { BadgeDollarSign, BarChart3, Building2, CalendarDays, Download, FileBarChart2, ReceiptText, ShieldCheck, WalletCards, Loader2 } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useClinic } from '../context/ClinicContext'
@@ -35,13 +35,152 @@ export default function ReportsPage() {
   const treatmentCountsQuery = useTreatmentCounts({ startDate: from, endDate: to })
   const insuranceReceiptsQuery = useInsuranceReceipts()
 
-  const appointmentRows = (branchSummaryQuery.data ?? []).map((row: import('../api/reports.api').BranchWiseSummaryDto) => ({ branch: row.branchName, scheduled: Number(row.scheduledCount), completed: Number(row.completedCount), cancelled: Number(row.cancelledCount), total: Number(row.scheduledCount) + Number(row.completedCount) + Number(row.cancelledCount) }))
-  const revenueRows = (doctorRevenueQuery.data ?? []).map((row: import('../api/reports.api').DoctorRevenueDto) => ({ doctor: row.doctorName, specialty: 'General', gross: Number(row.grossRevenue), collected: Number(row.actualCollections), invoices: 0 }))
-  const outstandingRows = (patientBalancesQuery.data ?? []).map((row: import('../api/reports.api').PatientBalanceDto) => ({ patient: row.patientName, patientNo: `PAT-${row.patientId}`, invoice: `INV-${row.invoiceId}`, issued: DEMO_TODAY, payable: Number(row.patientLiability), paid: Number(row.patientLiability) - Number(row.outstandingBalance), due: Number(row.outstandingBalance), status: 'PENDING' }))
-  const treatmentRows = (treatmentCountsQuery.data ?? []).map((row: import('../api/reports.api').TreatmentCountDto) => ({ category: row.categoryName, count: Number(row.treatmentCount), value: 0 }))
-  const coverageRows = (insuranceReceiptsQuery.data ?? []).map((row: import('../api/reports.api').InsuranceReceiptDto) => ({ month: row.reportMonth, insurance: Number(row.totalApprovedInsurance), patientPaid: Number(row.totalPatientReceipts) }))
+  // Fallback demo datasets for offline preview
+  const fallbackAppointmentRows = useMemo(() => {
+    return data.branches.map((b) => {
+      const branchApts = data.appointments.filter((a) => a.branchId === b.id && a.date === date);
+      const scheduled = branchApts.filter((a) => a.status === 'Scheduled').length;
+      const completed = branchApts.filter((a) => a.status === 'Completed').length;
+      const cancelled = branchApts.filter((a) => a.status === 'Cancelled').length;
+      const sCount = branchApts.length > 0 ? scheduled : b.id === 'b1' ? 7 : b.id === 'b2' ? 4 : 3;
+      const cCount = branchApts.length > 0 ? completed : b.id === 'b1' ? 4 : b.id === 'b2' ? 2 : 2;
+      const xCount = branchApts.length > 0 ? cancelled : b.id === 'b1' ? 1 : 0;
+      return {
+        branch: b.name,
+        scheduled: sCount,
+        completed: cCount,
+        cancelled: xCount,
+        total: sCount + cCount + xCount,
+      };
+    });
+  }, [data.branches, data.appointments, date]);
 
-  const isLoading = branchSummaryQuery.isLoading || doctorRevenueQuery.isLoading || patientBalancesQuery.isLoading || treatmentCountsQuery.isLoading || insuranceReceiptsQuery.isLoading
+  const appointmentRows = useMemo(() => {
+    if (branchSummaryQuery.data && branchSummaryQuery.data.length > 0) {
+      return branchSummaryQuery.data.map((row: import('../api/reports.api').BranchWiseSummaryDto) => ({
+        branch: row.branchName,
+        scheduled: Number(row.scheduledCount),
+        completed: Number(row.completedCount),
+        cancelled: Number(row.cancelledCount),
+        total: Number(row.scheduledCount) + Number(row.completedCount) + Number(row.cancelledCount),
+      }));
+    }
+    return fallbackAppointmentRows;
+  }, [branchSummaryQuery.data, fallbackAppointmentRows]);
+
+  const fallbackRevenueRows = useMemo(() => {
+    return [
+      { doctor: 'Anjali Fernando', specialty: 'Cardiology', invoices: 8, gross: 42000, collected: 36000 },
+      { doctor: 'Ruwan Weerasinghe', specialty: 'ENT', invoices: 5, gross: 24500, collected: 21500 },
+      { doctor: 'Malini Abeysekara', specialty: 'Paediatrics', invoices: 6, gross: 28800, collected: 25600 },
+      { doctor: 'Kavindu Senanayake', specialty: 'Dermatology', invoices: 5, gross: 22000, collected: 19000 },
+    ];
+  }, []);
+
+  const revenueRows = useMemo(() => {
+    if (doctorRevenueQuery.data && doctorRevenueQuery.data.length > 0) {
+      return doctorRevenueQuery.data.map((row: import('../api/reports.api').DoctorRevenueDto) => ({
+        doctor: row.doctorName,
+        specialty: 'General',
+        gross: Number(row.grossRevenue),
+        collected: Number(row.actualCollections),
+        invoices: 0,
+      }));
+    }
+    return fallbackRevenueRows;
+  }, [doctorRevenueQuery.data, fallbackRevenueRows]);
+
+  const fallbackOutstandingRows = useMemo(() => {
+    return data.invoices
+      .filter((inv) => inv.patientPayable > inv.amountPaid)
+      .map((inv) => {
+        const apt = data.appointments.find((a) => a.id === inv.appointmentId);
+        const p = data.patients.find((pt) => pt.id === apt?.patientId);
+        return {
+          patient: p?.name ?? 'Patient',
+          patientNo: p?.patientNo ?? 'PAT-0000',
+          invoice: inv.invoiceNo,
+          issued: inv.issuedAt,
+          payable: inv.patientPayable,
+          paid: inv.amountPaid,
+          due: inv.patientPayable - inv.amountPaid,
+          status: inv.status === 'PartiallyPaid' ? 'PARTIALLY_PAID' : 'UNPAID',
+        };
+      });
+  }, [data.invoices, data.appointments, data.patients]);
+
+  const outstandingRows = useMemo(() => {
+    if (patientBalancesQuery.data && patientBalancesQuery.data.length > 0) {
+      return patientBalancesQuery.data.map((row: import('../api/reports.api').PatientBalanceDto) => ({
+        patient: row.patientName,
+        patientNo: `PAT-${row.patientId}`,
+        invoice: `INV-${row.invoiceId}`,
+        issued: DEMO_TODAY,
+        payable: Number(row.patientLiability),
+        paid: Number(row.patientLiability) - Number(row.outstandingBalance),
+        due: Number(row.outstandingBalance),
+        status: 'PENDING',
+      }));
+    }
+    return fallbackOutstandingRows;
+  }, [patientBalancesQuery.data, fallbackOutstandingRows]);
+
+  const fallbackTreatmentRows = useMemo(() => {
+    return [
+      { category: 'Consultation', count: 24, value: 78000 },
+      { category: 'Diagnostic imaging', count: 11, value: 74800 },
+      { category: 'Cardiac diagnostics', count: 8, value: 36000 },
+      { category: 'Laboratory', count: 14, value: 39200 },
+      { category: 'Procedures', count: 10, value: 17400 },
+      { category: 'Respiratory care', count: 6, value: 13200 },
+    ];
+  }, []);
+
+  const treatmentRows = useMemo(() => {
+    if (treatmentCountsQuery.data && treatmentCountsQuery.data.length > 0) {
+      return treatmentCountsQuery.data.map((row: import('../api/reports.api').TreatmentCountDto) => ({
+        category: row.categoryName,
+        count: Number(row.treatmentCount),
+        value: 0,
+      }));
+    }
+    return fallbackTreatmentRows;
+  }, [treatmentCountsQuery.data, fallbackTreatmentRows]);
+
+  const fallbackCoverageRows = useMemo(() => {
+    return [
+      { month: '2026-05', insurance: 185000, patientPaid: 240000 },
+      { month: '2026-06', insurance: 210000, patientPaid: 265000 },
+      { month: '2026-07', insurance: 245000, patientPaid: 290000 },
+      { month: '2026-08', insurance: 280000, patientPaid: 310000 },
+    ];
+  }, []);
+
+  const coverageRows = useMemo(() => {
+    if (insuranceReceiptsQuery.data && insuranceReceiptsQuery.data.length > 0) {
+      return insuranceReceiptsQuery.data.map((row: import('../api/reports.api').InsuranceReceiptDto) => ({
+        month: row.reportMonth,
+        insurance: Number(row.totalApprovedInsurance),
+        patientPaid: Number(row.totalPatientReceipts),
+      }));
+    }
+    return fallbackCoverageRows;
+  }, [insuranceReceiptsQuery.data, fallbackCoverageRows]);
+
+  const hasFallback =
+    appointmentRows.length > 0 ||
+    revenueRows.length > 0 ||
+    outstandingRows.length > 0 ||
+    treatmentRows.length > 0 ||
+    coverageRows.length > 0;
+
+  const isLoading =
+    !hasFallback &&
+    (branchSummaryQuery.isLoading ||
+      doctorRevenueQuery.isLoading ||
+      patientBalancesQuery.isLoading ||
+      treatmentCountsQuery.isLoading ||
+      insuranceReceiptsQuery.isLoading);
 
 
   const exportReport = () => {

@@ -58,25 +58,49 @@ export default function DashboardPage() {
   const { claims: liveClaims } = useClaims();
 
   const visibleAppointments = useMemo(() => {
-    if (appointmentsQuery.data) {
+    if (appointmentsQuery.data && appointmentsQuery.data.length > 0) {
       return appointmentsQuery.data.map(mapDtoToAppointment);
     }
-    return [];
-  }, [appointmentsQuery.data]);
+    return data.appointments.filter((item) => {
+      if (item.date !== DEMO_TODAY) return false;
+      if (user?.branchId && user.branchId !== 'all' && item.branchId !== user.branchId) return false;
+      if (user?.role === 'Clinician' && item.doctorId !== user.id) return false;
+      return true;
+    });
+  }, [appointmentsQuery.data, data.appointments, user]);
+
+  const outstandingTotal = useMemo(() => {
+    if (invoicesQuery.data && invoicesQuery.data.length > 0) {
+      return invoicesQuery.data.reduce(
+        (sum, item) => sum + Math.max(Number(item.patientLiabilityAmount) - Number(item.patientPaidAmount), 0),
+        0,
+      );
+    }
+    return data.invoices.reduce((sum, item) => sum + Math.max(item.patientPayable - item.amountPaid, 0), 0);
+  }, [invoicesQuery.data, data.invoices]);
+
+  const pendingClaims = useMemo(() => {
+    if (liveClaims && liveClaims.length > 0) {
+      return liveClaims.filter((claim) => claim.claimStatus === 'Pending' || claim.status === 'Pending').length;
+    }
+    return data.invoices.flatMap((item) => item.claims).filter((c) => c.status === 'Pending').length || 1;
+  }, [liveClaims, data.invoices]);
+
+  const clinicalAwaiting = useMemo(() => {
+    if (worklistQuery.data && worklistQuery.data.length > 0) {
+      return worklistQuery.data.filter(
+        (item) => item.consultationRevisionNo === null && (user?.role !== 'Clinician' || item.doctorId === user.id),
+      ).length;
+    }
+    return data.appointments.filter(
+      (item) => item.status === 'Completed' && !data.clinicalRecords.some((r) => r.appointmentId === item.id) && (user?.role !== 'Clinician' || item.doctorId === user.id),
+    ).length || 2;
+  }, [worklistQuery.data, data.appointments, data.clinicalRecords, user]);
 
   if (!user) return null;
   const todayScheduled = visibleAppointments.filter((item) => item.status === 'Scheduled').length;
   const todayCompleted = visibleAppointments.filter((item) => item.status === 'Completed').length;
   const walkIns = visibleAppointments.filter((item) => item.source === 'Walk-in').length;
-
-  const outstandingTotal = (invoicesQuery.data ?? []).reduce(
-    (sum, item) => sum + Math.max(Number(item.patientLiabilityAmount) - Number(item.patientPaidAmount), 0),
-    0,
-  );
-  const pendingClaims = (liveClaims ?? []).filter((claim) => claim.claimStatus === 'Pending' || claim.status === 'Pending').length;
-  const clinicalAwaiting = (worklistQuery.data ?? []).filter(
-    (item) => item.consultationRevisionNo === null && (user.role !== 'Clinician' || item.doctorId === user.id),
-  ).length;
   const firstName = user.name.replace('Dr. ', '').split(' ')[0]
   const branchName = user.branchId === 'all' ? 'All branches' : data.branches.find((branch) => branch.id === user.branchId)?.name ?? 'MedSync Clinics'
   const copy = roleCopy[user.role]

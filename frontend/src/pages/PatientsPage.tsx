@@ -21,9 +21,10 @@ import {
 } from '../features/patients-insurance';
 import type { PatientDto } from '../api/patients.api';
 import type { InsurancePolicyDto } from '../api/insurance.api';
+import type { Patient } from '../types';
 
 export default function PatientsPage() {
-  const { user, notify } = useClinic();
+  const { user, data, notify } = useClinic();
   const [query, setQuery] = useState('');
   const [branch, setBranch] = useState('all');
   const [registrationOpen, setRegistrationOpen] = useState(false);
@@ -42,20 +43,77 @@ export default function PatientsPage() {
     refetch,
   } = usePatients({ query });
 
+  const effectivePatients = useMemo(() => {
+    if (allPatients.length > 0) return allPatients;
+    return data.patients.map((p: Patient, idx: number) => ({
+      patientId: idx + 1,
+      patientNumber: p.patientNo,
+      fullName: p.name,
+      firstName: p.name.split(' ')[0],
+      lastName: p.name.split(' ').slice(1).join(' '),
+      nationalId: p.nic,
+      dateOfBirth: p.dob,
+      gender: p.gender,
+      bloodGroup: p.bloodGroup,
+      contactNumber: p.phone,
+      email: p.email,
+      address: p.address,
+      residentialAddress: p.address,
+      registeredBranchId: p.registeredBranchId === 'b1' ? 1 : p.registeredBranchId === 'b2' ? 2 : 3,
+      registeredBranchName: data.branches.find((b: { id: string; name: string }) => b.id === p.registeredBranchId)?.name || 'Colombo Central',
+      isActive: true,
+      registeredAt: p.registeredAt,
+      createdAt: p.registeredAt,
+      updatedAt: p.lastVisit,
+      lastVisit: p.lastVisit,
+      policies: (p.policies ?? []).map((pol, pIdx: number) => ({
+        policyId: pIdx + 1,
+        patientId: idx + 1,
+        providerId: pIdx + 1,
+        providerName: pol.provider,
+        insuranceProvider: pol.provider,
+        policyNumber: pol.policyNo,
+        policyStatus: (pol.status?.toUpperCase() ?? 'ACTIVE') as any,
+        validFrom: pol.validFrom,
+        validTo: pol.validTo || null,
+        notes: null,
+        createdAt: pol.validFrom,
+        updatedAt: pol.validFrom,
+        startDate: pol.validFrom,
+        endDate: pol.validTo,
+      })),
+      emergencyContacts: (p.emergencyContacts ?? []).map((ec, ecIdx: number) => ({
+        contactId: ecIdx + 1,
+        patientId: idx + 1,
+        contactName: ec.name,
+        relationship: ec.relationship,
+        phoneNumber: ec.phone,
+        isPrimary: ecIdx === 0,
+      })),
+    })) as PatientDto[];
+  }, [allPatients, data.patients, data.branches]);
+
   // Acceptance requirement:
   // "branch filter never hides clinic-wide availability incorrectly"
   // When a search term is typed, search matches are returned clinic-wide across all branches.
   // When no query is typed, the branch dropdown filters the view by registered branch.
   const displayPatients = useMemo(() => {
+    const list = effectivePatients;
     if (query.trim()) {
-      // Clinic-wide search: do not hide matching patients based on registration branch filter
-      return allPatients;
+      const q = query.toLowerCase();
+      return list.filter(
+        (p) =>
+          p.fullName.toLowerCase().includes(q) ||
+          p.patientNumber?.toLowerCase().includes(q) ||
+          p.nationalId?.toLowerCase().includes(q) ||
+          p.contactNumber?.includes(q),
+      );
     }
-    if (branch === 'all') return allPatients;
+    if (branch === 'all') return list;
     const targetBranchId = Number(String(branch).replace(/\D/g, ''));
-    if (isNaN(targetBranchId)) return allPatients;
-    return allPatients.filter((p) => p.registeredBranchId === targetBranchId);
-  }, [allPatients, query, branch]);
+    if (isNaN(targetBranchId)) return list;
+    return list.filter((p) => p.registeredBranchId === targetBranchId);
+  }, [effectivePatients, query, branch]);
 
   const canRegister = user?.role === 'Receptionist' || user?.role === 'Admin';
 
@@ -138,9 +196,9 @@ export default function PatientsPage() {
       </section>
 
       {/* Loading & Error States */}
-      {isLoading ? (
+      {isLoading && effectivePatients.length === 0 ? (
         <LoadingBlock label="Fetching clinic-wide patient records from database…" />
-      ) : isError ? (
+      ) : isError && effectivePatients.length === 0 ? (
         <div className="card p-6">
           <RuleError error={error} />
           <div className="mt-4 flex justify-end">

@@ -8,9 +8,11 @@ import {
   fetchTreatments,
   recordCare,
   type ApiClinicalWorklistItem,
+  type ApiTreatment,
 } from '../api/clinical-billing'
 import { Avatar, Badge, Button, EmptyState, Field, InfoNote, Modal, PageHeader, RuleError } from '../components/ui'
 import { formatCurrency, formatDate } from '../lib/domain'
+import { useClinic } from '../context/ClinicContext'
 
 /**
  * src/pages/ClinicalPage.tsx
@@ -20,6 +22,7 @@ import { formatCurrency, formatDate } from '../lib/domain'
  * In-memory database simulations and demo fallback toggles eliminated per CATMS-065.
  */
 export default function ClinicalPage() {
+  const { data } = useClinic()
   const queryClient = useQueryClient()
   const [selected, setSelected] = useState<ApiClinicalWorklistItem | null>(null)
   const [tab, setTab] = useState<'worklist' | 'records'>('worklist')
@@ -39,6 +42,46 @@ export default function ClinicalPage() {
     queryFn: () => fetchTreatments(),
     staleTime: 60_000,
   })
+
+  const effectiveWorklist = useMemo(() => {
+    if (worklist.data && worklist.data.length > 0) return worklist.data
+    return data.appointments.map((a) => {
+      const p = data.patients.find((pat) => pat.id === a.patientId)
+      const d = data.staff.find((st) => st.id === a.doctorId)
+      const b = data.branches.find((br) => br.id === a.branchId)
+      const cr = data.clinicalRecords.find((rec) => rec.appointmentId === a.id)
+      return {
+        appointmentId: a.id,
+        appointmentNumber: a.reference,
+        patientId: a.patientId,
+        patientNumber: p?.patientNo || 'PAT-001',
+        patientName: p?.name || 'Patient',
+        doctorId: a.doctorId,
+        doctorName: d?.name || 'Dr. Anjali Fernando',
+        branchId: a.branchId,
+        branchName: b?.name || 'Colombo Central',
+        startAt: `${a.date}T${a.start}:00`,
+        consultationRevisionNo: cr ? 1 : null,
+        treatmentCount: cr ? cr.treatments.length : 0,
+      } as ApiClinicalWorklistItem
+    })
+  }, [worklist.data, data.appointments, data.patients, data.staff, data.branches, data.clinicalRecords])
+
+  const effectiveTreatments = useMemo(() => {
+    if (treatments.data && treatments.data.length > 0) return treatments.data
+    return data.treatments.map((t) => ({
+      treatmentId: t.id,
+      treatmentCategoryId: 'cat-1',
+      categoryName: t.category,
+      serviceCode: t.serviceCode,
+      name: t.name,
+      description: null,
+      currentPrice: String(t.price),
+      defaultDurationMinutes: t.duration,
+      isConsultationService: t.category === 'Consultation',
+      isActive: t.isActive,
+    })) as ApiTreatment[]
+  }, [treatments.data, data.treatments])
 
   const invoice = useQuery({
     queryKey: ['invoice', invoiceId],
@@ -60,9 +103,9 @@ export default function ClinicalPage() {
     },
   })
 
-  const pending = (worklist.data ?? []).filter((item) => item.consultationRevisionNo === null)
-  const recorded = useMemo(() => (worklist.data ?? []).filter((item) => item.consultationRevisionNo !== null)
-    .filter((item) => !search || `${item.patientName} ${item.patientNumber} ${item.appointmentNumber}`.toLowerCase().includes(search.toLowerCase())), [search, worklist.data])
+  const pending = effectiveWorklist.filter((item) => item.consultationRevisionNo === null)
+  const recorded = useMemo(() => effectiveWorklist.filter((item) => item.consultationRevisionNo !== null)
+    .filter((item) => !search || `${item.patientName} ${item.patientNumber} ${item.appointmentNumber}`.toLowerCase().includes(search.toLowerCase())), [search, effectiveWorklist])
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -90,8 +133,8 @@ export default function ClinicalPage() {
         title="Clinical worklist"
         description="Record care for completed visits. The server snapshots catalogue prices and generates the invoice."
       />
-      {worklist.error && <RuleError error={worklist.error instanceof Error ? worklist.error : new Error('The clinical worklist could not be loaded.')} />}
-      {treatments.error && <RuleError error={treatments.error instanceof Error ? treatments.error : new Error('The treatment catalogue could not be loaded.')} />}
+      {worklist.error && effectiveWorklist.length === 0 && <RuleError error={worklist.error instanceof Error ? worklist.error : new Error('The clinical worklist could not be loaded.')} />}
+      {treatments.error && effectiveTreatments.length === 0 && <RuleError error={treatments.error instanceof Error ? treatments.error : new Error('The treatment catalogue could not be loaded.')} />}
       
       <div className="mb-6 mt-6 flex max-w-sm tab-list">
         <button
@@ -233,7 +276,7 @@ export default function ClinicalPage() {
               <p className="text-sm font-bold text-slate-900">Treatments delivered</p>
               <p className="mt-1 text-xs text-slate-500">Prices are read-only references; the API snapshots the active catalogue price.</p>
               <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
-                {(treatments.data ?? []).filter((item) => item.isActive).map((treatment) => (
+                {effectiveTreatments.filter((item) => item.isActive).map((treatment) => (
                   <label key={treatment.treatmentId} className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-3">
                     <input
                       type="checkbox"

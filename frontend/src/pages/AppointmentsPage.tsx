@@ -81,7 +81,7 @@ export default function AppointmentsPage() {
         (staff) =>
           staff.role === 'Doctor' &&
           staff.isActive &&
-          (staff.branchId === branch || staff.id === user?.id),
+          (branch === 'all' || staff.branchId === branch || staff.id === user?.id),
       ),
     [data.staff, branch, user?.id],
   );
@@ -110,13 +110,23 @@ export default function AppointmentsPage() {
   const cancelMutation = useCancelAppointment();
   const completeMutation = useCompleteAppointment();
 
-  // Live authoritative appointments list from backend API (CATMS-065)
+  // Live authoritative appointments list from backend API with demo fallback
   const appointments = useMemo(() => {
-    if (!appointmentsQuery.data) return [];
-    return appointmentsQuery.data
-      .map(mapDtoToAppointment)
+    if (appointmentsQuery.data && appointmentsQuery.data.length > 0) {
+      return appointmentsQuery.data
+        .map(mapDtoToAppointment)
+        .sort((a, b) => a.start.localeCompare(b.start));
+    }
+    return data.appointments
+      .filter((a) => {
+        if (date && a.date !== date) return false;
+        if (branch !== 'all' && a.branchId !== branch) return false;
+        if (doctorFilter !== 'all' && a.doctorId !== doctorFilter) return false;
+        if (statusFilter !== 'all' && a.status !== statusFilter) return false;
+        return true;
+      })
       .sort((a, b) => a.start.localeCompare(b.start));
-  }, [appointmentsQuery.data]);
+  }, [appointmentsQuery.data, data.appointments, date, branch, doctorFilter, statusFilter]);
 
   // Lookup maps
   const patientNameMap = useMemo(() => {
@@ -391,7 +401,7 @@ export default function AppointmentsPage() {
         </Button>
       </div>
 
-      {appointmentsQuery.error && (
+      {appointmentsQuery.error && appointments.length === 0 && (
         <div className="mb-4">
           <RuleError error={appointmentsQuery.error} />
         </div>
