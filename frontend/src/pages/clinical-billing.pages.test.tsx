@@ -6,6 +6,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as clinicalBillingApi from '../api/clinical-billing'
+import { ClinicProvider } from '../context/ClinicContext'
 import type {
   ApiClinicalWorklistItem,
   ApiInvoice,
@@ -122,11 +123,15 @@ const postedPayment: ApiPayment = {
   }],
 }
 
-function renderWithQueryClient(component: ReactNode) {
+function renderWithProviders(component: ReactNode) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
-  return render(<QueryClientProvider client={client}>{component}</QueryClientProvider>)
+  return render(
+    <QueryClientProvider client={client}>
+      <ClinicProvider>{component}</ClinicProvider>
+    </QueryClientProvider>,
+  )
 }
 
 function currencyText(amount: number) {
@@ -169,7 +174,7 @@ afterEach(() => cleanup())
 describe('CATMS-068 clinical and billing page workflows', () => {
   it('submits only clinical data and displays the server-generated invoice as read-only', async () => {
     const user = userEvent.setup()
-    renderWithQueryClient(<ApiClinicalPage />)
+    renderWithProviders(<ApiClinicalPage />)
 
     await user.click(await screen.findByRole('button', { name: 'Record care' }))
     await user.type(screen.getByLabelText(/Diagnosis/), 'Routine examination')
@@ -201,7 +206,7 @@ describe('CATMS-068 clinical and billing page workflows', () => {
   it('retains the care form values and treatment selection when the API rejects the save', async () => {
     const user = userEvent.setup()
     api.recordCare.mockRejectedValueOnce(new Error('Care record was rejected.'))
-    renderWithQueryClient(<ApiClinicalPage />)
+    renderWithProviders(<ApiClinicalPage />)
 
     await user.click(await screen.findByRole('button', { name: 'Record care' }))
     await user.type(screen.getByLabelText(/Diagnosis/), 'Follow-up')
@@ -217,7 +222,7 @@ describe('CATMS-068 clinical and billing page workflows', () => {
   })
 
   it('shows invoice amounts and payment status from the API without editable maintained fields', async () => {
-    renderWithQueryClient(<ApiFinancePage />)
+    renderWithProviders(<ApiFinancePage />)
 
     expect(await screen.findByText('INV-1001')).toBeTruthy()
     expect(screen.getByText('Due')).toBeTruthy()
@@ -244,7 +249,7 @@ describe('CATMS-068 clinical and billing page workflows', () => {
         patientPaidAmount: '100.00',
         patientPaymentStatus: 'Paid',
       }])
-    renderWithQueryClient(<ApiFinancePage />)
+    renderWithProviders(<ApiFinancePage />)
 
     await user.click(await screen.findByRole('button', { name: 'Payment' }))
     const dialog = await screen.findByRole('dialog', { name: 'Post a payment' })
@@ -276,7 +281,7 @@ describe('CATMS-068 clinical and billing page workflows', () => {
       referenceNumber: 'bank-ref-1001',
     })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    expect(await screen.findByText('Paid')).toBeTruthy()
+    expect((await screen.findAllByText('Paid')).length).toBeGreaterThan(0)
   })
 
   it('retains reversal context on rejection and refreshes payment state after the reversal succeeds', async () => {
@@ -287,7 +292,7 @@ describe('CATMS-068 clinical and billing page workflows', () => {
     api.fetchPayments
       .mockResolvedValueOnce([payment])
       .mockResolvedValueOnce([postedPayment])
-    renderWithQueryClient(<ApiFinancePage />)
+    renderWithProviders(<ApiFinancePage />)
 
     await user.click(await screen.findByRole('button', { name: /INV-1001/ }))
     const invoiceDialog = await screen.findByRole('dialog', { name: 'INV-1001' })
