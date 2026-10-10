@@ -59,10 +59,10 @@ export function PageHeader({ eyebrow, title, description, actions, image }: { ey
 
 export function StatCard({ label, value, detail, icon: Icon, accent = 'teal' }: { label: string; value: ReactNode; detail: string; icon: LucideIcon; accent?: 'teal' | 'blue' | 'amber' | 'coral' }) {
   const colors = {
-    teal: 'bg-[#E7F5EE]/80 text-[#1E8A5F] border border-white/60 shadow-xs backdrop-blur-xs',
-    blue: 'bg-[#EAF4FB]/80 text-[#1E77B8] border border-white/60 shadow-xs backdrop-blur-xs',
-    amber: 'bg-[#FBF2E3]/80 text-[#C0872A] border border-white/60 shadow-xs backdrop-blur-xs',
-    coral: 'bg-[#FBEAEE]/80 text-[#C4425A] border border-white/60 shadow-xs backdrop-blur-xs',
+    teal: 'bg-[#E7F5EE]/80 text-[#1E8A5F] shadow-xs backdrop-blur-xs',
+    blue: 'bg-[#EAF4FB]/80 text-[#1E77B8] shadow-xs backdrop-blur-xs',
+    amber: 'bg-[#FBF2E3]/80 text-[#C0872A] shadow-xs backdrop-blur-xs',
+    coral: 'bg-[#FBEAEE]/80 text-[#C4425A] shadow-xs backdrop-blur-xs',
   }
   return <div className={`metric-card metric-${accent}`}>
     <span className="metric-curve" aria-hidden="true" />

@@ -76,7 +76,7 @@ function Sidebar({ close }: { close?: () => void }) {
 
       <div className="space-y-4 pt-4">
         {/* User profile row */}
-        <div className="flex items-center gap-3 px-1 pt-3 border-t border-white/70">
+        <div className="flex items-center gap-3 px-1 pt-3 border-t border-slate-200/60">
           <Avatar name={user.name} size="sm" className="ring-2 ring-emerald-500/20" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-bold text-slate-800 leading-tight">{user.name}</p>
@@ -85,7 +85,7 @@ function Sidebar({ close }: { close?: () => void }) {
         </div>
 
         {/* AI Health Update promo card */}
-        <div className="relative overflow-hidden rounded-2xl border border-white/80 bg-gradient-to-br from-emerald-50/70 via-white/50 to-teal-50/35 p-3.5 shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_4px_16px_rgba(16,185,129,0.06)] backdrop-blur-md">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50/70 via-white/50 to-teal-50/35 p-3.5 shadow-[0_4px_16px_rgba(16,185,129,0.06)] backdrop-blur-md">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-800">AI Health Update</span>
             <button
@@ -221,7 +221,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="lg:pl-64 relative z-10">
         <div className="sticky top-0 z-30 pt-3 sm:pt-4 pointer-events-none">
           <div className="mx-auto max-w-[1560px] px-4 sm:px-6 lg:px-8 pointer-events-none">
-            <header className="pointer-events-auto portal-topbar flex h-[68px] sm:h-[72px] items-center justify-between px-4 sm:px-6 lg:px-8 py-3 rounded-2xl border border-white/80 shadow-xs">
+            <header className="pointer-events-auto portal-topbar flex h-[68px] sm:h-[72px] items-center justify-between px-4 sm:px-6 lg:px-8 py-3 rounded-2xl shadow-xs">
               {/* Left: Mobile toggle + Pill Search input */}
               <div className="flex items-center gap-3">
                 <button

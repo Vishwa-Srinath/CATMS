@@ -75,7 +75,7 @@
   /* 14-16px card radius with optical Glassmorphism */
   .card {
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.82);
+    border: none;
     background: linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.74) 0%,
@@ -86,14 +86,12 @@
     -webkit-backdrop-filter: blur(20px) saturate(190%);
     border-radius: 16px;
     box-shadow:
-      inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
-      inset 0 0 20px 0 rgba(255, 255, 255, 0.20),
+      inset 0 0 20px 0 rgba(255, 255, 255, 0.15),
       0 10px 30px -4px rgba(18, 35, 43, 0.05);
-    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease, background 200ms ease;
+    transition: box-shadow 200ms ease, transform 200ms ease, background 200ms ease;
   }
   .card-hover:hover,
   .card:hover {
-    border-color: rgba(255, 255, 255, 0.98);
     background: linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.84) 0%,
@@ -101,8 +99,7 @@
       color-mix(in srgb, var(--portal-accent) 6%, rgba(255, 255, 255, 0.54)) 100%
     );
     box-shadow:
-      inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
-      inset 0 0 24px 0 rgba(255, 255, 255, 0.28),
+      inset 0 0 24px 0 rgba(255, 255, 255, 0.20),
       0 14px 36px -4px color-mix(in srgb, var(--portal-accent) 10%, rgba(18, 35, 43, 0.07));
     transform: translateY(-2px);
   }
@@ -112,8 +109,6 @@
     --glass-blur: 24px;
     --glass-saturate: 185%;
     --glass-bg-opacity: 0.52;
-    --glass-border-opacity: 0.72;
-    --glass-bevel-highlight: rgba(255, 255, 255, 0.95);
 
     background: linear-gradient(
       135deg,
@@ -122,14 +117,13 @@
     );
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-    border: 1px solid rgba(255, 255, 255, var(--glass-border-opacity));
+    border: none;
     border-radius: 16px;
     box-shadow:
-      inset 0 1px 2px 0 var(--glass-bevel-highlight),
-      inset 0 0 24px 0 rgba(255, 255, 255, 0.22),
+      inset 0 0 24px 0 rgba(255, 255, 255, 0.15),
       0 24px 48px -12px rgba(18, 35, 43, 0.11),
       0 12px 24px -6px color-mix(in srgb, var(--portal-accent) 8%, rgba(18, 35, 43, 0.04));
-    transition: backdrop-filter 250ms ease, background 500ms ease, border-color 250ms ease, box-shadow 250ms ease;
+    transition: backdrop-filter 250ms ease, background 500ms ease, box-shadow 250ms ease;
   }
 
   .input {
@@ -161,7 +155,7 @@
   /* Table shell with 16px radius and Glassmorphism */
   .table-shell {
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.82);
+    border: none;
     background: linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.74) 0%,
@@ -172,8 +166,7 @@
     -webkit-backdrop-filter: blur(20px) saturate(185%);
     border-radius: 16px;
     box-shadow:
-      inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
-      inset 0 0 20px 0 rgba(255, 255, 255, 0.2),
+      inset 0 0 20px 0 rgba(255, 255, 255, 0.15),
       0 10px 30px -4px rgba(18, 35, 43, 0.05);
   }
   .data-table {
@@ -390,7 +383,7 @@
   color: var(--portal-accent);
 }
 .portal-topbar {
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: none;
   border-radius: 16px;
   background: linear-gradient(
     118deg,
@@ -401,8 +394,7 @@
   backdrop-filter: blur(24px) saturate(185%);
   -webkit-backdrop-filter: blur(24px) saturate(185%);
   box-shadow:
-    inset 0 1px 2px 0 rgba(255, 255, 255, 0.95),
-    inset 0 0 24px 0 rgba(255, 255, 255, 0.2),
+    inset 0 0 24px 0 rgba(255, 255, 255, 0.15),
     0 12px 36px -6px rgba(18, 35, 43, 0.06);
 }
 .topbar-search {
@@ -415,7 +407,7 @@
 .page-hero {
   position: relative;
   padding: 22px 26px;
-  border: 1px solid rgba(255, 255, 255, 0.82);
+  border: none;
   border-radius: 16px;
   background: linear-gradient(
     110deg,
@@ -426,17 +418,8 @@
   backdrop-filter: blur(22px) saturate(185%);
   -webkit-backdrop-filter: blur(22px) saturate(185%);
   box-shadow:
-    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
-    inset 0 0 20px 0 rgba(255, 255, 255, 0.2),
+    inset 0 0 20px 0 rgba(255, 255, 255, 0.15),
     0 10px 30px -4px rgba(18, 35, 43, 0.05);
-}
-.page-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  border-radius: 14px 0 0 14px;
-  background: var(--portal-accent);
 }
 .page-hero-photo {
   position: relative;
@@ -444,7 +427,7 @@
   width: 200px;
   height: 84px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  border: none;
   border-radius: 12px;
   background: var(--portal-accent-soft);
   box-shadow: 0 4px 14px rgba(18, 35, 43, 0.06);
@@ -466,7 +449,7 @@
   min-height: 130px;
   overflow: hidden;
   padding: 18px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  border: none;
   border-radius: 16px;
   background: linear-gradient(
     135deg,
@@ -477,14 +460,12 @@
   backdrop-filter: blur(20px) saturate(190%);
   -webkit-backdrop-filter: blur(20px) saturate(190%);
   box-shadow:
-    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
-    inset 0 0 20px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 20px 0 rgba(255, 255, 255, 0.16),
     0 10px 30px -4px rgba(18, 35, 43, 0.05);
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background 200ms ease;
+  transition: transform 200ms ease, box-shadow 200ms ease, background 200ms ease;
 }
 .metric-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.98);
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.84) 0%,
@@ -492,8 +473,7 @@
     color-mix(in srgb, var(--portal-accent) 8%, rgba(255, 255, 255, 0.54)) 100%
   );
   box-shadow:
-    inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
-    inset 0 0 24px 0 rgba(255, 255, 255, 0.3),
+    inset 0 0 24px 0 rgba(255, 255, 255, 0.22),
     0 16px 36px -4px color-mix(in srgb, var(--portal-accent) 12%, rgba(18, 35, 43, 0.08));
 }
 .metric-card p {
@@ -521,7 +501,7 @@
   gap: 28px;
   overflow: hidden;
   padding: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  border: none;
   border-radius: 16px;
   background: linear-gradient(
     118deg,
@@ -532,8 +512,7 @@
   backdrop-filter: blur(24px) saturate(190%);
   -webkit-backdrop-filter: blur(24px) saturate(190%);
   box-shadow:
-    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
-    inset 0 0 24px 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 24px 0 rgba(255, 255, 255, 0.16),
     0 14px 40px -6px rgba(18, 35, 43, 0.06);
 }
 .role-showcase {
@@ -543,14 +522,13 @@
   overflow: hidden;
   border-radius: 14px;
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: none;
   background:
     radial-gradient(circle at 86% 3%, rgba(255, 255, 255, 0.22), transparent 13rem),
     linear-gradient(145deg, color-mix(in srgb, var(--portal-accent) 78%, rgba(18, 35, 43, 0.85)), color-mix(in srgb, var(--portal-accent-deep) 60%, rgba(18, 35, 43, 0.90)));
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow:
-    inset 0 1px 2px 0 rgba(255, 255, 255, 0.35),
     0 12px 32px color-mix(in srgb, var(--portal-accent) 22%, rgba(18, 35, 43, 0.16));
 }
 .role-showcase-photo {
@@ -576,7 +554,6 @@
 .showcase-heading strong {
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.20);
-  border: 1px solid rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(8px);
   padding: 4px 8px;
   font-size: 10px;
@@ -604,14 +581,13 @@
   width: calc(100% - 60px);
   min-height: 58px;
   padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: none;
   border-radius: 12px;
   color: var(--ink);
   background: rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   box-shadow:
-    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95),
     0 8px 24px rgba(9, 24, 29, 0.16);
 }
 .floating-appointment.appointment-1 { left: 45px; top: 62px; }
@@ -623,7 +599,7 @@
 .activity-surface,
 .attention-surface {
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.82);
+  border: none;
   border-radius: 16px;
   background: linear-gradient(
     135deg,
@@ -634,18 +610,15 @@
   backdrop-filter: blur(22px) saturate(190%);
   -webkit-backdrop-filter: blur(22px) saturate(190%);
   box-shadow:
-    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
-    inset 0 0 20px 0 rgba(255, 255, 255, 0.2),
+    inset 0 0 20px 0 rgba(255, 255, 255, 0.15),
     0 10px 30px -4px rgba(18, 35, 43, 0.05);
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  transition: box-shadow 200ms ease;
 }
 .flow-surface:hover,
 .activity-surface:hover,
 .attention-surface:hover {
-  border-color: rgba(255, 255, 255, 0.98);
   box-shadow:
-    inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
-    inset 0 0 24px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 24px 0 rgba(255, 255, 255, 0.22),
     0 14px 36px -4px color-mix(in srgb, var(--portal-accent) 10%, rgba(18, 35, 43, 0.07));
 }
 
@@ -659,7 +632,7 @@
   overflow: hidden;
   padding: 24px 28px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: none;
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--portal-accent) 85%, rgba(255, 255, 255, 0.25)) 0%,
@@ -668,7 +641,6 @@
   backdrop-filter: blur(24px) saturate(190%);
   -webkit-backdrop-filter: blur(24px) saturate(190%);
   box-shadow:
-    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.45),
     0 12px 36px -4px color-mix(in srgb, var(--portal-accent) 22%, rgba(18, 35, 43, 0.12));
 }
 .walkin-orbit {
@@ -693,7 +665,6 @@
 }
 .appointment-flow-row:hover {
   background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 12px rgba(18, 35, 43, 0.04);
 }
@@ -709,7 +680,6 @@
 }
 .attention-row:hover {
   background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 12px rgba(18, 35, 43, 0.04);
 }
@@ -879,21 +849,21 @@
 /* Modals & Floating surfaces elevation with Glassmorphism */
 .modal-panel {
   border-radius: 16px !important;
-  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  border: none !important;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.82) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   box-shadow:
-    inset 0 1px 2px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 20px 0 rgba(255, 255, 255, 0.15),
     0 24px 60px -12px rgba(18, 35, 43, 0.18) !important;
 }
 .floating-surface {
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  border: none;
   box-shadow:
-    inset 0 1px 2px 0 rgba(255, 255, 255, 0.9),
+    inset 0 0 20px 0 rgba(255, 255, 255, 0.15),
     0 12px 32px rgba(18, 35, 43, 0.08);
 }
 
@@ -902,8 +872,6 @@
   --glass-blur: 24px;
   --glass-saturate: 190%;
   --glass-bg-opacity: 0.62;
-  --glass-border-opacity: 0.78;
-  --glass-bevel-highlight: rgba(255, 255, 255, 0.95);
 
   background: linear-gradient(
     145deg,
@@ -912,13 +880,15 @@
   ) !important;
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
-  border: 1px solid rgba(255, 255, 255, var(--glass-border-opacity)) !important;
+  border-right: 1px solid rgba(220, 228, 228, 0.5) !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
   box-shadow:
-    inset 0 1.5px 2px 0 var(--glass-bevel-highlight),
-    inset 0 0 24px 0 rgba(255, 255, 255, 0.26),
+    inset 0 0 24px 0 rgba(255, 255, 255, 0.18),
     0 24px 48px -12px rgba(18, 35, 43, 0.10),
     0 8px 24px -4px color-mix(in srgb, var(--portal-accent) 8%, rgba(18, 35, 43, 0.04)) !important;
-  transition: backdrop-filter 250ms ease, background 500ms ease, border-color 250ms ease, box-shadow 250ms ease;
+  transition: backdrop-filter 250ms ease, background 500ms ease, box-shadow 250ms ease;
 }
 
 .portal-shell[data-theme="night"] .glass-sidebar {
