@@ -43,7 +43,7 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 | 12 | CATMS-049 | Claims API and tests | ✅ Done |
 | 13 | CATMS-059 | Connect Patient and Insurance frontend | ✅ Done |
 | 14 | CATMS-060 | Connect Claim submission and review frontend | ✅ Done |
-| 15 | CATMS-067 | Patient/Insurance/Claim frontend tests | ⬜ Not started |
+| 15 | CATMS-067 | Patient/Insurance/Claim frontend tests | ✅ Done |
 | 16 | CATMS-075 | Reconcile at scale and privacy audit | ⬜ Not started |
 
 ---
@@ -375,11 +375,11 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 
 ---
 
-### Step 15 â€” CATMS-067: Patient/Insurance/Claim frontend tests
-- [ ] Automated tests for registration and duplicate handling
-- [ ] Automated tests for policy actions
-- [ ] Automated tests for claim flows
-- [ ] Test verifies UI does NOT calculate liability/approval values itself
+### Step 15 — CATMS-067: Patient/Insurance/Claim frontend tests
+- [x] Automated tests for registration and duplicate handling
+- [x] Automated tests for policy actions
+- [x] Automated tests for claim flows
+- [x] Test verifies UI does NOT calculate liability/approval values itself
 
 **What:** Automated tests for registration, duplicate handling, policy actions, claim flows, and permission-restricted states.
 
