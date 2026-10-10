@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowUpRight, BarChart3, CalendarClock, CalendarDays, CheckCircle2, CircleDollarSign,
@@ -12,6 +13,7 @@ import receptionCareImage from '../assets/clinical/appointment-care.webp'
 import clinicianCareImage from '../assets/clinical/patient-consultation.webp'
 import managerCareImage from '../assets/clinical/reception-corridor.webp'
 import financeCareImage from '../assets/clinical/finance-calculator.webp'
+import { useAppointments, mapDtoToAppointment, parseNumericId } from '../features/appointments'
 
 const weeklyData = [
   { day: 'Mon', visits: 31 }, { day: 'Tue', visits: 38 }, { day: 'Wed', visits: 29 },
@@ -50,9 +52,27 @@ const roleShowcaseImages = {
 
 export default function DashboardPage() {
   const { data, user } = useClinic()
-  if (!user) return null
 
-  const visibleAppointments = data.appointments.filter((appointment) => appointment.date === DEMO_TODAY && (user.role !== 'Clinician' || appointment.doctorId === user.id) && (user.branchId === 'all' || user.role === 'Clinician' || appointment.branchId === user.branchId))
+  const appointmentsQuery = useAppointments({
+    date: DEMO_TODAY,
+    branchId: user?.branchId && user.branchId !== 'all' ? parseNumericId(user.branchId) : undefined,
+    doctorId: user?.role === 'Clinician' ? parseNumericId(user.id) : undefined,
+  }, { enabled: Boolean(user) })
+
+  const visibleAppointments = useMemo(() => {
+    if (appointmentsQuery.data && appointmentsQuery.data.length > 0) {
+      return appointmentsQuery.data.map(mapDtoToAppointment)
+    }
+    if (!user) return []
+    return data.appointments.filter(
+      (appointment) =>
+        appointment.date === DEMO_TODAY &&
+        (user.role !== 'Clinician' || appointment.doctorId === user.id) &&
+        (user.branchId === 'all' || user.role === 'Clinician' || appointment.branchId === user.branchId),
+    )
+  }, [appointmentsQuery.data, data.appointments, user])
+
+  if (!user) return null
   const todayScheduled = visibleAppointments.filter((item) => item.status === 'Scheduled').length
   const todayCompleted = visibleAppointments.filter((item) => item.status === 'Completed').length
   const walkIns = visibleAppointments.filter((item) => item.source === 'Walk-in').length
@@ -153,13 +173,21 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between px-5 pb-3 pt-5 sm:px-6 sm:pt-6"><div><p className="label-caps text-[var(--portal-accent)]">Live patient flow</p><h2 className="mt-1 section-title">{user.role === 'Clinician' ? 'My appointments' : 'Today’s appointment flow'}</h2><p className="mt-1 text-xs text-slate-500">Sunday schedule · {branchName}</p></div><Link to="/appointments" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--portal-accent)] hover:underline">Full schedule <ArrowUpRight size={13} /></Link></div>
         <div className="appointment-flow-list px-3 pb-3 sm:px-4 sm:pb-4">
           {visibleAppointments.slice(0, 5).map((appointment, index) => {
-            const patient = data.patients.find((item) => item.id === appointment.patientId)!
-            const doctor = data.staff.find((item) => item.id === appointment.doctorId)!
+            const patient = data.patients.find((item) =>
+              item.id === appointment.patientId ||
+              String(item.id).replace(/\D/g, '') === String(appointment.patientId).replace(/\D/g, '')
+            )
+            const doctor = data.staff.find((item) =>
+              item.id === appointment.doctorId ||
+              String(item.id).replace(/\D/g, '') === String(appointment.doctorId).replace(/\D/g, '')
+            )
+            const patientName = patient?.name ?? 'Patient'
+            const doctorName = doctor?.name ?? 'Doctor'
             return <div key={appointment.id} className="appointment-flow-row">
               <div className="flow-time"><span className={index === 0 ? 'is-current' : ''} /><div><p>{appointment.start}</p><small>{appointment.end}</small></div></div>
-              <Avatar name={patient.name} />
-              <div className="min-w-[10rem] flex-1"><p className="truncate text-sm font-bold text-slate-800">{patient.name}</p><p className="mt-0.5 truncate text-xs text-slate-500">{appointment.reason}</p></div>
-              <div className="hidden min-w-40 xl:block"><p className="text-xs font-semibold text-slate-700">{doctor.name}</p><p className="text-[10px] text-slate-400">{doctor.specialties?.[0]}</p></div>
+              <Avatar name={patientName} />
+              <div className="min-w-[10rem] flex-1"><p className="truncate text-sm font-bold text-slate-800">{patientName}</p><p className="mt-0.5 truncate text-xs text-slate-500">{appointment.reason}</p></div>
+              <div className="hidden min-w-40 xl:block"><p className="text-xs font-semibold text-slate-700">{doctorName}</p><p className="text-[10px] text-slate-400">{doctor?.specialties?.[0]}</p></div>
               <div className="ml-auto flex items-center gap-2"><Badge>{appointment.source}</Badge><Badge>{appointment.status}</Badge></div>
             </div>
           })}
