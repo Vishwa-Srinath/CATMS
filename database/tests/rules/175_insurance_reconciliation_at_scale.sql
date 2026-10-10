@@ -69,6 +69,8 @@ DECLARE
     v_line2_rec             RECORD;
     v_inv_rec               RECORD;
     v_new_cov_id            BIGINT;
+    v_line_sum              NUMERIC(12,2);
+    v_claim_amount_val      NUMERIC(12,2);
     
     -- Aggregate counters
     v_total_patients        INTEGER := 0;
@@ -430,30 +432,30 @@ BEGIN
         v_total_claims := v_total_claims + array_length(v_claim_ids, 1);
 
         -- Verify Line 1 & Line 2 coordination invariant: sum(claimed) <= line_total
-        SELECT sum(claimed_amount) INTO v_claim1_rec
+        SELECT coalesce(sum(cl.claimed_amount), 0) INTO v_line_sum
         FROM catms.insurance_claim_line cl
         JOIN catms.insurance_claim c ON c.claim_id = cl.claim_id
         WHERE c.invoice_id = v_inv_id AND cl.line_number = 1;
 
-        IF v_claim1_rec.sum > 3500.00 THEN
+        IF v_line_sum > 3500.00 THEN
             v_over_allocation_count := v_over_allocation_count + 1;
         END IF;
 
-        SELECT sum(claimed_amount) INTO v_claim2_rec
+        SELECT coalesce(sum(cl.claimed_amount), 0) INTO v_line_sum
         FROM catms.insurance_claim_line cl
         JOIN catms.insurance_claim c ON c.claim_id = cl.claim_id
         WHERE c.invoice_id = v_inv_id AND cl.line_number = 2;
 
-        IF v_claim2_rec.sum > 2500.00 THEN
+        IF v_line_sum > 2500.00 THEN
             v_over_allocation_count := v_over_allocation_count + 1;
         END IF;
 
         -- Resolve with full approval on Claim 1, rejection on Claim 2
-        SELECT claimed_amount INTO v_claim1_rec FROM catms.insurance_claim WHERE claim_id = v_claim_ids[1];
+        SELECT claimed_amount INTO v_claim_amount_val FROM catms.insurance_claim WHERE claim_id = v_claim_ids[1];
         PERFORM catms.resolve_claim(
             v_claim_ids[1],
             'Approved',
-            v_claim1_rec.claimed_amount,
+            v_claim_amount_val,
             v_finance_user_id,
             'Scale audit: Full primary approval'
         );
@@ -596,7 +598,7 @@ BEGIN
     );
 
     -- Verify Patient 1's historical claim line for June 2026 retains original terms
-    SELECT * INTO v_line1_rec
+    SELECT cl.* INTO v_line1_rec
     FROM catms.insurance_claim_line cl
     JOIN catms.insurance_claim c ON c.claim_id = cl.claim_id
     WHERE c.invoice_id = (
