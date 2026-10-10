@@ -10,6 +10,7 @@ import { useClinic } from '../context/ClinicContext'
 import type { Role } from '../types'
 import { Avatar, Modal, SearchInput, Badge } from './ui'
 import { AmbientGlowSpheres } from './AmbientGlowSpheres'
+import medSyncMark from '../assets/brand/medsync-mark.png'
 
 interface NavItem { label: string; to: string; icon: LucideIcon; roles: Role[] }
 
@@ -27,14 +28,9 @@ function Brand() {
   return (
     <div className="flex items-center gap-2.5 px-1 py-1">
       <div className="flex items-center justify-center">
-        <svg className="w-8 h-8 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="8" cy="8" r="3.2" className="text-emerald-500 fill-emerald-500" />
-          <circle cx="16" cy="8" r="3.2" className="text-emerald-600 fill-emerald-600" />
-          <circle cx="8" cy="16" r="3.2" className="text-emerald-400 fill-emerald-400" />
-          <circle cx="16" cy="16" r="3.2" className="text-emerald-500 fill-emerald-500" />
-        </svg>
+        <img src={medSyncMark} alt="MedSync" className="w-8 h-8 object-contain" />
       </div>
-      <span className="font-bold text-[20px] tracking-tight text-slate-900 font-sans">DocuVerse</span>
+      <span className="font-bold text-[20px] tracking-tight text-slate-900 font-sans">MedSync</span>
     </div>
   )
 }
@@ -316,7 +312,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main id="main-content" className="mx-auto max-w-[1560px] px-4 sm:px-6 lg:px-8 py-4 sm:py-5">{children}</main>
         <footer className="px-6 pb-6 text-center text-[11px] text-slate-400">
-          <span className="inline-flex items-center gap-1.5"><ShieldCheck size={12} />DocuVerse · MedSync CATMS · Live System</span>
+          <span className="inline-flex items-center gap-1.5"><ShieldCheck size={12} />MedSync CATMS · Live System</span>
         </footer>
       </div>
 
