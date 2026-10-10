@@ -55,7 +55,7 @@ BEGIN
     RETURNING employee_id INTO v_emp_id;
 
     INSERT INTO catms.user_account (employee_id, username, password_hash, account_status)
-    VALUES (v_emp_id, 'audit_runner_75', 'TEST_HASH', 'ACTIVE')
+    VALUES (v_emp_id, 'audit_runner_75', '$2b$12$e8Yk1.Kq9O2jM4jV6jQ8Nu8F/0kQ5lM1yZ7h9o8x7p6', 'ACTIVE')
     RETURNING user_account_id INTO v_user_id;
 
     INSERT INTO catms.user_account_role (user_account_id, app_role_id)
