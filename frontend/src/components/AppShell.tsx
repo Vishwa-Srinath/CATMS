@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   BarChart3, Bell, Building2, CalendarDays, ChevronDown, CircleHelp,
   ClipboardPlus, CreditCard, LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck, Sun, UsersRound, X,
@@ -52,6 +52,7 @@ function Sidebar({ close }: { close?: () => void }) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, data, signOut } = useClinic()
+  const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [nightCharting, setNightCharting] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -73,7 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const currentPage = navItems.find((item) => item.to === location.pathname)?.label ?? 'MedSync workspace'
   if (!user) return null
   const branchName = user.branchId === 'all' ? 'All clinic branches' : data.branches.find((branch) => branch.id === user.branchId)?.name ?? 'MedSync Clinics'
-  const portalClass = user.role === 'Receptionist' ? 'portal-reception' : user.role === 'Clinician' ? 'portal-clinician' : user.role === 'Manager' ? 'portal-manager' : 'portal-admin'
+  const portalClass = 'portal-reception'
   return <div className={`portal-shell ${portalClass} min-h-screen`} data-theme={user.role === 'Clinician' && nightCharting ? 'night' : 'light'}>
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:block"><Sidebar /></aside>
     {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><button className="absolute inset-0 bg-slate-950/50" aria-label="Close navigation" onClick={() => setMobileOpen(false)} /><aside className="floating-surface relative h-full w-[min(86vw,20rem)]"><button className="absolute right-3 top-3 z-10 rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X size={20} /></button><Sidebar close={() => setMobileOpen(false)} /></aside></div>}
@@ -148,25 +149,81 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
 
     <Modal open={searchOpen} onClose={() => { setSearchOpen(false); setSearchQuery(''); }} title="Search records" description="Find patients, appointments, and staff members across the network.">
-      <SearchInput placeholder="Search by name, ID, or phone number..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="w-full" />
-      <div className="mt-4 min-h-[250px]">
-        {searchQuery ? (
+      <SearchInput placeholder="Search patients, appointments, or staff by name, ID, or phone…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="w-full" />
+      <div className="mt-4 max-h-[60vh] overflow-y-auto">
+        {searchQuery.trim() ? (
           <div className="space-y-2">
-            {data.patients.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.patientNo.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5).map(p => (
-              <div key={p.id} className="flex items-center justify-between rounded-lg border border-slate-200 p-3 hover:bg-slate-50 cursor-pointer transition" onClick={() => { setSearchOpen(false); setSearchQuery(''); }}>
-                <div>
-                  <div className="text-sm font-semibold text-slate-800">{p.name}</div>
-                  <div className="text-xs text-slate-500">{p.patientNo} • {p.phone}</div>
+            {/* Patients matches */}
+            {data.patients
+              .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.patientNo.toLowerCase().includes(searchQuery.toLowerCase()) || p.nic.toLowerCase().includes(searchQuery.toLowerCase()))
+              .slice(0, 4)
+              .map(p => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between rounded-xl border border-slate-200 p-3 hover:border-clinic-500 hover:bg-slate-50 cursor-pointer transition"
+                  onClick={() => { setSearchOpen(false); setSearchQuery(''); navigate('/patients'); }}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar name={p.name} size="sm" />
+                    <div>
+                      <div className="text-sm font-semibold text-slate-800">{p.name}</div>
+                      <div className="text-xs text-slate-500 font-mono">{p.patientNo} · {p.phone}</div>
+                    </div>
+                  </div>
+                  <Badge tone="Active">Patient</Badge>
                 </div>
-                <Badge tone="Active">Patient</Badge>
-              </div>
-            ))}
-            {data.patients.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.patientNo.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-              <div className="mt-12 text-center text-sm text-slate-500">No records found for "{searchQuery}"</div>
+              ))}
+
+            {/* Appointments matches */}
+            {data.appointments
+              .filter(a => a.reference.toLowerCase().includes(searchQuery.toLowerCase()) || a.reason.toLowerCase().includes(searchQuery.toLowerCase()))
+              .slice(0, 3)
+              .map(a => {
+                const patient = data.patients.find(p => p.id === a.patientId)
+                return (
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between rounded-xl border border-slate-200 p-3 hover:border-clinic-500 hover:bg-slate-50 cursor-pointer transition"
+                    onClick={() => { setSearchOpen(false); setSearchQuery(''); navigate('/appointments'); }}
+                  >
+                    <div>
+                      <div className="text-sm font-semibold text-slate-800">{a.reference} · {patient?.name}</div>
+                      <div className="text-xs text-slate-500">{a.date} · {a.start}–{a.end} · {a.reason}</div>
+                    </div>
+                    <Badge tone={a.status}>{a.status}</Badge>
+                  </div>
+                )
+              })}
+
+            {/* Staff matches */}
+            {data.staff
+              .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.employeeNo.toLowerCase().includes(searchQuery.toLowerCase()) || s.role.toLowerCase().includes(searchQuery.toLowerCase()))
+              .slice(0, 3)
+              .map(s => (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between rounded-xl border border-slate-200 p-3 hover:border-clinic-500 hover:bg-slate-50 cursor-pointer transition"
+                  onClick={() => { setSearchOpen(false); setSearchQuery(''); navigate('/administration'); }}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar name={s.name} size="sm" />
+                    <div>
+                      <div className="text-sm font-semibold text-slate-800">{s.name}</div>
+                      <div className="text-xs text-slate-500 font-mono">{s.employeeNo} · {s.role}</div>
+                    </div>
+                  </div>
+                  <Badge tone={s.isActive ? 'Active' : 'Inactive'}>{s.role}</Badge>
+                </div>
+              ))}
+
+            {data.patients.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.patientNo.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
+             data.appointments.filter(a => a.reference.toLowerCase().includes(searchQuery.toLowerCase()) || a.reason.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
+             data.staff.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.employeeNo.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+              <div className="py-12 text-center text-sm text-slate-500">No matching records found for "{searchQuery}"</div>
             )}
           </div>
         ) : (
-          <div className="mt-12 text-center text-sm text-slate-500">Type a name or ID to start searching.</div>
+          <div className="py-12 text-center text-sm text-slate-500">Type a name, patient ID, reference, or doctor to search.</div>
         )}
       </div>
     </Modal>

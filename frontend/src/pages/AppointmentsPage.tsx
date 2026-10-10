@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { AlertTriangle, CalendarCheck2, CalendarClock, CheckCircle2, ChevronLeft, ChevronRight, Clock3, MapPin, Plus, RotateCcw, UserRound, UserRoundCheck, XCircle, Zap } from 'lucide-react'
 import { useClinic } from '../context/ClinicContext'
-import { ClinicRuleError, DEMO_TODAY, formatDate, timeToMinutes } from '../lib/domain'
+import { ClinicRuleError, DEMO_TODAY, findAppointmentConflict, formatDate, timeToMinutes } from '../lib/domain'
 import type { Appointment } from '../types'
 import { Avatar, Badge, Button, Field, InfoNote, Modal, PageHeader, RuleError } from '../components/ui'
 import appointmentCareImage from '../assets/clinical/appointment-care.webp'
@@ -100,11 +100,55 @@ export default function AppointmentsPage() {
         {displayDoctors.map((doctor) => <div key={doctor.id} className="border-b border-r border-slate-200 bg-slate-50 p-3 last:border-r-0"><div className="flex items-center gap-2"><Avatar name={doctor.name} size="sm" /><div><p className="text-xs font-bold text-slate-800">{doctor.name}</p><p className="text-[10px] text-slate-400">{doctor.specialties?.[0]}</p></div></div></div>)}
         {displayDoctors.length === 0 && <div className="border-b border-slate-200 bg-slate-50 p-4 text-xs text-slate-500">No doctors at this branch</div>}
         {timeSlots.map((time) => <div key={time} className="contents">
-          <div className="sticky left-0 z-10 h-[4.25rem] border-r border-t border-slate-100 bg-white px-3 py-2 text-[11px] font-semibold text-slate-400">{time}</div>
+          <div className="sticky left-0 z-10 h-[4.25rem] border-r border-t border-slate-100 bg-white px-3 py-2 text-[11px] font-mono font-semibold text-slate-400">{time}</div>
           {displayDoctors.map((doctor) => {
             const item = appointments.find((appointment) => appointment.doctorId === doctor.id && appointment.start === time)
+            const conflict = !item ? findAppointmentConflict(data.appointments, { doctorId: doctor.id, date, start: time, end: addMinutes(time, 30) }) : undefined
+
             return <div key={doctor.id} className="relative h-[4.25rem] border-r border-t border-slate-100 p-1.5 last:border-r-0">
-              {item ? <button onClick={() => openDialog('details', item)} className={`h-full w-full rounded-lg border-l-4 px-3 py-2 text-left transition hover:brightness-[.98] ${item.status === 'Completed' ? 'border-[#1E8A5F] bg-[#E7F5EE]' : item.status === 'Cancelled' ? 'border-[#8A97A0] bg-[#EFF3F3] opacity-75' : 'border-[#1E77B8] bg-[#EAF4FB]'}`}><span className="block truncate text-xs font-bold text-slate-800">{patientFor(item).name}</span><span className="mt-0.5 flex items-center gap-1 truncate text-[10px] text-slate-500">{item.start}–{item.end}{item.source === 'Walk-in' && <> · <Zap size={9} /> Walk-in</>}</span></button> : canManage && <button onClick={() => { setBookingDoctor(doctor.id); setBookingStart(time); openDialog('book') }} className="group h-full w-full rounded-lg p-1.5" aria-label={`Preview and book ${doctor.name} at ${time}`}><span className="slot-ghost flex h-full w-full items-center justify-center gap-1.5 rounded-md px-2 text-[10px] font-medium opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100"><span className="live-pulse" />Free · preview</span></button>}
+              {item ? (
+                <button
+                  onClick={() => openDialog('details', item)}
+                  className={`group flex h-full w-full flex-col justify-between rounded-lg border p-2 text-left transition hover:shadow-sm ${
+                    item.status === 'Completed'
+                      ? 'border-[#BFD9D2] bg-[#E7F5EE]/90 hover:bg-[#E7F5EE]'
+                      : item.status === 'Cancelled'
+                        ? 'border-[#DCE4E4] bg-[#EFF3F3]/80 opacity-70'
+                        : 'border-[#C6D9EA] bg-[#EAF4FB]/90 hover:bg-[#EAF4FB]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="truncate text-xs font-bold text-slate-900">{patientFor(item).name}</span>
+                    <Badge tone={item.status}>{item.status}</Badge>
+                  </div>
+                  <span className="flex items-center gap-1 truncate font-mono text-[10px] text-slate-500">
+                    <Clock3 size={10} />{item.start}–{item.end}
+                    {item.source === 'Walk-in' && <span className="inline-flex items-center gap-0.5 text-amber-700 font-sans"><Zap size={9} />Walk-in</span>}
+                  </span>
+                </button>
+              ) : conflict ? (
+                <div
+                  className="slot-ghost slot-ghost-conflict flex h-full w-full flex-col items-center justify-center p-1.5 text-center"
+                  title={`${doctor.name} is already booked from ${conflict.start} to ${conflict.end}`}
+                >
+                  <span className="flex items-center gap-1 text-[10px] font-bold">
+                    <AlertTriangle size={11} /> Overlap conflict
+                  </span>
+                  <span className="mt-0.5 font-mono text-[9px] opacity-85">
+                    {conflict.start}–{conflict.end}
+                  </span>
+                </div>
+              ) : canManage ? (
+                <button
+                  onClick={() => { setBookingDoctor(doctor.id); setBookingStart(time); openDialog('book') }}
+                  className="group h-full w-full rounded-lg p-1 text-left"
+                  aria-label={`Preview and book ${doctor.name} at ${time}`}
+                >
+                  <span className="slot-ghost slot-ghost-free flex h-full w-full items-center justify-center gap-1.5 rounded-md px-2 text-[10px] font-medium opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                    <span className="live-pulse" />Free · preview
+                  </span>
+                </button>
+              ) : null}
             </div>
           })}
         </div>)}
