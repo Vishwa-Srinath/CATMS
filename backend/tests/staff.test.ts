@@ -214,6 +214,26 @@ vi.mock('../src/db/pool', () => ({
         return { rows: adminUsers };
       }
 
+      // 6. SELECT audit logs
+      if (text.includes('FROM catms.audit_event a')) {
+        return {
+          rows: [
+            {
+              audit_event_id: 1,
+              actor_user_id: 1,
+              actor_username: 'admin.user',
+              actor_name: 'Dr. Admin Leader',
+              entity_type: 'USER_ACCOUNT',
+              entity_id: '1',
+              action_code: 'ACCOUNT_UNLOCKED',
+              occurred_at: '2026-08-09T10:00:00Z',
+              payload: { reason: 'manual unlock' },
+              client_ip: '127.0.0.1',
+            },
+          ],
+        };
+      }
+
       return { rows: [] };
     }),
     connect: vi.fn(),
@@ -358,6 +378,36 @@ vi.mock('../src/db/transaction', () => ({
         // SELECT app_role_id FROM catms.app_role
         if (text.includes('SELECT app_role_id FROM catms.app_role')) {
           return { rows: [{ app_role_id: 3 }] };
+        }
+
+        // UPDATE catms.user_account (unlock)
+        if (text.includes('UPDATE catms.user_account') && text.includes('failed_login_count = 0')) {
+          const uId = Number(params[0]);
+          const found = adminUsers.find((u) => u.user_account_id === uId);
+          if (found) {
+            found.account_status = 'Active';
+            found.failed_login_count = 0;
+          }
+          return { rows: [], rowCount: 1 };
+        }
+
+        // SELECT user_account_id, username, account_status FROM catms.user_account
+        if (text.includes('SELECT user_account_id, username, account_status FROM catms.user_account')) {
+          const uId = Number(params[0]);
+          const found = adminUsers.find((u) => u.user_account_id === uId);
+          return { rows: found ? [{ user_account_id: found.user_account_id, username: found.username, account_status: found.account_status }] : [] };
+        }
+
+        // SELECT user_account_id, username FROM catms.user_account
+        if (text.includes('SELECT user_account_id, username FROM catms.user_account')) {
+          const uId = Number(params[0]);
+          const found = adminUsers.find((u) => u.user_account_id === uId);
+          return { rows: found ? [{ user_account_id: found.user_account_id, username: found.username }] : [] };
+        }
+
+        // UPDATE catms.user_account_role
+        if (text.includes('UPDATE catms.user_account_role')) {
+          return { rows: [], rowCount: 1 };
         }
 
         // INSERT INTO catms.user_account_role
@@ -720,5 +770,34 @@ describe('Admin User Accounts (/api/v1/admin/users)', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.data).toBeDefined();
+  });
+
+  it('PATCH /api/v1/admin/users/:id/unlock unlocks account (Admin only)', async () => {
+    const res = await request(app)
+      .patch('/api/v1/admin/users/1/unlock')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.accountStatus).toBe('Active');
+  });
+
+  it('PUT /api/v1/admin/users/:id/role updates user role (Admin only)', async () => {
+    const res = await request(app)
+      .put('/api/v1/admin/users/1/role')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ roleCode: 'Admin', branchScopeId: 1 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toBeDefined();
+  });
+
+  it('GET /api/v1/admin/audit-logs returns audit log entries for Admin/QA', async () => {
+    const res = await request(app)
+      .get('/api/v1/admin/audit-logs')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBeGreaterThan(0);
   });
 });

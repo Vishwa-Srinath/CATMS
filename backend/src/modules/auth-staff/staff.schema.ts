@@ -153,3 +153,12 @@ export const createAdminUserSchema = z.object({
     .max(30),
   branchScopeId: z.coerce.number().int().positive().optional().nullable(),
 }).strict({ message: 'Maintained or unexpected fields are not permitted.' });
+
+export const updateUserRoleSchema = z.object({
+  roleCode: z
+    .string({ required_error: 'Role code is required.' })
+    .trim()
+    .min(2, 'Role code must be at least 2 characters.')
+    .max(30),
+  branchScopeId: z.coerce.number().int().positive().optional().nullable(),
+}).strict({ message: 'Maintained or unexpected fields are not permitted.' });
