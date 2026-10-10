@@ -160,3 +160,21 @@ export interface CreateAdminUserInput {
   roleCode: string;
   branchScopeId?: number | null | undefined;
 }
+
+export interface UpdateUserRoleInput {
+  roleCode: string;
+  branchScopeId?: number | null | undefined;
+}
+
+export interface AuditLogDto {
+  auditEventId: number;
+  actorUserId: number | null;
+  actorUsername: string;
+  actorName: string;
+  entityType: string;
+  entityId: string;
+  actionCode: string;
+  occurredAt: string;
+  payload: unknown;
+  clientIp: string | null;
+}

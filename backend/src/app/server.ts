@@ -41,6 +41,7 @@ import {
   doctorRouter,
   specialtyRouter,
   adminUserRouter,
+  auditLogRouter,
 } from '../modules/auth-staff/staff.routes';
 import { appointmentRouter } from '../modules/appointments/appointments.routes';
 import { patientRouter, insuranceRouter } from '../modules/patients-insurance/patients-insurance.routes';
@@ -159,6 +160,7 @@ export function createApp(): express.Application {
   app.use('/api/v1/doctors', doctorRouter);
   app.use('/api/v1/specialties', specialtyRouter);
   app.use('/api/v1/admin/users', adminUserRouter);
+  app.use('/api/v1/admin/audit-logs', auditLogRouter);
   app.use('/api/v1/appointments', appointmentRouter);
   app.use('/api/v1/patients', patientRouter);
   app.use('/api/v1/insurance', insuranceRouter);

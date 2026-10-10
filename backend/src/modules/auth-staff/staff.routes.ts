@@ -28,6 +28,7 @@ import {
   deactivateEmployeeSchema,
   registerDoctorSchema,
   createAdminUserSchema,
+  updateUserRoleSchema,
 } from './staff.schema';
 import { AppError, successEnvelope } from '../../shared/errors';
 
@@ -336,6 +337,75 @@ adminUserRouter.post(
       const validated = createAdminUserSchema.parse(req.body);
       const user = await staffService.createAdminUser(validated, req.user?.userId);
       res.status(201).json(successEnvelope(user, correlationId));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// PATCH /api/v1/admin/users/:id/unlock — Unlock user account (Admin only)
+const unlockHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
+    const userAccountId = parseId(req.params.id, 'user account ID');
+    const user = await staffService.unlockUserAccount(userAccountId, req.user?.userId);
+    res.status(200).json(successEnvelope(user, correlationId));
+  } catch (err) {
+    next(err);
+  }
+};
+adminUserRouter.patch('/:id/unlock', requireAuth, requireRole('Admin'), unlockHandler);
+adminUserRouter.post('/:id/unlock', requireAuth, requireRole('Admin'), unlockHandler);
+
+// PUT /api/v1/admin/users/:id/role — Update user account role (Admin only)
+adminUserRouter.put(
+  '/:id/role',
+  requireAuth,
+  requireRole('Admin'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
+      const userAccountId = parseId(req.params.id, 'user account ID');
+      const validated = updateUserRoleSchema.parse(req.body);
+      const user = await staffService.updateUserRole(userAccountId, validated, req.user?.userId);
+      res.status(200).json(successEnvelope(user, correlationId));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /api/v1/admin/users/audit-logs — View security & state audit trail (Admin & QA)
+adminUserRouter.get(
+  '/audit-logs',
+  requireAuth,
+  requireRole('Admin', 'QA'),
+  async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
+      const logs = await staffService.listAuditLogs();
+      res.status(200).json(successEnvelope(logs, correlationId));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// =============================================================================
+// 6. Audit Log Router (/api/v1/admin/audit-logs)
+// =============================================================================
+export const auditLogRouter = Router();
+
+// GET /api/v1/admin/audit-logs — View security & procedural audit log (Admin & QA)
+auditLogRouter.get(
+  '/',
+  requireAuth,
+  requireRole('Admin', 'QA'),
+  async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
+      const logs = await staffService.listAuditLogs();
+      res.status(200).json(successEnvelope(logs, correlationId));
     } catch (err) {
       next(err);
     }
