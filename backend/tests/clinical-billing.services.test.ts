@@ -144,6 +144,58 @@ describe('clinical and payment database workflows', () => {
     expect(statements.indexOf('COMMIT')).toBeGreaterThan(statements.findIndex((sql) => sql.includes('issue_invoice')));
   });
 
+  it('lists database-calculated invoice balances and approved claim references as strings', async () => {
+    mockClientQuery.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM catms.invoice i')) {
+        return dbResult([{
+          invoice_id: '9007199254740993',
+          invoice_number: 'INV-501',
+          appointment_id: '101',
+          appointment_number: 'APT-101',
+          patient_id: '22',
+          patient_number: 'PAT-22',
+          patient_name: 'Test Patient',
+          invoice_state: 'Issued',
+          currency_code: 'LKR',
+          subtotal_amount: '5500.00',
+          approved_insurance_amount: '1000.00',
+          patient_liability_amount: '4500.00',
+          patient_paid_amount: '500.00',
+          insurer_paid_amount: '0.00',
+          patient_payment_status: 'PartiallyPaid',
+          issued_at: '2026-10-01T10:00:00.000Z',
+          approved_claims: [{
+            claimId: '9007199254740995',
+            claimNumber: 'CLM-5',
+            claimStatus: 'Approved',
+            approvedAmount: '1000.00',
+            policyNumber: 'POL-1',
+            providerName: 'Example Insurance',
+          }],
+        }]);
+      }
+      return dbResult();
+    });
+
+    const result = await new ClinicalService().listInvoices();
+
+    expect(result).toEqual([expect.objectContaining({
+      invoiceId: '9007199254740993',
+      subtotalAmount: '5500.00',
+      patientLiabilityAmount: '4500.00',
+      patientPaidAmount: '500.00',
+      approvedClaims: [{
+        claimId: '9007199254740995',
+        claimNumber: 'CLM-5',
+        claimStatus: 'Approved',
+        approvedAmount: '1000.00',
+        policyNumber: 'POL-1',
+        providerName: 'Example Insurance',
+      }],
+    })]);
+    expect(mockClientQuery.mock.calls.map(([sql]) => String(sql))).toContain('SET LOCAL ROLE catms_admin');
+  });
+
   it("hides another clinician's appointment before attempting a clinical write", async () => {
     mockClientQuery.mockImplementation(async (sql: string) => {
       if (sql.includes('lock_clinical_appointment')) {

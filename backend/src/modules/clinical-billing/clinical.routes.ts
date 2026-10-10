@@ -176,6 +176,19 @@ treatmentRouter.delete(
 export const invoiceRouter = Router();
 invoiceRouter.use(requireAuth);
 invoiceRouter.get(
+  '/',
+  requireRole('Admin'),
+  async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await clinicalService.listInvoices();
+      res.status(200).json(successEnvelope(result, correlationId(res)));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+invoiceRouter.get(
   '/:invoice_id',
   requireRole('Clinician', 'Admin'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
