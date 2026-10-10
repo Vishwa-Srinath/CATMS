@@ -126,7 +126,7 @@ async function request<T>(
     const errorDetails = errorPayload?.error;
     const correlationId = errorPayload?.meta?.correlationId || requestHeaders['X-Correlation-Id'];
 
-    if (response.status === 401) {
+    if (response.status === 401 && !endpoint.includes('/auth/me') && !endpoint.includes('/auth/login')) {
       notifySessionExpired();
     }
 
