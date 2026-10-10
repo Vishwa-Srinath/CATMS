@@ -34,8 +34,9 @@ export function Badge({ children, tone }: { children: ReactNode; tone?: string }
   return <span className={`status-badge inline-flex items-center gap-1.5 whitespace-nowrap px-2 py-1 text-[10px] font-medium ring-1 ring-inset ${badgeStyles[key] ?? 'bg-[#EFF3F3] text-[#4B5D66] ring-[#8A97A0]/20'}`}>{Icon && <Icon size={11} aria-hidden="true" />}{label}</span>
 }
 
-export function Avatar({ name, size = 'md', className = '' }: { name: string; size?: 'sm' | 'md' | 'lg'; className?: string }) {
-  const letters = name.replace('Dr. ', '').split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase()
+export function Avatar({ name, size = 'md', className = '' }: { name?: string; size?: 'sm' | 'md' | 'lg'; className?: string }) {
+  const safeName = name || 'User'
+  const letters = safeName.replace('Dr. ', '').split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase()
   const sizes = { sm: 'h-8 w-8 text-[10px]', md: 'h-10 w-10 text-xs', lg: 'h-14 w-14 text-sm' }
   return <span aria-hidden="true" className={`inline-flex shrink-0 items-center justify-center rounded-full bg-[#EFF3F3] font-semibold text-[#4B5D66] ring-1 ring-[#DCE4E4] ${sizes[size]} ${className}`}>{letters}</span>
 }

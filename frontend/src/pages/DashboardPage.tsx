@@ -86,7 +86,8 @@ export default function DashboardPage() {
   const clinicalAwaiting = (worklistQuery.data ?? []).filter(
     (item) => item.consultationRevisionNo === null && (user.role !== 'Clinician' || item.doctorId === user.id),
   ).length;
-  const firstName = user.name.replace('Dr. ', '').split(' ')[0]
+  const safeName = user.name || 'User'
+  const firstName = safeName.replace('Dr. ', '').split(' ')[0]
   const branchName = user.branchId === 'all' ? 'All branches' : data.branches.find((branch) => branch.id === user.branchId)?.name ?? 'MedSync Clinics'
   const copy = roleCopy[user.role]
 

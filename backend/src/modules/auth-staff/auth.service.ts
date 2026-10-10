@@ -257,7 +257,8 @@ export class AuthService {
        FROM catms.employee_branch_assignment eba
        JOIN catms.branch b ON b.branch_id = eba.branch_id
        WHERE eba.employee_id = $1
-         AND eba.is_primary = TRUE
+         AND UPPER(eba.assignment_type) = 'PRIMARY'
+         AND eba.is_active = TRUE
          AND (eba.valid_to IS NULL OR eba.valid_to > now())
        LIMIT 1`,
       [employeeId],

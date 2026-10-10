@@ -299,7 +299,8 @@ export class StaffService {
       FROM catms.employee e
       LEFT JOIN catms.employee_branch_assignment eba
         ON eba.employee_id = e.employee_id
-       AND eba.is_primary = TRUE
+       AND UPPER(eba.assignment_type) = 'PRIMARY'
+       AND eba.is_active = TRUE
        AND (eba.valid_to IS NULL OR eba.valid_to > now())
       LEFT JOIN catms.branch b ON b.branch_id = eba.branch_id
       LEFT JOIN catms.user_account u ON u.employee_id = e.employee_id
