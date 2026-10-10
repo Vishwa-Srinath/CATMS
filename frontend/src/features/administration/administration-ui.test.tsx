@@ -423,15 +423,14 @@ describe('CATMS-066 — Administration Frontend Tests', () => {
         </QueryClientProvider>,
       );
 
-      expect(html).toContain('Staff system access');
-      expect(html).toContain('Backend auth online');
-      expect(html).toContain('Authorized staff only');
-      expect(html).toContain('Reception');
+      expect(html).toContain('Staff Portal Login');
+      expect(html).toContain('Select your role and sign in to access your workspace');
+      expect(html).toContain('Receptionist');
       expect(html).toContain('Clinician');
       expect(html).toContain('Manager');
-      expect(html).toContain('Admin / Finance');
-      expect(html).toContain('Sign in');
-      expect(html).toContain('Offline demo bypass');
+      expect(html).toContain('Admin');
+      expect(html).toContain('Sign in to workspace');
+      expect(html).toContain('MedSync Clinics');
     });
   });
 
