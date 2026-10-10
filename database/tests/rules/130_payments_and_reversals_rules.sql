@@ -1,7 +1,9 @@
--- CATMS-035 / CATMS-036: real-claim payment integration tests.
+-- CATMS-035 / CATMS-036 / CATMS-076: real-claim payment reconciliation tests.
 -- Requires migrations through 130 and the policy/treatment FK.
 -- Run as catms_super in a development/test database.
 -- All fixture data is rolled back; sequences may advance.
+-- CATMS-076 golden ledger sample: 3,500 + 6,500 = 10,000 LKR;
+-- approved insurer liability 6,000 + patient liability 4,000.
 
 \set ON_ERROR_STOP on
 
@@ -17,6 +19,7 @@ DECLARE
     v_patient BIGINT;
     v_category BIGINT;
     v_treatment BIGINT;
+    v_treatment_2 BIGINT;
     v_appointment BIGINT;
     v_invoice BIGINT;
     v_provider BIGINT;
@@ -28,6 +31,7 @@ DECLARE
     v_caught BOOLEAN;
     v_count BIGINT;
     v_audit_count BIGINT;
+    v_line_total NUMERIC(12,2);
 
     v_patient_key UUID := gen_random_uuid();
     v_insurer_key UUID := gen_random_uuid();
@@ -127,9 +131,20 @@ BEGIN
     )
     VALUES (
         v_category, 'RULE130-SERVICE', 'Payment Test Service',
-        10000.00, 15, FALSE
+        3500.00, 15, FALSE
     )
     RETURNING treatment_id INTO v_treatment;
+
+    INSERT INTO catms.treatment_catalogue (
+        treatment_category_id, service_code, name,
+        current_price, default_duration_minutes,
+        is_consultation_service
+    )
+    VALUES (
+        v_category, 'RULE130-SERVICE-2', 'Payment Test Diagnostic',
+        6500.00, 30, FALSE
+    )
+    RETURNING treatment_id INTO v_treatment_2;
 
     INSERT INTO catms.appointment (
         appointment_number, patient_id, doctor_id,
@@ -148,11 +163,49 @@ BEGIN
     SET CONSTRAINTS ALL IMMEDIATE;
     SET CONSTRAINTS ALL DEFERRED;
 
-    PERFORM catms.record_appointment_treatment(
-        v_appointment, v_treatment, 1, v_user
-    );
+    PERFORM catms.record_appointment_treatment(v_appointment, v_treatment, 1, v_user);
+    PERFORM catms.record_appointment_treatment(v_appointment, v_treatment_2, 1, v_user);
 
     v_invoice := catms.issue_invoice(v_appointment, v_user);
+
+    SELECT sum(line_total) INTO v_line_total
+    FROM catms.invoice_line
+    WHERE invoice_id = v_invoice;
+
+    IF (SELECT count(*) FROM catms.invoice_line WHERE invoice_id = v_invoice) <> 2
+       OR v_line_total <> 10000.00
+       OR NOT EXISTS (
+            SELECT 1
+            FROM catms.invoice_line il
+            JOIN catms.appointment_treatment at
+              ON at.appointment_treatment_id = il.appointment_treatment_id
+            WHERE il.invoice_id = v_invoice
+              AND at.treatment_id = v_treatment
+              AND il.unit_price = 3500.00
+              AND il.line_total = 3500.00
+       )
+       OR NOT EXISTS (
+            SELECT 1
+            FROM catms.invoice_line il
+            JOIN catms.appointment_treatment at
+              ON at.appointment_treatment_id = il.appointment_treatment_id
+            WHERE il.invoice_id = v_invoice
+              AND at.treatment_id = v_treatment_2
+              AND il.unit_price = 6500.00
+              AND il.line_total = 6500.00
+       )
+       OR NOT EXISTS (
+            SELECT 1 FROM catms.invoice
+            WHERE invoice_id = v_invoice
+              AND subtotal_amount = 10000.00
+              AND approved_insurance_amount = 0.00
+              AND patient_liability_amount = 10000.00
+              AND patient_paid_amount = 0.00
+              AND insurer_paid_amount = 0.00
+              AND patient_payment_status = 'Unpaid'
+       ) THEN
+        RAISE EXCEPTION 'FAIL: invoice line/subtotal/liability reconciliation';
+    END IF;
 
     INSERT INTO catms.insurance_provider (provider_code, name)
     VALUES ('RULE130', 'Payment Test Insurer')
@@ -172,12 +225,42 @@ BEGIN
         policy_id, treatment_id, coverage_percentage,
         coverage_cap, effective_from
     )
-    VALUES (
-        v_policy, v_treatment, 80.00,
-        8000.00, '2026-01-01'
-    );
+    VALUES
+        (v_policy, v_treatment, 80.00, 8000.00, '2026-01-01'),
+        (v_policy, v_treatment_2, 80.00, 8000.00, '2026-01-01');
 
     v_claim := catms.submit_claim(v_invoice, v_policy, v_user);
+
+    UPDATE catms.treatment_catalogue
+    SET current_price = 9999.00,
+        service_code = 'RULE130-UPDATED',
+        name = 'Updated Payment Test Service'
+    WHERE treatment_id = v_treatment;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM catms.invoice_line il
+        JOIN catms.appointment_treatment at
+          ON at.appointment_treatment_id = il.appointment_treatment_id
+        WHERE il.invoice_id = v_invoice
+          AND at.treatment_id = v_treatment
+          AND il.service_code_snapshot = 'RULE130-SERVICE'
+          AND il.description_snapshot = 'Payment Test Service'
+          AND il.unit_price = 3500.00
+          AND il.line_total = 3500.00
+    ) OR NOT EXISTS (
+        SELECT 1
+        FROM catms.insurance_claim_line
+        WHERE claim_id = v_claim
+          AND service_code_snapshot = 'RULE130-SERVICE'
+          AND description_snapshot = 'Payment Test Service'
+          AND unit_price_snapshot = 3500.00
+          AND line_total_snapshot = 3500.00
+    ) THEN
+        RAISE EXCEPTION 'FAIL: catalogue update changed historical invoice or claim snapshots';
+    END IF;
+
+    RAISE NOTICE 'PASS: line/subtotal reconciliation and immutable invoice/claim snapshots';
 
     -- 2. Pending claims cannot receive insurer payments.
 
@@ -427,6 +510,19 @@ BEGIN
           AND patient_payment_status = 'Paid'
     ) THEN
         RAISE EXCEPTION 'FAIL: final invoice reconciliation';
+    END IF;
+
+    IF (SELECT count(*) FROM catms.payment WHERE invoice_id = v_invoice) <> 3
+       OR (SELECT sum(amount) FROM catms.payment WHERE invoice_id = v_invoice) <> 12000.00
+       OR (SELECT sum(r.amount) FROM catms.payment_reversal r
+           JOIN catms.payment p USING (payment_id)
+           WHERE p.invoice_id = v_invoice) <> 2000.00
+       OR catms.payment_net(v_invoice, 'Patient')
+          + catms.payment_net(v_invoice, 'Insurer') <> 10000.00
+       OR (SELECT greatest(patient_liability_amount - patient_paid_amount, 0)
+                  + greatest(approved_insurance_amount - insurer_paid_amount, 0)
+           FROM catms.invoice WHERE invoice_id = v_invoice) <> 0.00 THEN
+        RAISE EXCEPTION 'FAIL: final receipts, reversals, net payments and outstanding do not reconcile';
     END IF;
 
     RAISE NOTICE 'PASS: forced rollback, successful retry and final reconciliation';
