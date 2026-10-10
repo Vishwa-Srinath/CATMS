@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Banknote, CircleDollarSign, History, Landmark, ReceiptText, RotateCcw, WalletCards } from 'lucide-react'
 import { ApiError } from '../api/errors'
@@ -32,6 +32,7 @@ export default function ApiFinancePage({ onBack }: { onBack?: () => void }) {
   const [paymentTarget, setPaymentTarget] = useState<ApiInvoiceSummary | null>(null)
   const [payerType, setPayerType] = useState<PayerType>('Patient')
   const [claimId, setClaimId] = useState('')
+  const [paymentAmount, setPaymentAmount] = useState('')
   const [paymentError, setPaymentError] = useState<Error | null>(null)
   const [catalogueError, setCatalogueError] = useState<Error | null>(null)
   const [reverseTarget, setReverseTarget] = useState<ApiPayment | null>(null)
@@ -61,6 +62,9 @@ export default function ApiFinancePage({ onBack }: { onBack?: () => void }) {
     enabled: paymentTarget !== null && (payerType === 'Patient' || claimId.length > 0),
     retry: false,
   })
+  useEffect(() => {
+    if (preview.data) setPaymentAmount(preview.data.outstandingAmount)
+  }, [preview.data])
   const post = useMutation({
     mutationFn: postPayment,
     onSuccess: async () => {
@@ -77,6 +81,7 @@ export default function ApiFinancePage({ onBack }: { onBack?: () => void }) {
       setReverseTarget(null)
       await queryClient.invalidateQueries({ queryKey: ['invoices'] })
       await queryClient.invalidateQueries({ queryKey: ['payments'] })
+      await queryClient.invalidateQueries({ queryKey: ['invoice-detail'] })
     },
   })
   const addService = useMutation({
@@ -101,6 +106,7 @@ export default function ApiFinancePage({ onBack }: { onBack?: () => void }) {
     setPaymentTarget(item)
     setPayerType('Patient')
     setClaimId('')
+    setPaymentAmount('')
     setPaymentError(null)
     idempotencyKey.current = null
   }
@@ -223,14 +229,15 @@ export default function ApiFinancePage({ onBack }: { onBack?: () => void }) {
     <Modal open={paymentTarget !== null} onClose={() => { setPaymentTarget(null); setPaymentError(null) }} title="Post a payment" description={paymentTarget ? `${paymentTarget.invoiceNumber} · ${paymentTarget.patientName}` : undefined} size="sm">
       {paymentTarget && <form onSubmit={submitPayment} onChange={() => { idempotencyKey.current = null }} className="space-y-4">
         {paymentError && <RuleError error={paymentError} />}
-        <Field label="Payer" required><select className="input" value={payerType} onChange={(event) => { setPayerType(event.target.value as PayerType); setClaimId(''); setPaymentError(null) }}><option value="Patient">Patient</option><option value="Insurer">Insurer</option></select></Field>
-        {payerType === 'Insurer' && <Field label="Approved claim" required><select className="input" value={claimId} onChange={(event) => setClaimId(event.target.value)} required><option value="">Select approved claim</option>{paymentTarget.approvedClaims.map((claim) => <option value={claim.claimId} key={claim.claimId}>{claim.providerName} · {claim.policyNumber} · {claim.claimNumber} ({claim.claimStatus})</option>)}</select></Field>}
+        <Field label="Payer" required><select className="input" value={payerType} onChange={(event) => { setPayerType(event.target.value as PayerType); setClaimId(''); setPaymentAmount(''); setPaymentError(null) }}><option value="Patient">Patient</option><option value="Insurer">Insurer</option></select></Field>
+        {payerType === 'Insurer' && <Field label="Approved claim" required><select className="input" value={claimId} onChange={(event) => { setClaimId(event.target.value); setPaymentAmount('') }} required><option value="">Select approved claim</option>{paymentTarget.approvedClaims.map((claim) => <option value={claim.claimId} key={claim.claimId}>{claim.providerName} · {claim.policyNumber} · {claim.claimNumber} ({claim.claimStatus})</option>)}</select></Field>}
         {preview.error && <RuleError error={preview.error instanceof ApiError ? preview.error : new Error('The outstanding balance could not be previewed.')} />}
-        {preview.data && <div className="rounded-xl bg-slate-50 p-4"><p className="label-caps">{payerType} outstanding</p><p className="mt-1 text-2xl font-bold">{formatCurrency(Number(preview.data.outstandingAmount))}</p><p className="mt-1 text-xs text-slate-500">Balance is calculated by the API; partial payments are allowed.</p></div>}
-        <Field label="Payment amount" required><input name="amount" type="number" className="input" min="0.01" step="0.01" max={preview.data?.outstandingAmount} defaultValue={preview.data?.outstandingAmount} required disabled={!preview.data} /></Field>
+        {preview.data && Number(preview.data.outstandingAmount) > 0 && <div className="rounded-xl bg-slate-50 p-4"><p className="label-caps">{payerType} outstanding</p><p className="mt-1 text-2xl font-bold">{formatCurrency(Number(preview.data.outstandingAmount))}</p><p className="mt-1 text-xs text-slate-500">Balance is calculated by the API; partial payments are allowed.</p></div>}
+        {preview.data && Number(preview.data.outstandingAmount) <= 0 && <InfoNote title="No balance due">There is no outstanding balance for this payer and claim.</InfoNote>}
+        <Field label="Payment amount" required><input name="amount" type="number" className="input" min="0.01" step="0.01" max={preview.data?.outstandingAmount} value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} required disabled={!preview.data || Number(preview.data.outstandingAmount) <= 0} /></Field>
         <Field label="Payment method" required><select name="method" className="input"><option>Cash</option><option>Card</option><option>BankTransfer</option><option>Online</option></select></Field>
         <Field label="Reference"><input name="reference" className="input" maxLength={100} /></Field>
-        <div className="flex justify-end"><Button type="submit" disabled={!preview.data || post.isPending}>{post.isPending ? 'Posting…' : 'Commit payment'}</Button></div>
+        <div className="flex justify-end"><Button type="submit" disabled={!preview.data || Number(preview.data.outstandingAmount) <= 0 || !paymentAmount || post.isPending}>{post.isPending ? 'Posting…' : 'Commit payment'}</Button></div>
       </form>}
     </Modal>
 
