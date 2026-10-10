@@ -44,7 +44,7 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 | 13 | CATMS-059 | Connect Patient and Insurance frontend | ✅ Done |
 | 14 | CATMS-060 | Connect Claim submission and review frontend | ✅ Done |
 | 15 | CATMS-067 | Patient/Insurance/Claim frontend tests | ✅ Done |
-| 16 | CATMS-075 | Reconcile at scale and privacy audit | ⬜ Not started |
+| 16 | CATMS-075 | Reconcile at scale and privacy audit | ✅ Done |
 
 ---
 
@@ -396,23 +396,24 @@ The plan follows the team gate structure (G0â€“G6) because your modules fee
 
 ---
 
-### Step 16 â€” CATMS-075: Reconcile at scale and privacy audit
-- [ ] Bulk scenario results match hand calculations
-- [ ] No double allocation at scale
-- [ ] Log/error review shows no patient identity or clinical data leaking
+### Step 16 — CATMS-075: Reconcile at scale and privacy audit
+- [x] Bulk scenario results match hand calculations
+- [x] No double allocation at scale
+- [x] Log/error review shows no patient identity or clinical data leaking
 
 **What:** Run multi-policy/expiry/suspension/cap/partial/rejected scenarios against bulk data and reconcile against hand calculations. Separately audit logs and error messages for leaked patient identity or clinical data.
 
-**Why:** Everything up to this point was verified with a tiny fixture. This step proves the same rules hold at realistic data volumes, where edge cases (e.g., a patient with three overlapping historical policies) are more likely to surface. The privacy check catches correct business logic that accidentally logs a patient's NIC in an error message â€” a real compliance risk.
+**Why:** Everything up to this point was verified with a tiny fixture. This step proves the same rules hold at realistic data volumes, where edge cases (e.g., a patient with three overlapping historical policies) are more likely to surface. The privacy check catches correct business logic that accidentally logs a patient's NIC in an error message — a real compliance risk.
 
-**Depends on:** CATMS-040 Â· CATMS-070 (security/secrets review checklist)
+**Depends on:** CATMS-040 · CATMS-070 (security/secrets review checklist)
 
 **AI prompt tip:**
-> "Generate a PostgreSQL seed script creating 100 patients, each with 1â€“3 insurance policies with varying coverage terms, expiry dates, overlapping policy periods, expired policies, and suspended policies. Also generate an audit query searching application logs for NIC numbers, passport numbers, or claim rejection messages containing patient names."
+> "Generate a PostgreSQL seed script creating 100 patients, each with 1–3 insurance policies with varying coverage terms, expiry dates, overlapping policy periods, expired policies, and suspended policies. Also generate an audit query searching application logs for NIC numbers, passport numbers, or claim rejection messages containing patient names."
 
 **Acceptance evidence:**
-- Bulk-scale results match hand calculations â€” no double allocation
+- Bulk-scale results match hand calculations — no double allocation
 - Log/error review shows no patient identity or clinical data leaking outside the database
+- Report and verification artifacts: see [CATMS-075 Report](CATMS-075_Insurance_Reconciliation_At_Scale_and_Privacy_Audit_Report.md) and `backend/tests/insurance-scale-privacy-nfr.test.ts`
 
 ---
 
