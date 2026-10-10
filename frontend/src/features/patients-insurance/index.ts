@@ -1,3 +1,10 @@
-// Patients & Insurance feature — owned by Dev3 (CATMS-048, CATMS-059, CATMS-060, CATMS-067)
-// Re-export all components and hooks consumed by pages/PatientsPage.tsx and pages/FinancePage.tsx
-// Add exports here as you implement components and hooks.
+/**
+ * src/features/patients-insurance/index.ts
+ * Owner: Dev3 | Issues: CATMS-048, CATMS-049, CATMS-057, CATMS-059, CATMS-060
+ *
+ * Feature package for patient registry, insurance policies and claims lifecycle.
+ */
+
+export * from './components/ClaimTracker';
+export * from './components/ClaimSubmissionModal';
+export * from './components/ClaimReviewModal';
