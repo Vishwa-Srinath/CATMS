@@ -22,15 +22,28 @@ export function useSession() {
     refetch,
   } = useQuery<SessionUserDto | null, ApiError>({
     queryKey: SESSION_QUERY_KEY,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       try {
-        return await authApi.getMe();
+        // Fast timeout controller (1.5 seconds max) so offline backend never freezes UI
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500);
+
+        if (signal) {
+          signal.addEventListener('abort', () => controller.abort(), { once: true });
+        }
+
+        const session = await authApi.getMe(controller.signal);
+        clearTimeout(timeoutId);
+        return session;
       } catch (err) {
+        // If unauthenticated (401), backend offline (502/503/504), network error, or timeout:
+        // treat safely as unauthenticated so the login page renders immediately
+        // instead of staying permanently stuck on the skeleton screen.
         if (err instanceof ApiError && err.status === 401) {
-          // Not logged in is normal state, not an unhandled error
           return null;
         }
-        throw err;
+        console.warn('[useSession] Backend session unavailable – defaulting to offline/demo mode:', err);
+        return null;
       }
     },
     staleTime: 60_000,

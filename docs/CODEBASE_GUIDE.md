@@ -102,6 +102,7 @@ CATMS/
 │       │       ├── hooks/
 │       │       └── index.ts
 │       ├── components/      ← Shared UI primitives — LOCKED
+│       │   ├── AmbientGlowSpheres.tsx ← dynamic background glowing spheres
 │       │   ├── AppShell.tsx           ← sidebar, nav, portal theming
 │       │   ├── ToastRegion.tsx        ← global toast notifications
 │       │   └── ui.tsx                 ← Button, Badge, Modal, etc.

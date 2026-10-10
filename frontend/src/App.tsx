@@ -27,11 +27,11 @@ function ProtectedPage({ roles, children }: { roles?: Role[]; children: ReactNod
 }
 
 export default function App() {
-  const { user, isLoadingSession } = useClinic()
+  const { user } = useClinic()
   return <>
     <a href="#main-content" className="skip-link">Skip to main content</a>
     <Suspense fallback={<div className="min-h-screen bg-canvas"><LoadingBlock label="Opening secure workspace" /></div>}><Routes>
-      <Route path="/login" element={isLoadingSession ? <div className="min-h-screen bg-canvas flex items-center justify-center"><LoadingBlock label="Verifying session credentials…" /></div> : user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route path="/" element={<ProtectedPage><DashboardPage /></ProtectedPage>} />
       <Route path="/patients" element={<ProtectedPage roles={['Receptionist', 'Clinician', 'Admin']}><PatientsPage /></ProtectedPage>} />
       <Route path="/appointments" element={<ProtectedPage roles={['Receptionist', 'Clinician', 'Manager', 'Admin']}><AppointmentsPage /></ProtectedPage>} />

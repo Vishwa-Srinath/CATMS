@@ -41,9 +41,9 @@ export const authApi = {
   logout: () =>
     apiClient.post<{ message: string }>('/auth/logout'),
 
-  getMe: () =>
-    apiClient.get<SessionUserDto>('/auth/me'),
+  getMe: (signal?: AbortSignal) =>
+    apiClient.get<SessionUserDto>('/auth/me', { signal }),
 
   getCsrf: () =>
     apiClient.get<CsrfTokenResponseDto>('/auth/csrf'),
-};
+}
