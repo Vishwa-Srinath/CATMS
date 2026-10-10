@@ -8,3 +8,8 @@
 export * from './components/ClaimTracker';
 export * from './components/ClaimSubmissionModal';
 export * from './components/ClaimReviewModal';
+export * from './components/RegisterPatientModal';
+export * from './components/AddPolicyModal';
+export * from './components/PatientDetailModal';
+
+export * from './hooks/usePatientsInsurance';
