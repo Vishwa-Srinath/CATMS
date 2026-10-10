@@ -22,7 +22,7 @@ import {
 import { useClinic } from '../context/ClinicContext';
 import { DEMO_TODAY, formatDate } from '../lib/domain';
 import type { Appointment, StaffMember } from '../types';
-import { Avatar, Badge, Button, PageHeader } from '../components/ui';
+import { Avatar, Badge, Button, LoadingBlock, PageHeader, RuleError } from '../components/ui';
 import appointmentCareImage from '../assets/clinical/appointment-care.webp';
 import {
   useAppointments,
@@ -54,9 +54,6 @@ export default function AppointmentsPage() {
     data,
     user,
     notify,
-    addAppointment,
-    rescheduleAppointment,
-    updateAppointmentStatus,
   } = useClinic();
 
   const [date, setDate] = useState(DEMO_TODAY);
@@ -114,23 +111,13 @@ export default function AppointmentsPage() {
   const cancelMutation = useCancelAppointment();
   const completeMutation = useCompleteAppointment();
 
-  // Unified appointments list: Live API with fallback to ClinicContext
+  // Live authoritative appointments list from backend API (CATMS-065)
   const appointments = useMemo(() => {
-    if (appointmentsQuery.data && appointmentsQuery.data.length > 0) {
-      return appointmentsQuery.data.map(mapDtoToAppointment);
-    }
-
-    // Context / in-memory fallback
-    return data.appointments
-      .filter(
-        (apt) =>
-          apt.date === date &&
-          apt.branchId === branch &&
-          (doctorFilter === 'all' || apt.doctorId === doctorFilter) &&
-          (statusFilter === 'all' || apt.status === statusFilter),
-      )
+    if (!appointmentsQuery.data) return [];
+    return appointmentsQuery.data
+      .map(mapDtoToAppointment)
       .sort((a, b) => a.start.localeCompare(b.start));
-  }, [appointmentsQuery.data, data.appointments, date, branch, doctorFilter, statusFilter]);
+  }, [appointmentsQuery.data]);
 
   // Lookup maps
   const patientNameMap = useMemo(() => {
@@ -175,21 +162,6 @@ export default function AppointmentsPage() {
   const handleBook = async (input: BookAppointmentInput) => {
     try {
       await bookMutation.mutateAsync(input);
-      // Synchronize in-memory context as well
-      try {
-        addAppointment({
-          patientId: `p${input.patientId}`,
-          doctorId: `e${input.doctorId}`,
-          branchId: `b${input.branchId}`,
-          date,
-          start: bookingStart,
-          end: '12:00',
-          source: 'Booked',
-          reason: input.notes || 'General checkup',
-        });
-      } catch {
-        // In-memory sync is secondary
-      }
       notify({
         type: 'success',
         title: 'Appointment booked',
@@ -206,20 +178,6 @@ export default function AppointmentsPage() {
   const handleWalkIn = async (input: WalkInAppointmentInput) => {
     try {
       await walkInMutation.mutateAsync(input);
-      try {
-        addAppointment({
-          patientId: `p${input.patientId}`,
-          doctorId: `e${input.doctorId}`,
-          branchId: `b${input.branchId}`,
-          date,
-          start: bookingStart,
-          end: '12:00',
-          source: 'Walk-in',
-          reason: input.notes || 'Walk-in arrival',
-        });
-      } catch {
-        // Ignored
-      }
       notify({
         type: 'success',
         title: 'Walk-in confirmed',
@@ -236,19 +194,6 @@ export default function AppointmentsPage() {
   const handleReschedule = async (id: number, input: RescheduleAppointmentInput) => {
     try {
       await rescheduleMutation.mutateAsync({ id, data: input });
-      if (selectedAppointment) {
-        try {
-          rescheduleAppointment(
-            selectedAppointment.id,
-            input.newStartAt.slice(0, 10),
-            input.newStartAt.slice(11, 16),
-            input.newEndAt.slice(11, 16),
-            input.reason,
-          );
-        } catch {
-          // Ignored
-        }
-      }
       notify({
         type: 'success',
         title: 'Appointment rescheduled',
@@ -265,13 +210,6 @@ export default function AppointmentsPage() {
   const handleCancel = async (id: number, reason: string) => {
     try {
       await cancelMutation.mutateAsync({ id, reason });
-      if (selectedAppointment) {
-        try {
-          updateAppointmentStatus(selectedAppointment.id, 'Cancelled', reason);
-        } catch {
-          // Ignored
-        }
-      }
       notify({
         type: 'success',
         title: 'Appointment cancelled',
@@ -294,11 +232,6 @@ export default function AppointmentsPage() {
         id: numId,
         data: { reason: 'Consultation completed' },
       });
-      try {
-        updateAppointmentStatus(selectedAppointment.id, 'Completed');
-      } catch {
-        // Ignored
-      }
       notify({
         type: 'success',
         title: 'Consultation completed',
@@ -459,6 +392,17 @@ export default function AppointmentsPage() {
           Today
         </Button>
       </div>
+
+      {appointmentsQuery.error && (
+        <div className="mb-4">
+          <RuleError error={appointmentsQuery.error} />
+        </div>
+      )}
+      {appointmentsQuery.isLoading && appointments.length === 0 && (
+        <div className="mb-4">
+          <LoadingBlock label="Loading authoritative appointments from database…" />
+        </div>
+      )}
 
       {/* Desktop Schedule Grid */}
       <DoctorDaySchedule
