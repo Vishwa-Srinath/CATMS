@@ -79,6 +79,7 @@ paymentRouter.post(
         actorUserId(req),
         input.amount,
         input.reason,
+        input.idempotencyKey,
       );
       res.status(201).json(successEnvelope(result, correlationId(res)));
     } catch (error) {

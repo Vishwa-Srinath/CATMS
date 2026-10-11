@@ -313,10 +313,13 @@ describe('CATMS-068 clinical and billing page workflows', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Record reversal' }))
 
     await waitFor(() => expect(api.reversePayment).toHaveBeenCalledTimes(2))
-    expect(api.reversePayment).toHaveBeenLastCalledWith(payment.paymentId, {
+    expect(api.reversePayment.mock.calls[1]?.[1].idempotencyKey)
+      .toBe(api.reversePayment.mock.calls[0]?.[1].idempotencyKey)
+    expect(api.reversePayment).toHaveBeenLastCalledWith(payment.paymentId, expect.objectContaining({
       amount: '100.00',
       reason: 'Duplicate payment',
-    })
+      idempotencyKey: expect.any(String),
+    }))
     await waitFor(() => expect(api.fetchPayments).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(invoiceDialog.textContent?.replace(/\s+/g, ' ')).toContain(`Reversed ${formatCurrency(100).replace(/\s+/g, ' ')} · Duplicate payment`))
     expect(within(invoiceDialog).queryByRole('button', { name: 'Reverse' })).toBeNull()

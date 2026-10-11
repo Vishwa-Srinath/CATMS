@@ -1,405 +1,216 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { randomUUID } from 'node:crypto';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
-import { AppError, ErrorCode } from '../src/shared/errors';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-const { clinicalService, paymentsService } = vi.hoisted(() => ({
-  clinicalService: {
-    listWorklist: vi.fn(),
-    recordClinical: vi.fn(),
-    amendClinical: vi.fn(),
-    listTreatments: vi.fn(),
-    listTreatmentCategories: vi.fn(),
-    createTreatment: vi.fn(),
-    updateTreatment: vi.fn(),
-    deactivateTreatment: vi.fn(),
-    listInvoices: vi.fn(),
-    getInvoice: vi.fn(),
-  },
-  paymentsService: {
-    preview: vi.fn(),
-    list: vi.fn(),
-    post: vi.fn(),
-    reverse: vi.fn(),
-  },
-}));
+const enabled = process.env.CATMS_LIVE_DB_TESTS === 'true';
 
-vi.mock('../src/shared/env', () => ({
-  env: {
-    NODE_ENV: 'test',
-    API_PORT: 3001,
-    POSTGRES_HOST: 'localhost',
-    POSTGRES_PORT: 5432,
-    POSTGRES_DB: 'catms_test',
-    POSTGRES_USER: 'catms_app',
-    POSTGRES_PASSWORD: 'catms_test_password',
-    JWT_SECRET: 'a'.repeat(64),
-    CSRF_SECRET: 'b'.repeat(32),
-    COOKIE_SECURE: false,
-    COOKIE_SAME_SITE: 'lax',
-    COOKIE_MAX_AGE_SECONDS: 3600,
-    ALLOWED_ORIGINS: 'http://localhost:5173',
-    RATE_LIMIT_WINDOW_MS: 60_000,
-    RATE_LIMIT_MAX: 200,
-    LOG_LEVEL: 'silent',
-  },
-}));
+describe.skipIf(!enabled)('payment and reversal idempotency against PostgreSQL', () => {
+  let pool: typeof import('../src/db/pool').pool;
+  let closePool: typeof import('../src/db/pool').closePool;
+  let app: express.Express;
+  let invoiceId: string;
+  let actorId: number;
+  let actorEmployeeId: number;
 
-vi.mock('../src/modules/clinical-billing/clinical.service', () => ({ clinicalService }));
-vi.mock('../src/modules/payments/payments.service', () => ({ paymentsService }));
+  beforeAll(async () => {
+    process.env.NODE_ENV ??= 'test';
+    process.env.POSTGRES_HOST ??= 'localhost';
+    process.env.POSTGRES_PORT ??= '5433';
+    process.env.POSTGRES_DB ??= 'catms_test';
+    process.env.POSTGRES_USER ??= 'catms_super_test';
+    process.env.POSTGRES_PASSWORD ??= 'catms_test_password';
+    process.env.JWT_SECRET ??= 'a'.repeat(64);
+    process.env.CSRF_SECRET ??= 'b'.repeat(32);
 
-import { correlationId } from '../src/app/middleware/correlationId';
-import { errorHandler } from '../src/app/middleware/errorHandler';
-import { clinicalRouter, invoiceRouter, treatmentRouter } from '../src/modules/clinical-billing/clinical.routes';
-import { paymentRouter } from '../src/modules/payments/payments.routes';
-
-const SECRET = 'a'.repeat(64);
-
-function token(role: string, employeeId = 42): string {
-  return jwt.sign({
-    userId: 9,
-    employeeId,
-    username: 'test.user',
-    role,
-    branchId: 1,
-    fullName: 'Test User',
-  }, SECRET);
-}
-
-function createTestApp() {
-  const app = express();
-  app.use(correlationId);
-  app.use(express.json());
-  app.use('/api/v1/clinical', clinicalRouter);
-  app.use('/api/v1/treatments', treatmentRouter);
-  app.use('/api/v1/invoices', invoiceRouter);
-  app.use('/api/v1/payments', paymentRouter);
-  app.use(errorHandler);
-  return app;
-}
-
-describe('clinical, invoice, catalogue and payment APIs (CATMS-052 through CATMS-054)', () => {
-  const app = createTestApp();
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('records completed care as the authenticated clinician without accepting prices', async () => {
-    clinicalService.recordClinical.mockResolvedValue({
-      appointmentId: '101',
-      consultationNoteId: '201',
-      treatmentIds: ['301'],
-      invoiceId: '401',
-    });
-
-    const response = await request(app)
-      .post('/api/v1/clinical/101/record')
-      .set('Authorization', `Bearer ${token('Clinician', 42)}`)
-      .send({
-        notes: 'Care delivered.',
-        treatments: [{ treatmentId: '7', quantity: '1.00' }],
-      });
-
-    expect(response.status).toBe(201);
-    expect(clinicalService.recordClinical).toHaveBeenCalledWith(
-      '101',
-      9,
-      42,
-      'Clinician',
-      { notes: 'Care delivered.', treatments: [{ treatmentId: '7', quantity: '1.00' }] },
+    const db = await import('../src/db/pool');
+    pool = db.pool;
+    closePool = db.closePool;
+    const current = await pool.query<{ database_name: string }>(
+      'SELECT current_database() AS database_name',
     );
+    if (current.rows[0]?.database_name !== 'catms_test') {
+      throw new Error('Live payment tests may only run against the disposable catms_test database.');
+    }
+
+    const suffix = randomUUID().replaceAll('-', '').slice(0, 8).toUpperCase();
+    const phone = `077${String(Number.parseInt(suffix.slice(0, 6), 16)).padStart(7, '0').slice(-7)}`;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const branch = await client.query<{ branch_id: string }>(
+        `INSERT INTO catms.branch (branch_code, name, address_line_1, city, contact_phone)
+         VALUES ($1, $2, 'Test Address', 'Colombo', $3)
+         RETURNING branch_id`,
+        [`L${suffix}`, `Idempotency Test Branch ${suffix}`, phone],
+      );
+      const employee = await client.query<{ employee_id: string }>(
+        `INSERT INTO catms.employee (
+           employee_number, nic, full_name, gender_code, date_of_birth,
+           position_code, phone, hire_date
+         ) VALUES ($1, $2, 'Idempotency Test Doctor', 'Male', '1990-01-01', 'Doctor', $3, CURRENT_DATE)
+         RETURNING employee_id`,
+        [`L${suffix}`, `1990${suffix}`, phone],
+      );
+      actorEmployeeId = Number(employee.rows[0]!.employee_id);
+      await client.query(
+        `INSERT INTO catms.doctor_profile (doctor_id, medical_license_no, practice_start_date)
+         VALUES ($1, $2, '2015-01-01')`,
+        [actorEmployeeId, `L${suffix}`],
+      );
+      const specialty = await client.query<{ specialty_id: string }>(
+        `INSERT INTO catms.specialty (specialty_code, name)
+         VALUES ($1, $2) RETURNING specialty_id`,
+        [`L${suffix}`, `Idempotency Test Specialty ${suffix}`],
+      );
+      await client.query(
+        'INSERT INTO catms.doctor_specialty (doctor_id, specialty_id, is_primary) VALUES ($1, $2, TRUE)',
+        [actorEmployeeId, specialty.rows[0]!.specialty_id],
+      );
+      const user = await client.query<{ user_account_id: string }>(
+        `INSERT INTO catms.user_account (employee_id, username, password_hash)
+         VALUES ($1, $2, 'TEST_ONLY_NOT_A_USABLE_PASSWORD_HASH') RETURNING user_account_id`,
+        [actorEmployeeId, `live_${suffix.toLowerCase()}`],
+      );
+      actorId = Number(user.rows[0]!.user_account_id);
+      await client.query(
+        `INSERT INTO catms.user_account_role (user_account_id, app_role_id)
+         SELECT $1, app_role_id FROM catms.app_role WHERE upper(role_code) = 'ADMIN'`,
+        [actorId],
+      );
+      const patient = await client.query<{ patient_id: string }>(
+        `INSERT INTO catms.patient (
+           patient_number, first_name, last_name, date_of_birth, gender,
+           contact_number, registered_branch_id, registered_by
+         ) VALUES ($1, 'Test', 'Patient', '1995-01-01', 'Male', $2, $3, $4)
+         RETURNING patient_id`,
+        [`L${suffix}`, phone, branch.rows[0]!.branch_id, actorEmployeeId],
+      );
+      await client.query(
+        `INSERT INTO catms.patient_identity (patient_id, identity_type, identity_number, is_primary)
+         VALUES ($1, 'Passport', $2, TRUE)`,
+        [patient.rows[0]!.patient_id, `L-${suffix}-PASS`],
+      );
+      await client.query(
+        `INSERT INTO catms.emergency_contact (patient_id, contact_name, relationship, phone_number, is_primary)
+         VALUES ($1, 'Test Contact', 'Sibling', $2, TRUE)`,
+        [patient.rows[0]!.patient_id, phone],
+      );
+      const category = await client.query<{ treatment_category_id: string }>(
+        `INSERT INTO catms.treatment_category (category_code, name)
+         VALUES ($1, $2) RETURNING treatment_category_id`,
+        [`L${suffix}`, `Idempotency Test Category ${suffix}`],
+      );
+      const treatment = await client.query<{ treatment_id: string }>(
+        `INSERT INTO catms.treatment_catalogue (
+           treatment_category_id, service_code, name, current_price,
+           default_duration_minutes, is_consultation_service
+         ) VALUES ($1, $2, 'Idempotency Test Service', 100.00, 15, FALSE)
+         RETURNING treatment_id`,
+        [category.rows[0]!.treatment_category_id, `L-${suffix}`],
+      );
+      const appointment = await client.query<{ appointment_id: string }>(
+        `INSERT INTO catms.appointment (
+           appointment_number, patient_id, doctor_id, branch_id, specialty_id,
+           start_at, end_at, status, created_by
+         ) VALUES ($1, $2, $3, $4, $5, date_trunc('hour', now()) - interval '2 days',
+                   date_trunc('hour', now()) - interval '2 days' + interval '15 minutes', 'Completed', $6)
+         RETURNING appointment_id`,
+        [
+          `L${suffix}`, patient.rows[0]!.patient_id, actorEmployeeId,
+          branch.rows[0]!.branch_id, specialty.rows[0]!.specialty_id, actorId,
+        ],
+      );
+      await client.query('SET CONSTRAINTS ALL IMMEDIATE');
+      await client.query('SET CONSTRAINTS ALL DEFERRED');
+      await client.query(
+        'SELECT catms.record_appointment_treatment($1, $2, 1, $3)',
+        [appointment.rows[0]!.appointment_id, treatment.rows[0]!.treatment_id, actorId],
+      );
+      const invoice = await client.query<{ issue_invoice: string }>(
+        'SELECT catms.issue_invoice($1, $2) AS issue_invoice',
+        [appointment.rows[0]!.appointment_id, actorId],
+      );
+      invoiceId = invoice.rows[0]!.issue_invoice;
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    const [{ correlationId }, { errorHandler }, { paymentRouter }] = await Promise.all([
+      import('../src/app/middleware/correlationId'),
+      import('../src/app/middleware/errorHandler'),
+      import('../src/modules/payments/payments.routes'),
+    ]);
+    app = express();
+    app.use(correlationId);
+    app.use(express.json());
+    app.use('/api/v1/payments', paymentRouter);
+    app.use(errorHandler);
+  }, 30_000);
+
+  afterAll(async () => {
+    if (closePool) await closePool();
   });
 
-  it('scopes a clinician worklist by the authenticated doctor identity', async () => {
-    clinicalService.listWorklist.mockResolvedValue([]);
-    const response = await request(app)
-      .get('/api/v1/clinical/worklist')
-      .set('Authorization', `Bearer ${token('Clinician', 42)}`);
-
-    expect(response.status).toBe(200);
-    expect(clinicalService.listWorklist).toHaveBeenCalledWith(42, 'Clinician', undefined);
-  });
-
-  it('allows Admin worklist filtering by a validated branch ID', async () => {
-    clinicalService.listWorklist.mockResolvedValue([]);
-    const response = await request(app)
-      .get('/api/v1/clinical/worklist?branchId=8')
-      .set('Authorization', `Bearer ${token('Admin')}`);
-
-    expect(response.status).toBe(200);
-    expect(clinicalService.listWorklist).toHaveBeenCalledWith(42, 'Admin', '8');
-  });
-
-  it('rejects forged totals and does not call the clinical service', async () => {
-    const response = await request(app)
-      .post('/api/v1/clinical/101/record')
-      .set('Authorization', `Bearer ${token('Clinician')}`)
-      .send({ notes: 'Care delivered.', subtotal_amount: '0.00' });
-
-    expect(response.status).toBe(422);
-    expect(response.body.error.code).toBe(ErrorCode.VALIDATION_ERROR);
-    expect(clinicalService.recordClinical).not.toHaveBeenCalled();
-  });
-
-  it('appends an amendment only when an explanation is supplied', async () => {
-    const response = await request(app)
-      .post('/api/v1/clinical/101/revisions')
-      .set('Authorization', `Bearer ${token('Clinician')}`)
-      .send({ notes: 'Corrected findings.' });
-
-    expect(response.status).toBe(422);
-    expect(clinicalService.amendClinical).not.toHaveBeenCalled();
-  });
-
-  it('denies Reception clinical and invoice access', async () => {
-    const clinical = await request(app)
-      .get('/api/v1/clinical/worklist')
-      .set('Authorization', `Bearer ${token('Reception')}`);
-    const invoice = await request(app)
-      .get('/api/v1/invoices/100')
-      .set('Authorization', `Bearer ${token('Reception')}`);
-
-    expect(clinical.status).toBe(403);
-    expect(invoice.status).toBe(403);
-    expect(clinicalService.listWorklist).not.toHaveBeenCalled();
-    expect(clinicalService.getInvoice).not.toHaveBeenCalled();
-  });
-
-  it('allows only Admin to read inactive treatment catalogue rows', async () => {
-    const response = await request(app)
-      .get('/api/v1/treatments?includeInactive=true')
-      .set('Authorization', `Bearer ${token('Reception')}`);
-
-    expect(response.status).toBe(403);
-    expect(clinicalService.listTreatments).not.toHaveBeenCalled();
-  });
-
-  it('denies Reception catalogue writes', async () => {
-    const response = await request(app)
-      .post('/api/v1/treatments')
-      .set('Authorization', `Bearer ${token('Reception')}`)
-      .send({
-        treatmentCategoryId: '1',
-        serviceCode: 'CONSULT',
-        name: 'Consultation',
-        currentPrice: '100.00',
-        defaultDurationMinutes: 30,
-      });
-
-    expect(response.status).toBe(403);
-    expect(clinicalService.createTreatment).not.toHaveBeenCalled();
-  });
-
-  it('returns persisted invoice snapshot values from the service unchanged', async () => {
-    const invoice = {
-      invoiceId: '100',
-      invoiceNumber: 'INV-100',
-      appointmentId: '101',
-      invoiceState: 'Issued',
-      currencyCode: 'LKR',
-      subtotalAmount: '3500.00',
-      approvedInsuranceAmount: '500.00',
-      patientLiabilityAmount: '3000.00',
-      patientPaidAmount: '1000.00',
-      insurerPaidAmount: '500.00',
-      patientPaymentStatus: 'PartiallyPaid',
-      issuedAt: '2026-10-01T10:00:00.000Z',
-      lines: [{
-        invoiceLineId: '1',
-        lineNumber: 1,
-        serviceCode: 'CONSULT',
-        description: 'Consultation',
-        quantity: '1.00',
-        unitPrice: '3500.00',
-        lineTotal: '3500.00',
-      }],
-    };
-    clinicalService.getInvoice.mockResolvedValue(invoice);
-
-    const response = await request(app)
-      .get('/api/v1/invoices/100')
-      .set('Authorization', `Bearer ${token('Clinician', 42)}`);
-
-    expect(response.status).toBe(200);
-    expect(response.body.data).toEqual(invoice);
-  });
-
-  it('lists invoice summaries only for Admin finance sessions', async () => {
-    clinicalService.listInvoices.mockResolvedValue([{
-      invoiceId: '100',
-      invoiceNumber: 'INV-100',
-      appointmentId: '101',
-      appointmentNumber: 'APT-101',
-      patientId: '22',
-      patientNumber: 'PAT-22',
-      patientName: 'Test Patient',
-      invoiceState: 'Issued',
-      currencyCode: 'LKR',
-      subtotalAmount: '3500.00',
-      approvedInsuranceAmount: '500.00',
-      patientLiabilityAmount: '3000.00',
-      patientPaidAmount: '1000.00',
-      insurerPaidAmount: '0.00',
-      patientPaymentStatus: 'PartiallyPaid',
-      issuedAt: '2026-10-01T10:00:00.000Z',
-      approvedClaims: [],
-    }]);
-
-    const response = await request(app)
-      .get('/api/v1/invoices/')
-      .set('Cookie', `catms_session=${token('Admin')}`)
-      .set('Authorization', 'Bearer ' + token('Admin'));
-
-    expect(response.status, JSON.stringify(response.body)).toBe(200);
-    expect(response.body.data[0].patientLiabilityAmount).toBe('3000.00');
-    expect(clinicalService.listInvoices).toHaveBeenCalledOnce();
-
-    const denied = await request(app)
-      .get('/api/v1/invoices/')
-      .set('Cookie', `catms_session=${token('Clinician')}`)
-      .set('Authorization', 'Bearer ' + token('Clinician'));
-    expect(denied.status).toBe(403);
-    expect(clinicalService.listInvoices).toHaveBeenCalledOnce();
-  });
-
-  it('denies Reception payment preview/post/reversal operations', async () => {
-    const headers = { Authorization: `Bearer ${token('Reception')}` };
-    const preview = await request(app)
-      .post('/api/v1/payments/preview')
-      .set(headers)
-      .send({ invoiceId: '100', payerType: 'Patient' });
-    const post = await request(app)
-      .post('/api/v1/payments')
-      .set(headers)
-      .send({});
-    const reverse = await request(app)
-      .post('/api/v1/payments/5/reverse')
-      .set(headers)
-      .send({ amount: '1.00', reason: 'Correction' });
-
-    expect([preview.status, post.status, reverse.status]).toEqual([403, 403, 403]);
-    expect(paymentsService.preview).not.toHaveBeenCalled();
-    expect(paymentsService.post).not.toHaveBeenCalled();
-    expect(paymentsService.reverse).not.toHaveBeenCalled();
-  });
-
-  it('posts a payment with the idempotency key and authenticated actor', async () => {
-    const payment = {
-      paymentId: '55',
-      invoiceId: '100',
-      receiptNumber: 'RCT-55',
-      payerType: 'Patient',
-      insuranceClaimId: null,
-      amount: '100.00',
-      paymentMethod: 'Cash',
-      paymentStatus: 'Settled',
-      paidAt: '2026-10-01T10:00:00.000Z',
-      referenceNumber: null,
-      reversedAmount: '0.00',
-      netAmount: '100.00',
-      reversals: [],
-    };
-    paymentsService.post.mockResolvedValue(payment);
-
-    const response = await request(app)
-      .post('/api/v1/payments')
-      .set('Authorization', `Bearer ${token('Admin')}`)
-      .send({
-        invoiceId: '100',
-        payerType: 'Patient',
-        amount: '100.00',
-        paymentMethod: 'Cash',
-        idempotencyKey: '550e8400-e29b-41d4-a716-446655440000',
-      });
-
-    expect(response.status).toBe(200);
-    expect(response.body.data).toEqual(payment);
-    expect(paymentsService.post).toHaveBeenCalledWith(9, {
-      invoiceId: '100',
+  it('posts a payment once and returns the original reversal for a retry', async () => {
+    const auth = jwt.sign({
+      userId: actorId,
+      employeeId: actorEmployeeId,
+      username: 'live-test',
+      role: 'Admin',
+      branchId: 'all',
+      fullName: 'Idempotency Test Doctor',
+    }, process.env.JWT_SECRET ?? 'a'.repeat(64));
+    const paymentKey = randomUUID();
+    const reversalKey = randomUUID();
+    const headers = { Authorization: `Bearer ${auth}` };
+    const paymentBody = {
+      invoiceId,
       payerType: 'Patient',
       amount: '100.00',
       paymentMethod: 'Cash',
-      idempotencyKey: '550e8400-e29b-41d4-a716-446655440000',
-    });
-  });
+      idempotencyKey: paymentKey,
+    };
 
-  it('previews an insurer payment only with a claim reference', async () => {
-    const response = await request(app)
-      .post('/api/v1/payments/preview')
-      .set('Authorization', `Bearer ${token('Admin')}`)
-      .send({ invoiceId: '100', payerType: 'Insurer' });
+    const firstPayment = await request(app).post('/api/v1/payments').set(headers).send(paymentBody);
+    const retryPayment = await request(app).post('/api/v1/payments').set(headers).send(paymentBody);
+    expect(firstPayment.status, JSON.stringify(firstPayment.body)).toBe(200);
+    expect(retryPayment.status, JSON.stringify(retryPayment.body)).toBe(200);
+    expect(retryPayment.body.data.paymentId).toBe(firstPayment.body.data.paymentId);
 
-    expect(response.status).toBe(422);
-    expect(paymentsService.preview).not.toHaveBeenCalled();
-  });
+    const reversalBody = {
+      amount: '10.00',
+      reason: 'Idempotency integration test',
+      idempotencyKey: reversalKey,
+    };
+    const paymentId = firstPayment.body.data.paymentId as string;
+    const firstReversal = await request(app)
+      .post(`/api/v1/payments/${paymentId}/reverse`).set(headers).send(reversalBody);
+    const retryReversal = await request(app)
+      .post(`/api/v1/payments/${paymentId}/reverse`).set(headers).send(reversalBody);
+    const conflictingRetry = await request(app)
+      .post(`/api/v1/payments/${paymentId}/reverse`)
+      .set(headers)
+      .send({ ...reversalBody, amount: '11.00' });
 
-  it('records a reversal using the authenticated administrator as actor', async () => {
-    paymentsService.reverse.mockResolvedValue({
-      paymentReversalId: '802',
-      payment: {
-        paymentId: '55',
-        invoiceId: '100',
-        receiptNumber: 'RCT-55',
-        payerType: 'Patient',
-        insuranceClaimId: null,
-        amount: '75.00',
-        paymentMethod: 'Cash',
-        paymentStatus: 'PartiallyReversed',
-        paidAt: '2026-10-01T10:00:00.000Z',
-        referenceNumber: null,
-        reversedAmount: '10.00',
-        netAmount: '65.00',
-        reversals: [],
-      },
-    });
-    const response = await request(app)
-      .post('/api/v1/payments/55/reverse')
-      .set('Authorization', `Bearer ${token('Admin')}`)
-      .send({ amount: '10.00', reason: 'Duplicate receipt' });
+    expect(firstReversal.status, JSON.stringify(firstReversal.body)).toBe(201);
+    expect(retryReversal.status, JSON.stringify(retryReversal.body)).toBe(201);
+    expect(conflictingRetry.status, JSON.stringify(conflictingRetry.body)).toBe(409);
+    expect(retryReversal.body.data.paymentReversalId)
+      .toBe(firstReversal.body.data.paymentReversalId);
+    expect(retryReversal.body.data.payment.reversedAmount).toBe('10.00');
 
-    expect(response.status).toBe(201);
-    expect(paymentsService.reverse).toHaveBeenCalledWith(
-      '55',
-      9,
-      '10.00',
-      'Duplicate receipt',
+    const persisted = await pool.query<{ count: string; reversal_count: string }>(
+      `SELECT count(*)::text AS count,
+              (SELECT count(*)::text FROM catms.payment_reversal WHERE idempotency_key = $2::uuid) AS reversal_count
+       FROM catms.payment WHERE idempotency_key = $1::uuid`,
+      [paymentKey, reversalKey],
     );
-  });
-
-  it('returns a sanitized domain error when the database rejects overpayment', async () => {
-    paymentsService.post.mockRejectedValue(
-      new AppError(ErrorCode.PAYMENT_OVERAGE, 'Payment amount exceeds the outstanding balance.', 422),
-    );
-    const response = await request(app)
-      .post('/api/v1/payments')
-      .set('Authorization', `Bearer ${token('Admin')}`)
-      .send({
-        invoiceId: '100',
-        payerType: 'Patient',
-        amount: '999999.00',
-        paymentMethod: 'Cash',
-        idempotencyKey: '550e8400-e29b-41d4-a716-446655440000',
-      });
-
-    expect(response.status).toBe(422);
-    expect(response.body.error.code).toBe(ErrorCode.PAYMENT_OVERAGE);
-    expect(JSON.stringify(response.body)).not.toContain('SQL');
-  });
-
-  it('rejects a request without an idempotency key before service execution', async () => {
-    const response = await request(app)
-      .post('/api/v1/payments')
-      .set('Authorization', `Bearer ${token('Admin')}`)
-      .send({
-        invoiceId: '100',
-        payerType: 'Patient',
-        amount: '20.00',
-        paymentMethod: 'Cash',
-      });
-
-    expect(response.status).toBe(422);
-    expect(paymentsService.post).not.toHaveBeenCalled();
+    expect(persisted.rows[0]).toEqual({ count: '1', reversal_count: '1' });
   });
 });

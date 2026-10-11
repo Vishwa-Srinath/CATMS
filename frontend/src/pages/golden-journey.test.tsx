@@ -737,6 +737,7 @@ describe('CATMS-069 — Golden End-to-End Browser Journey (CATMS-008 Baseline & 
       const reversed = await clinicalBillingApi.reversePayment('pay-3', {
         amount: '1200.00',
         reason: 'INCORRECT_PAYMENT_METHOD',
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440002',
       });
       expect(reversed.paymentReversalId).toBe('rev-001');
 

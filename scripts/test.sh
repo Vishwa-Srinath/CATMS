@@ -69,6 +69,8 @@ export POSTGRES_PORT="5433"
 export POSTGRES_DB="catms_test"
 export POSTGRES_SUPERUSER="catms_super_test"
 export POSTGRES_SUPERUSER_PASSWORD="catms_test_password"
+export POSTGRES_USER="${POSTGRES_SUPERUSER}"
+export POSTGRES_PASSWORD="${POSTGRES_SUPERUSER_PASSWORD}"
 export PGPASSWORD="${POSTGRES_SUPERUSER_PASSWORD}"
 
 PG_PORT="5433"
@@ -184,6 +186,7 @@ run_rules() {
 # ── Layer: api (backend Vitest / Supertest) ───────────────────────────────────
 run_api() {
   cd "${REPO_ROOT}/backend"
+  export CATMS_LIVE_DB_TESTS="true"
   if [[ ! -f node_modules/.bin/vitest ]]; then
     info "Installing backend dependencies..."
     npm ci --silent

@@ -306,13 +306,19 @@ describe('clinical request validation', () => {
     }).success).toBe(false);
   });
 
-  it('validates reversal reason and amount', () => {
+  it('validates reversal reason, amount, and idempotency key', () => {
     expect(reversePaymentBodySchema.safeParse({
       amount: '10.00',
       reason: 'Duplicate receipt',
+      idempotencyKey: '550e8400-e29b-41d4-a716-446655440000',
     }).success).toBe(true);
     expect(reversePaymentBodySchema.safeParse({
       amount: '10.001',
+      reason: 'Duplicate receipt',
+      idempotencyKey: '550e8400-e29b-41d4-a716-446655440000',
+    }).success).toBe(false);
+    expect(reversePaymentBodySchema.safeParse({
+      amount: '10.00',
       reason: 'Duplicate receipt',
     }).success).toBe(false);
   });

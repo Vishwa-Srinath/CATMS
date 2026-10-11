@@ -270,10 +270,12 @@ payment_id=$(
 
 race reversal_cap \
     "SELECT catms.reverse_payment(
-        $payment_id,6000,'Concurrent correction A',$actor
+        $payment_id,6000,'Concurrent correction A',$actor,
+        '00000000-0000-4000-8000-000000036005'
     );" \
     "SELECT catms.reverse_payment(
-        $payment_id,3000,'Concurrent correction B',$actor
+        $payment_id,3000,'Concurrent correction B',$actor,
+        '00000000-0000-4000-8000-000000036006'
     );" \
     REVERSAL_OVER_CAP
 

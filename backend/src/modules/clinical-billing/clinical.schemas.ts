@@ -185,6 +185,7 @@ export const reversePaymentBodySchema = z.object({
     (value) => Array.from(value).length <= 250,
     'Reason must not exceed 250 characters',
   ),
+  idempotencyKey: z.string().uuid(),
 }).strict();
 
 export type AppointmentParams = z.infer<

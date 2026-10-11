@@ -3,7 +3,7 @@ import request from 'supertest';
 import type { Application } from 'express';
 
 const mockCheckDatabaseConnectivity = vi.fn().mockResolvedValue({ ok: true, latencyMs: 1 });
-const mockCheckDatabaseMigrations = vi.fn().mockResolvedValue({ ok: true, latestVersion: 160, appliedCount: 25 });
+const mockCheckDatabaseMigrations = vi.fn().mockResolvedValue({ ok: true, latestVersion: 163, appliedCount: 31 });
 const mockClosePool = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('../src/shared/env', () => ({
@@ -43,7 +43,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   mockCheckDatabaseConnectivity.mockResolvedValue({ ok: true, latencyMs: 1 });
-  mockCheckDatabaseMigrations.mockResolvedValue({ ok: true, latestVersion: 160, appliedCount: 25 });
+  mockCheckDatabaseMigrations.mockResolvedValue({ ok: true, latestVersion: 163, appliedCount: 31 });
 });
 
 describe('Liveness Probes (/api/v1/health and /api/v1/health/live)', () => {
@@ -78,8 +78,8 @@ describe('Readiness Probes (/api/v1/readiness and /api/v1/health/ready)', () => 
     expect(res.body.data.ready).toBe(true);
     expect(res.body.data.checks.database.ok).toBe(true);
     expect(res.body.data.checks.migrations.ok).toBe(true);
-    expect(res.body.data.checks.migrations.latestVersion).toBe(160);
-    expect(res.body.data.checks.migrations.appliedCount).toBe(25);
+    expect(res.body.data.checks.migrations.latestVersion).toBe(163);
+    expect(res.body.data.checks.migrations.appliedCount).toBe(31);
   });
 
   it('GET /api/v1/health/ready responds 200 with migration check details', async () => {

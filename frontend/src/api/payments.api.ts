@@ -50,6 +50,6 @@ export const paymentsApi = {
     return apiClient.post<PaymentDto>('/payments', data, { headers });
   },
 
-  reverse: (paymentId: number, reason: string) =>
-    apiClient.post<PaymentDto>(`/payments/${paymentId}/reverse`, { reason }),
+  reverse: (paymentId: number, reason: string, idempotencyKey: string) =>
+    apiClient.post<PaymentDto>(`/payments/${paymentId}/reverse`, { reason, idempotencyKey }),
 };

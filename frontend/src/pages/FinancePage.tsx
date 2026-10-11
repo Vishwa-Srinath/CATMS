@@ -90,6 +90,7 @@ export default function FinancePage() {
   // Idempotency guard for payment submissions
   const idempotencyKey = useRef<string | null>(null);
   const submittingPayment = useRef(false);
+  const reversalRequest = useRef<{ fingerprint: string; key: string } | null>(null);
 
   // Live queries
   const invoicesQuery = useQuery({ queryKey: ['invoices'], queryFn: fetchInvoices });
@@ -172,9 +173,14 @@ export default function FinancePage() {
   });
 
   const reversePaymentMutation = useMutation({
-    mutationFn: ({ paymentId, amount, reason }: { paymentId: string; amount: string; reason: string }) =>
-      reversePayment(paymentId, { amount, reason }),
+    mutationFn: ({ paymentId, amount, reason, idempotencyKey: key }: {
+      paymentId: string;
+      amount: string;
+      reason: string;
+      idempotencyKey: string;
+    }) => reversePayment(paymentId, { amount, reason, idempotencyKey: key }),
     onSuccess: async () => {
+      reversalRequest.current = null;
       setReverseTarget(null);
       notify({
         type: 'success',
@@ -471,11 +477,18 @@ export default function FinancePage() {
     if (!reverseTarget) return;
     const form = new FormData(event.currentTarget);
     setReverseError(null);
+    const amount = String(form.get('amount'));
+    const reason = String(form.get('reason'));
+    const fingerprint = `${reverseTarget.paymentId}:${amount}:${reason}`;
+    if (reversalRequest.current?.fingerprint !== fingerprint) {
+      reversalRequest.current = { fingerprint, key: crypto.randomUUID() };
+    }
     reversePaymentMutation.mutate(
       {
         paymentId: reverseTarget.paymentId,
-        amount: String(form.get('amount')),
-        reason: String(form.get('reason')),
+        amount,
+        reason,
+        idempotencyKey: reversalRequest.current.key,
       },
       {
         onError: (caught) =>

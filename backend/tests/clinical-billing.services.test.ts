@@ -292,6 +292,72 @@ describe('clinical and payment database workflows', () => {
     )).toBe(false);
   });
 
+  it('returns the original reversal for an idempotent retry without posting another row', async () => {
+    let savedReversal: {
+      payment_reversal_id: string;
+      payment_id: string;
+      amount: string;
+      reason: string;
+      reversed_by_user_id: string;
+    } | undefined;
+    mockClientQuery.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM catms.payment_reversal WHERE idempotency_key')) {
+        return dbResult(savedReversal ? [savedReversal] : []);
+      }
+      if (sql.includes('catms.reverse_payment')) {
+        savedReversal = {
+          payment_reversal_id: '801',
+          payment_id: '55',
+          amount: '10.00',
+          reason: 'Duplicate receipt',
+          reversed_by_user_id: '9',
+        };
+        return dbResult([{ payment_reversal_id: '801' }]);
+      }
+      if (sql.includes('FROM catms.payment p')) {
+        return dbResult([{
+          payment_id: '55',
+          invoice_id: '100',
+          receipt_number: 'RCT-55',
+          payer_type: 'Patient',
+          insurance_claim_id: null,
+          amount: '75.00',
+          payment_method: 'Cash',
+          payment_status: 'PartiallyReversed',
+          paid_at: '2026-10-01T10:00:00.000Z',
+          reference_number: null,
+          reversed_amount: '10.00',
+          net_amount: '65.00',
+          reversals: [{
+            paymentReversalId: '801',
+            amount: '10.00',
+            reason: 'Duplicate receipt',
+            reversedAt: '2026-10-01T10:01:00.000Z',
+          }],
+        }]);
+      }
+      return dbResult();
+    });
+
+    const service = new PaymentsService();
+    const key = '550e8400-e29b-41d4-a716-446655440001';
+    const first = await service.reverse('55', 9, '10.00', 'Duplicate receipt', key);
+    const retry = await service.reverse('55', 9, '10', 'Duplicate receipt', key);
+
+    expect(first.paymentReversalId).toBe('801');
+    expect(retry.paymentReversalId).toBe(first.paymentReversalId);
+    expect(retry.payment.reversedAmount).toBe('10.00');
+    expect(mockClientQuery.mock.calls.filter(([sql]) =>
+      String(sql).includes('catms.reverse_payment'),
+    )).toHaveLength(1);
+    expect(mockClientQuery.mock.calls.filter(([sql]) =>
+      String(sql).includes('pg_advisory_xact_lock'),
+    )).toHaveLength(2);
+    expect(mockClientQuery.mock.calls.filter(([sql]) =>
+      String(sql).includes('FROM catms.payment_reversal WHERE idempotency_key'),
+    )).toHaveLength(2);
+  });
+
   it('calculates the patient payment preview using PostgreSQL numeric values', async () => {
     mockClientQuery.mockImplementation(async (sql: string) => {
       if (sql.includes('greatest(patient_liability_amount - patient_paid_amount')) {

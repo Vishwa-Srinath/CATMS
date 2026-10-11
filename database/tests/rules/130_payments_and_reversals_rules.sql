@@ -1,5 +1,5 @@
 -- CATMS-035 / CATMS-036 / CATMS-076: real-claim payment reconciliation tests.
--- Requires migrations through 130 and the policy/treatment FK.
+-- Requires migrations through 163 and the policy/treatment FK.
 -- Run as catms_super in a development/test database.
 -- All fixture data is rolled back; sequences may advance.
 -- CATMS-076 golden ledger sample: 3,500 + 6,500 = 10,000 LKR;
@@ -330,7 +330,8 @@ BEGIN
 
     PERFORM catms.reverse_payment(
         v_patient_payment, 1000.00,
-        'Refund patient credit after claim approval', v_user
+        'Refund patient credit after claim approval', v_user,
+        '13000000-0000-4000-8000-000000000001'
     );
 
     RAISE NOTICE 'PASS: real claim approval preserves credit and permits refund';
@@ -399,7 +400,8 @@ BEGIN
 
     PERFORM catms.reverse_payment(
         v_insurer_payment, 1000.00,
-        'Incorrect insurer receipt allocation', v_user
+        'Incorrect insurer receipt allocation', v_user,
+        '13000000-0000-4000-8000-000000000002'
     );
 
     IF NOT EXISTS (
@@ -425,7 +427,8 @@ BEGIN
     BEGIN
         PERFORM catms.reverse_payment(
             v_insurer_payment, 5000.01,
-            'This reversal must be rejected', v_user
+            'This reversal must be rejected', v_user,
+            '13000000-0000-4000-8000-000000000003'
         );
     EXCEPTION WHEN raise_exception THEN
         IF SQLERRM NOT LIKE 'REVERSAL_OVER_CAP:%' THEN

@@ -260,6 +260,31 @@ jobs:
         env:
           PGPASSWORD: catms_test_password
 
+      - name: Set up Node.js for live payment API test
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Verify payment and reversal idempotency against PostgreSQL
+        run: ./node_modules/.bin/vitest run tests/clinical-billing.api.test.ts
+        working-directory: backend
+        env:
+          CATMS_LIVE_DB_TESTS: 'true'
+          NODE_ENV: test
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: '5433'
+          POSTGRES_DB: catms_test
+          POSTGRES_USER: catms_super_test
+          POSTGRES_PASSWORD: catms_test_password
+          JWT_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          CSRF_SECRET: bbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
       # ── Tear down disposable container ────────────────────────────────────
       # tmpfs data is already gone; this just removes the container.
       - name: Tear down test PostgreSQL

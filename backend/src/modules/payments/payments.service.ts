@@ -23,6 +23,9 @@ function mapPaymentDatabaseError(error: unknown): never {
   if (message.startsWith('PAYMENT_KEY_CONFLICT:')) {
     throw new AppError(ErrorCode.PAYMENT_DUPLICATE, 'This idempotency key was used with different payment details.', 409);
   }
+  if (message.startsWith('REVERSAL_KEY_CONFLICT:')) {
+    throw new AppError(ErrorCode.PAYMENT_DUPLICATE, 'This reversal key was used with different reversal details.', 409);
+  }
   if (
     message.startsWith('PAYMENT_AMOUNT_INVALID:')
     || message.startsWith('PAYMENT_TYPE_INVALID:')
@@ -47,6 +50,7 @@ function mapPaymentDatabaseError(error: unknown): never {
   if (
     message.startsWith('REVERSAL_AMOUNT_INVALID:')
     || message.startsWith('REVERSAL_REASON_REQUIRED:')
+    || message.startsWith('REVERSAL_KEY_REQUIRED:')
   ) {
     throw AppError.validationError('Reversal details are invalid.');
   }
@@ -275,14 +279,50 @@ export class PaymentsService {
     actorUserId: number,
     amount: string,
     reason: string,
+    idempotencyKey: string,
   ): Promise<{ paymentReversalId: string; payment: PaymentDto }> {
     try {
       return await withTransaction(async (client) => {
-        const reversal = await client.query<{ payment_reversal_id: string }>(
-          `SELECT catms.reverse_payment($1, $2, $3, $4) AS payment_reversal_id`,
-          [paymentId, amount, reason, actorUserId],
+        // Serialize retries by key in the service, and keep the database
+        // procedure as the final authority for concurrent callers.
+        await client.query(
+          `SELECT pg_advisory_xact_lock(hashtextextended('catms.reversal:' || $1::uuid::text, 0))`,
+          [idempotencyKey],
         );
-        const reversalId = reversal.rows[0]?.payment_reversal_id;
+        const existing = await client.query<{
+          payment_reversal_id: string;
+          payment_id: string;
+          amount: string;
+          reason: string;
+          reversed_by_user_id: string;
+        }>(
+          `SELECT payment_reversal_id, payment_id, amount::text, reason, reversed_by_user_id
+           FROM catms.payment_reversal WHERE idempotency_key = $1::uuid`,
+          [idempotencyKey],
+        );
+        let reversalId: string | undefined;
+        if (existing.rows[0]) {
+          const row = existing.rows[0];
+          if (
+            row.payment_id !== paymentId
+            || row.amount !== Number(amount).toFixed(2)
+            || row.reason !== reason
+            || row.reversed_by_user_id !== String(actorUserId)
+          ) {
+            throw new AppError(
+              ErrorCode.PAYMENT_DUPLICATE,
+              'This reversal key was used with different reversal details.',
+              409,
+            );
+          }
+          reversalId = row.payment_reversal_id;
+        } else {
+          const reversal = await client.query<{ payment_reversal_id: string }>(
+            `SELECT catms.reverse_payment($1, $2, $3, $4, $5::uuid) AS payment_reversal_id`,
+            [paymentId, amount, reason, actorUserId, idempotencyKey],
+          );
+          reversalId = reversal.rows[0]?.payment_reversal_id;
+        }
         if (!reversalId) {
           throw AppError.internal('Reversal procedure did not return a reversal identifier.');
         }
