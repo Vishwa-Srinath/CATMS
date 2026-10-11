@@ -51,7 +51,7 @@ claimRouter.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const input = previewClaimSchema.parse(req.body);
-      const result = await claimsService.previewClaimEligibility(input.invoiceId, input.policyIds);
+      const result = await claimsService.previewClaimEligibility(input.invoiceId, input.policyIds, req.user!);
       const correlationId = res.locals['correlationId'] as string;
       res.status(200).json(successEnvelope(result, correlationId));
     } catch (err) {
@@ -67,7 +67,7 @@ claimRouter.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const query = previewClaimQuerySchema.parse(req.query);
-      const result = await claimsService.previewClaimEligibility(query.invoiceId, query.policyIds);
+      const result = await claimsService.previewClaimEligibility(query.invoiceId, query.policyIds, req.user!);
       const correlationId = res.locals['correlationId'] as string;
       res.status(200).json(successEnvelope(result, correlationId));
     } catch (err) {
@@ -157,13 +157,13 @@ const resolveHandler = async (req: Request, res: Response, next: NextFunction) =
 claimRouter.patch(
   '/:id/resolve',
   requireAuth,
-  requireRole('Admin', 'Manager', 'BranchManager', 'AdminFinance'),
+  requireRole('Admin', 'Manager'),
   resolveHandler,
 );
 
 claimRouter.post(
   '/:id/resolve',
   requireAuth,
-  requireRole('Admin', 'Manager', 'BranchManager', 'AdminFinance'),
+  requireRole('Admin', 'Manager'),
   resolveHandler,
 );

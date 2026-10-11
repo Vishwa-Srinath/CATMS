@@ -236,7 +236,11 @@ export class ClaimsService {
    * Preview claim eligibility and multi-policy coordination of benefits
    * without mutating the database state.
    */
-  async previewClaimEligibility(invoiceId: number, policyIds: number[]): Promise<ClaimPreviewResultDto> {
+  async previewClaimEligibility(
+    invoiceId: number,
+    policyIds: number[],
+    user?: JwtPayload,
+  ): Promise<ClaimPreviewResultDto> {
     // 1. Fetch invoice header, appointment, patient
     const invRes = await pool.query<{
       invoice_id: number;
@@ -245,11 +249,13 @@ export class ClaimsService {
       invoice_state: string;
       patient_id: number;
       service_date: string;
+      branch_id: number;
       patient_full_name: string;
     }>(
       `SELECT
          i.invoice_id, i.appointment_id, i.subtotal_amount, i.invoice_state,
-         a.patient_id, a.start_at::date::text AS service_date,
+         a.patient_id, (a.start_at AT TIME ZONE 'Asia/Colombo')::date::text AS service_date,
+         a.branch_id,
          (p.first_name || ' ' || p.last_name) AS patient_full_name
        FROM catms.invoice i
        JOIN catms.appointment a ON a.appointment_id = i.appointment_id
@@ -263,6 +269,14 @@ export class ClaimsService {
     }
 
     const inv = invRes.rows[0]!;
+
+    // Enforce branch isolation for non-clinic-wide users
+    if (user && user.branchId !== 'all') {
+      if (Number(inv.branch_id) !== Number(user.branchId)) {
+        throw AppError.forbidden('Forbidden: You can only access data for your assigned clinic branch.');
+      }
+    }
+
     if (inv.invoice_state !== 'Issued') {
       throw AppError.conflict(`Claims can only be filed against Issued invoices (current state: ${inv.invoice_state}).`);
     }
@@ -538,6 +552,21 @@ export class ClaimsService {
         throw AppError.conflict(
           `Claim ${claimRec.claim_number} is already resolved in status ${claimRec.claim_status} and cannot be re-resolved.`,
         );
+      }
+
+      // Enforce branch isolation for non-clinic-wide users
+      if (user && user.branchId !== 'all') {
+        const branchCheck = await client.query<{ branch_id: number }>(
+          `SELECT a.branch_id
+           FROM catms.insurance_claim c
+           JOIN catms.invoice i ON i.invoice_id = c.invoice_id
+           JOIN catms.appointment a ON a.appointment_id = i.appointment_id
+           WHERE c.claim_id = $1`,
+          [claimId],
+        );
+        if (branchCheck.rows.length > 0 && Number(branchCheck.rows[0]?.branch_id) !== Number(user.branchId)) {
+          throw AppError.forbidden('Forbidden: You can only access data for your assigned clinic branch.');
+        }
       }
 
       const claimedAmount = Number(claimRec.claimed_amount);
