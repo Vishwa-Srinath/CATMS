@@ -70,8 +70,13 @@ function mapSessionDtoToUser(rawDto: SessionUserDto | { user: SessionUserDto }):
     role = 'Clinician'
   } else if (normalized.includes('manager')) {
     role = 'Manager'
-  } else if (normalized.includes('admin') || normalized.includes('qa')) {
+  } else if (normalized === 'qa' || normalized.includes('qa')) {
+    role = 'QA'
+  } else if (normalized.includes('admin')) {
     role = 'Admin'
+  } else {
+    // Audit fix: Unrecognized roles must NEVER default to Admin. Default to lowest privilege (Receptionist).
+    role = 'Receptionist'
   }
 
   const fullName = dto?.fullName || dto?.username || 'User'
@@ -80,8 +85,16 @@ function mapSessionDtoToUser(rawDto: SessionUserDto | { user: SessionUserDto }):
     ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
     : (fullName.length > 0 ? fullName.slice(0, 2).toUpperCase() : 'US')
 
+  // In CATMS schema, doctor_profile.doctor_id matches employee.employee_id
+  const userId = dto?.userId != null ? Number(dto.userId) : undefined
+  const employeeId = dto?.employeeId != null ? Number(dto.employeeId) : undefined
+  const doctorId = role === 'Clinician' && employeeId != null ? String(employeeId) : undefined
+
   return {
     id: String(dto?.userId ?? '0'),
+    userId,
+    employeeId,
+    doctorId,
     name: fullName,
     role,
     jobTitle: dto?.roleDisplayName || dto?.positionCode || dto?.role || role,
@@ -94,6 +107,10 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
   const session = useSession()
   const data = useMemo<ClinicData>(() => initialData, [])
   const [demoUser, setDemoUser] = useState<SessionUser | null>(() => {
+    // In production mode, never auto-fallback to unauthenticated demo role from sessionStorage
+    if (import.meta.env.PROD) {
+      return null
+    }
     const storedRole = sessionStorage.getItem('catms-demo-role')
     return demoUsers.find((candidate) => candidate.role === storedRole) ?? null
   })
@@ -103,8 +120,12 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
     if (session.user) {
       return mapSessionDtoToUser(session.user)
     }
-    return demoUser
-  }, [session.user, demoUser])
+    // Only return demoUser in non-production when not authenticated and not actively loading
+    if (session.isLoading) {
+      return null
+    }
+    return import.meta.env.PROD ? null : demoUser
+  }, [session.user, session.isLoading, demoUser])
 
   const dismissToast = useCallback((id: number) => {
     setToasts((current) => current.filter((toast) => toast.id !== id))

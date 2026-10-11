@@ -1,4 +1,4 @@
-export type Role = 'Receptionist' | 'Clinician' | 'Manager' | 'Admin'
+export type Role = 'Receptionist' | 'Clinician' | 'Manager' | 'Admin' | 'QA'
 export type AppointmentStatus = 'Scheduled' | 'Completed' | 'Cancelled'
 export type AppointmentSource = 'Booked' | 'Walk-in'
 export type InvoiceStatus = 'Unpaid' | 'PartiallyPaid' | 'Paid'
@@ -6,6 +6,9 @@ export type ClaimStatus = 'Pending' | 'Approved' | 'PartiallyApproved' | 'Reject
 
 export interface SessionUser {
   id: string
+  userId?: number | string
+  employeeId?: number | string
+  doctorId?: number | string
   name: string
   role: Role
   jobTitle: string

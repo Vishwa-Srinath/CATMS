@@ -5,6 +5,7 @@ export const demoUsers: SessionUser[] = [
   { id: 'e1', name: 'Dr. Anjali Fernando', role: 'Clinician', jobTitle: 'Consultant Physician', branchId: 'b1', initials: 'AF' },
   { id: 'e6', name: 'Tharindu Jayasinghe', role: 'Manager', jobTitle: 'Branch Manager', branchId: 'b1', initials: 'TJ' },
   { id: 'e7', name: 'Ishara Bandara', role: 'Admin', jobTitle: 'Finance Administrator', branchId: 'all', initials: 'IB' },
+  { id: 'e11', name: 'QA Inspector', role: 'QA', jobTitle: 'Quality Assurance Auditor', branchId: 'all', initials: 'QA' },
 ]
 
 export const initialData: ClinicData = {

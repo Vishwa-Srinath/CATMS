@@ -66,13 +66,13 @@ export default function AppointmentsPage() {
     user?.branchId === 'all' || !user?.branchId ? '1' : String(user.branchId),
   );
   const [doctorFilter, setDoctorFilter] = useState(
-    user?.role === 'Clinician' ? user.id : 'all',
+    user?.role === 'Clinician' ? (user.doctorId ? String(user.doctorId) : user.id) : 'all',
   );
   const [statusFilter, setStatusFilter] = useState('all');
   const [dialog, setDialog] = useState<DialogType>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [bookingDoctor, setBookingDoctor] = useState(
-    user?.role === 'Clinician' ? user.id : '4',
+    user?.role === 'Clinician' ? (user.doctorId ? String(user.doctorId) : user.id) : '4',
   );
   const [bookingStart, setBookingStart] = useState('11:30');
 

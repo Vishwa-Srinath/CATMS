@@ -40,9 +40,12 @@ const roleCopy = {
     title: 'Finance and Administration Dashboard',
     description: 'Review clinic-wide collections, outstanding balances, insurance claims, and administrative actions.',
   },
+  QA: {
+    eyebrow: 'Quality assurance & audit',
+    title: 'QA System Dashboard',
+    description: 'Review cross-branch system performance, transaction integrity, and audit coverage.',
+  },
 } as const
-
-
 
 function getTimeGreeting(): string {
   const hour = new Date().getHours()
@@ -57,7 +60,7 @@ export default function DashboardPage() {
   const appointmentsQuery = useAppointments({
     date: DEMO_TODAY,
     branchId: user?.branchId && user.branchId !== 'all' ? parseNumericId(user.branchId) : undefined,
-    doctorId: user?.role === 'Clinician' ? parseNumericId(user.id) : undefined,
+    doctorId: user?.role === 'Clinician' ? parseNumericId(user.doctorId ?? user.id) : undefined,
   }, { enabled: Boolean(user) })
 
   const invoicesQuery = useQuery({ queryKey: ['invoices'], queryFn: fetchInvoices, enabled: Boolean(user) });
@@ -65,19 +68,20 @@ export default function DashboardPage() {
   const { claims: liveClaims } = useClaims();
 
   const visibleAppointments = useMemo(() => {
-    if (appointmentsQuery.data && appointmentsQuery.data.length > 0) {
+    if (appointmentsQuery.data !== undefined) {
       return appointmentsQuery.data.map(mapDtoToAppointment);
     }
+    const targetDoctorId = user?.doctorId ? String(user.doctorId) : user?.id;
     return data.appointments.filter((item) => {
       if (item.date !== DEMO_TODAY) return false;
       if (user?.branchId && user.branchId !== 'all' && item.branchId !== user.branchId) return false;
-      if (user?.role === 'Clinician' && item.doctorId !== user.id) return false;
+      if (user?.role === 'Clinician' && item.doctorId !== targetDoctorId) return false;
       return true;
     });
   }, [appointmentsQuery.data, data.appointments, user]);
 
   const outstandingTotal = useMemo(() => {
-    if (invoicesQuery.data && invoicesQuery.data.length > 0) {
+    if (invoicesQuery.data !== undefined) {
       return invoicesQuery.data.reduce(
         (sum, item) => sum + Math.max(Number(item.patientLiabilityAmount) - Number(item.patientPaidAmount), 0),
         0,
@@ -87,21 +91,22 @@ export default function DashboardPage() {
   }, [invoicesQuery.data, data.invoices]);
 
   const pendingClaims = useMemo(() => {
-    if (liveClaims && liveClaims.length > 0) {
+    if (liveClaims !== undefined) {
       return liveClaims.filter((claim) => claim.claimStatus === 'Pending' || claim.status === 'Pending').length;
     }
-    return data.invoices.flatMap((item) => item.claims).filter((c) => c.status === 'Pending').length || 1;
+    return data.invoices.flatMap((item) => item.claims).filter((c) => c.status === 'Pending').length;
   }, [liveClaims, data.invoices]);
 
   const clinicalAwaiting = useMemo(() => {
-    if (worklistQuery.data && worklistQuery.data.length > 0) {
+    const targetDoctorId = user?.doctorId ? String(user.doctorId) : user?.id;
+    if (worklistQuery.data !== undefined) {
       return worklistQuery.data.filter(
-        (item) => item.consultationRevisionNo === null && (user?.role !== 'Clinician' || item.doctorId === user.id),
+        (item) => item.consultationRevisionNo === null && (user?.role !== 'Clinician' || item.doctorId === targetDoctorId),
       ).length;
     }
     return data.appointments.filter(
-      (item) => item.status === 'Completed' && !data.clinicalRecords.some((r) => r.appointmentId === item.id) && (user?.role !== 'Clinician' || item.doctorId === user.id),
-    ).length || 2;
+      (item) => item.status === 'Completed' && !data.clinicalRecords.some((r) => r.appointmentId === item.id) && (user?.role !== 'Clinician' || item.doctorId === targetDoctorId),
+    ).length;
   }, [worklistQuery.data, data.appointments, data.clinicalRecords, user]);
 
   if (!user) return null;
@@ -111,7 +116,7 @@ export default function DashboardPage() {
   const safeName = user.name || 'User'
   const firstName = safeName.replace('Dr. ', '').split(' ')[0]
   const branchName = user.branchId === 'all' ? 'All branches' : data.branches.find((branch) => branch.id === user.branchId)?.name ?? 'MedSync Clinics'
-  const copy = roleCopy[user.role]
+  const copy = roleCopy[user.role] ?? roleCopy.Receptionist
 
   const quickActions = user.role === 'Receptionist'
     ? [{ label: 'Book appointment', to: '/appointments', icon: CalendarDays }, { label: 'Register patient', to: '/patients', icon: UserPlus }]

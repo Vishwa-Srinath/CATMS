@@ -68,15 +68,15 @@ services:
       - catms_net
 
   # ---------------------------------------------------------------------------
-  # Express API — placeholder; implemented in CATMS-013
+  # Express API — Production Node.js backend
   # ---------------------------------------------------------------------------
   api:
     profiles: [app]
-    image: node:20-alpine
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
     container_name: catms_api
     restart: unless-stopped
-    working_dir: /app
-    command: sh -c "echo 'API not yet implemented. See CATMS-013.' && sleep infinity"
 
     environment:
       NODE_ENV:          ${NODE_ENV:-development}
@@ -91,7 +91,7 @@ services:
       COOKIE_SAME_SITE:  ${COOKIE_SAME_SITE:-lax}
       COOKIE_MAX_AGE_SECONDS: ${COOKIE_MAX_AGE_SECONDS:-3600}
       CSRF_SECRET:       ${CSRF_SECRET}
-      ALLOWED_ORIGINS:   ${ALLOWED_ORIGINS:-http://localhost:5173}
+      ALLOWED_ORIGINS:   ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:80,http://localhost,http://127.0.0.1:5173}
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
       RATE_LIMIT_MAX:    ${RATE_LIMIT_MAX:-200}
       LOG_LEVEL:         ${LOG_LEVEL:-info}
@@ -99,40 +99,37 @@ services:
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
 
-    volumes:
-      - ../backend:/app:ro
-      - /app/node_modules
-
     depends_on:
       postgres:
         condition: service_healthy
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
     networks:
       - catms_net
 
   # ---------------------------------------------------------------------------
-  # Vite frontend dev server — placeholder; implemented in CATMS-013
+  # CATMS Web — Frontend SPA served via Nginx with API reverse proxy
   # ---------------------------------------------------------------------------
   web:
     profiles: [app]
-    image: node:20-alpine
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
     container_name: catms_web
     restart: unless-stopped
-    working_dir: /app
-    command: sh -c "echo 'Web not yet implemented. See CATMS-013.' && sleep infinity"
-
-    environment:
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000/api/v1}
 
     ports:
-      - "127.0.0.1:5173:5173"
-
-    volumes:
-      - ../frontend:/app:ro
-      - /app/node_modules
+      - "127.0.0.1:5173:80"
 
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
     networks:
       - catms_net
