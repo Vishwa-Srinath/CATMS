@@ -57,30 +57,35 @@ interface ClinicContextValue {
 const ClinicContext = createContext<ClinicContextValue | null>(null)
 
 
-function mapSessionDtoToUser(dto: SessionUserDto): SessionUser {
-  let role: Role = 'Admin'
-  const normalized = (dto.role || '').toLowerCase()
+function mapSessionDtoToUser(rawDto: SessionUserDto | { user: SessionUserDto }): SessionUser {
+  const dto: SessionUserDto = (rawDto && typeof rawDto === 'object' && 'user' in rawDto && (rawDto as { user?: SessionUserDto }).user)
+    ? (rawDto as { user: SessionUserDto }).user
+    : (rawDto as SessionUserDto)
+
+  let role: Role = 'Receptionist'
+  const normalized = (dto?.role || '').toLowerCase()
   if (normalized.includes('reception')) {
     role = 'Receptionist'
   } else if (normalized.includes('clinic') || normalized.includes('doctor')) {
     role = 'Clinician'
   } else if (normalized.includes('manager')) {
     role = 'Manager'
-  } else if (normalized.includes('admin')) {
+  } else if (normalized.includes('admin') || normalized.includes('qa')) {
     role = 'Admin'
   }
 
-  const names = dto.fullName ? dto.fullName.trim().split(/\s+/) : ['User']
+  const fullName = dto?.fullName || dto?.username || 'User'
+  const names = fullName.trim().split(/\s+/)
   const initials = names.length >= 2
     ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
-    : (dto.fullName ? dto.fullName.slice(0, 2).toUpperCase() : 'US')
+    : (fullName.length > 0 ? fullName.slice(0, 2).toUpperCase() : 'US')
 
   return {
-    id: String(dto.userId),
-    name: dto.fullName || dto.username,
+    id: String(dto?.userId ?? '0'),
+    name: fullName,
     role,
-    jobTitle: dto.roleDisplayName || dto.positionCode || dto.role,
-    branchId: dto.branchId === 'all' ? 'all' : String(dto.branchId),
+    jobTitle: dto?.roleDisplayName || dto?.positionCode || dto?.role || role,
+    branchId: dto?.branchId === 'all' ? 'all' : String(dto?.branchId ?? '1'),
     initials,
   }
 }

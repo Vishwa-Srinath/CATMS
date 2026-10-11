@@ -16,6 +16,7 @@ import {
   type SubmitClaimInput,
   type ResolveClaimInput,
   type ClaimResolutionResultDto,
+  type PaginatedClaimsDto,
 } from '../../../api/claims.api';
 import { ApiError } from '../../../api/errors';
 
@@ -30,14 +31,17 @@ export const CLAIMS_QUERY_KEYS = {
 // ── 1. Claims List Hook ──────────────────────────────────────────────────────
 
 export function useClaims(filters?: ClaimFilters) {
-  const query = useQuery<ClaimDto[], ApiError>({
+  const query = useQuery<PaginatedClaimsDto, ApiError>({
     queryKey: CLAIMS_QUERY_KEYS.list(filters),
     queryFn: () => claimsApi.list(filters),
     staleTime: 20_000,
   });
 
   return {
-    claims: query.data ?? [],
+    claims: query.data?.claims ?? [],
+    total: query.data?.total ?? 0,
+    page: query.data?.page ?? 1,
+    limit: query.data?.limit ?? 100,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     isError: query.isError,

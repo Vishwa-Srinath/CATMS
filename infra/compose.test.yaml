@@ -34,10 +34,10 @@ services:
       # Hint Postgres to use tmpfs for logging too
       POSTGRES_INITDB_ARGS: "--no-sync"
 
-    ports:
+    ports: !override
       - "127.0.0.1:5433:5432"   # separate port so it does not conflict with dev
 
-    volumes:
+    volumes: !override
       # tmpfs — data lives only in RAM; dies with the container
       - type: tmpfs
         target: /var/lib/postgresql/data

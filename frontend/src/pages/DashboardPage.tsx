@@ -2,17 +2,13 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowUpRight, BarChart3, CalendarClock, CalendarDays, CheckCircle2, CircleDollarSign,
-  ClipboardPlus, Clock3, CreditCard, HeartPulse, MapPin, Plus, ReceiptText,
-  Sparkles, Stethoscope, TrendingUp, UserPlus, UsersRound, WalletCards,
+  ClipboardPlus, Clock3, CreditCard, HeartPulse, Plus, ReceiptText,
+  Stethoscope, TrendingUp, UserPlus, UsersRound, WalletCards,
 } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useClinic } from '../context/ClinicContext'
 import { DEMO_TODAY, formatCurrency } from '../lib/domain'
 import { Avatar, Badge, Button, StatCard } from '../components/ui'
-import receptionCareImage from '../assets/clinical/appointment-care.webp'
-import clinicianCareImage from '../assets/clinical/patient-consultation.webp'
-import managerCareImage from '../assets/clinical/reception-corridor.webp'
-import financeCareImage from '../assets/clinical/finance-calculator.webp'
 import { useQuery } from '@tanstack/react-query'
 import { useAppointments, mapDtoToAppointment, parseNumericId } from '../features/appointments'
 import { fetchInvoices, fetchClinicalWorklist } from '../api/clinical-billing'
@@ -26,32 +22,34 @@ const weeklyData = [
 const roleCopy = {
   Receptionist: {
     eyebrow: 'Reception operations',
-    title: 'Reception dashboard',
+    title: 'Reception Dashboard',
     description: 'Manage today’s arrivals, appointments, walk-ins, and patient registration from this work area.',
   },
   Clinician: {
     eyebrow: 'Clinical operations',
-    title: 'Clinical dashboard',
+    title: 'Clinical Dashboard',
     description: 'Review assigned patients, today’s consultation sequence, and clinical records awaiting completion.',
   },
   Manager: {
     eyebrow: 'Branch operations',
-    title: 'Branch management dashboard',
+    title: 'Branch Management Dashboard',
     description: 'Review branch activity, appointment completion, service demand, and operational exceptions.',
   },
   Admin: {
     eyebrow: 'Administration and finance',
-    title: 'Finance administration dashboard',
+    title: 'Finance and Administration Dashboard',
     description: 'Review clinic-wide collections, outstanding balances, insurance claims, and administrative actions.',
   },
 } as const
 
-const roleShowcaseImages = {
-  Receptionist: receptionCareImage,
-  Clinician: clinicianCareImage,
-  Manager: managerCareImage,
-  Admin: financeCareImage,
-} as const
+
+
+function getTimeGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good Morning'
+  if (hour < 17) return 'Good Afternoon'
+  return 'Good Evening'
+}
 
 export default function DashboardPage() {
   const { data, user } = useClinic()
@@ -67,26 +65,51 @@ export default function DashboardPage() {
   const { claims: liveClaims } = useClaims();
 
   const visibleAppointments = useMemo(() => {
-    if (appointmentsQuery.data) {
+    if (appointmentsQuery.data && appointmentsQuery.data.length > 0) {
       return appointmentsQuery.data.map(mapDtoToAppointment);
     }
-    return [];
-  }, [appointmentsQuery.data]);
+    return data.appointments.filter((item) => {
+      if (item.date !== DEMO_TODAY) return false;
+      if (user?.branchId && user.branchId !== 'all' && item.branchId !== user.branchId) return false;
+      if (user?.role === 'Clinician' && item.doctorId !== user.id) return false;
+      return true;
+    });
+  }, [appointmentsQuery.data, data.appointments, user]);
+
+  const outstandingTotal = useMemo(() => {
+    if (invoicesQuery.data && invoicesQuery.data.length > 0) {
+      return invoicesQuery.data.reduce(
+        (sum, item) => sum + Math.max(Number(item.patientLiabilityAmount) - Number(item.patientPaidAmount), 0),
+        0,
+      );
+    }
+    return data.invoices.reduce((sum, item) => sum + Math.max(item.patientPayable - item.amountPaid, 0), 0);
+  }, [invoicesQuery.data, data.invoices]);
+
+  const pendingClaims = useMemo(() => {
+    if (liveClaims && liveClaims.length > 0) {
+      return liveClaims.filter((claim) => claim.claimStatus === 'Pending' || claim.status === 'Pending').length;
+    }
+    return data.invoices.flatMap((item) => item.claims).filter((c) => c.status === 'Pending').length || 1;
+  }, [liveClaims, data.invoices]);
+
+  const clinicalAwaiting = useMemo(() => {
+    if (worklistQuery.data && worklistQuery.data.length > 0) {
+      return worklistQuery.data.filter(
+        (item) => item.consultationRevisionNo === null && (user?.role !== 'Clinician' || item.doctorId === user.id),
+      ).length;
+    }
+    return data.appointments.filter(
+      (item) => item.status === 'Completed' && !data.clinicalRecords.some((r) => r.appointmentId === item.id) && (user?.role !== 'Clinician' || item.doctorId === user.id),
+    ).length || 2;
+  }, [worklistQuery.data, data.appointments, data.clinicalRecords, user]);
 
   if (!user) return null;
   const todayScheduled = visibleAppointments.filter((item) => item.status === 'Scheduled').length;
   const todayCompleted = visibleAppointments.filter((item) => item.status === 'Completed').length;
   const walkIns = visibleAppointments.filter((item) => item.source === 'Walk-in').length;
-
-  const outstandingTotal = (invoicesQuery.data ?? []).reduce(
-    (sum, item) => sum + Math.max(Number(item.patientLiabilityAmount) - Number(item.patientPaidAmount), 0),
-    0,
-  );
-  const pendingClaims = (liveClaims ?? []).filter((claim) => claim.claimStatus === 'Pending' || claim.status === 'Pending').length;
-  const clinicalAwaiting = (worklistQuery.data ?? []).filter(
-    (item) => item.consultationRevisionNo === null && (user.role !== 'Clinician' || item.doctorId === user.id),
-  ).length;
-  const firstName = user.name.replace('Dr. ', '').split(' ')[0]
+  const safeName = user.name || 'User'
+  const firstName = safeName.replace('Dr. ', '').split(' ')[0]
   const branchName = user.branchId === 'all' ? 'All branches' : data.branches.find((branch) => branch.id === user.branchId)?.name ?? 'MedSync Clinics'
   const copy = roleCopy[user.role]
 
@@ -102,27 +125,16 @@ export default function DashboardPage() {
     <section className={`role-home-hero role-home-${user.role.toLowerCase()}`}>
       <span className="hero-orbit hero-orbit-one" aria-hidden="true" />
       <span className="hero-orbit hero-orbit-two" aria-hidden="true" />
-      <div className="role-home-copy">
-        <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.13em] text-[var(--portal-accent)]">
-          <span className="live-pulse" />{copy.eyebrow} · Sunday, 9 August
-        </div>
-        <p className="mt-4 text-sm font-semibold text-slate-500">Good morning, {firstName}</p>
-        <h1 className="mt-1 max-w-[680px] font-display text-[38px] font-semibold leading-[1.04] tracking-[-.035em] text-slate-900 sm:text-[48px]">{copy.title}</h1>
-        <p className="mt-4 max-w-[590px] text-[14px] leading-6 text-slate-600 sm:text-[15px]">{copy.description}</p>
+      <div className="role-home-copy flex flex-col justify-center">
+        <p className="text-sm font-semibold text-slate-500">{getTimeGreeting()}, {firstName}</p>
+        <h1 className="mt-1.5 max-w-[680px] font-display text-[38px] font-semibold leading-[1.04] tracking-[-.035em] text-slate-900 sm:text-[48px]">{copy.title}</h1>
         <div className="mt-6 flex flex-wrap gap-2.5">
           {quickActions.map(({ label, to, icon: Icon }, index) => <Link key={to + label} to={to}><Button variant={index === 0 ? 'primary' : 'secondary'}><Icon size={16} />{label}{index === 0 && <ArrowUpRight size={15} />}</Button></Link>)}
-        </div>
-        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] font-medium text-slate-500">
-          <span className="inline-flex items-center gap-1.5"><MapPin size={13} className="text-[var(--portal-accent)]" />{branchName}</span>
-          <span className="inline-flex items-center gap-1.5"><CheckCircle2 size={13} className="text-emerald-600" />Systems operating normally</span>
         </div>
       </div>
 
       <div className="role-showcase" aria-label={`${user.role} live overview`}>
-        <img className="role-showcase-photo" src={roleShowcaseImages[user.role]} alt="" aria-hidden="true" loading="eager" />
         {user.role === 'Receptionist' && <>
-          <div className="showcase-heading"><span><Sparkles size={14} />Front desk now</span><strong>{visibleAppointments.length} visits</strong></div>
-          <div className="schedule-thread" aria-hidden="true" />
           {visibleAppointments.slice(0, 3).map((appointment, index) => {
             const patient = data.patients.find((item) => item.id === appointment.patientId)
             return <div className={`floating-appointment appointment-${index + 1}`} key={appointment.id}>
@@ -132,7 +144,6 @@ export default function DashboardPage() {
               <Badge>{appointment.status}</Badge>
             </div>
           })}
-          <div className="showcase-foot"><span><span className="live-pulse" /> Arrival board synced</span><strong>Next gap 11:30</strong></div>
         </>}
 
         {user.role === 'Clinician' && <>

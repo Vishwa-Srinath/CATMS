@@ -170,6 +170,13 @@ export interface ClaimFilters {
 
 // ── API Operations ───────────────────────────────────────────────────────────
 
+export interface PaginatedClaimsDto {
+  claims: ClaimDto[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export const claimsApi = {
   previewEligibility: (data: { invoiceId: number; policyIds: number[] }) =>
     apiClient.post<ClaimPreviewResultDto>('/claims/preview', data),
@@ -178,7 +185,7 @@ export const claimsApi = {
     apiClient.post<ClaimDto[]>('/claims', data),
 
   list: (params?: ClaimFilters) =>
-    apiClient.get<ClaimDto[]>('/claims', { params }),
+    apiClient.get<PaginatedClaimsDto>('/claims', { params }),
 
   getById: (claimId: number) =>
     apiClient.get<ClaimDetailDto>(`/claims/${claimId}`),

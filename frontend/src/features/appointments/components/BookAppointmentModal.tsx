@@ -43,8 +43,8 @@ export function BookAppointmentModal({
   patients,
 }: BookAppointmentModalProps) {
   const [selectedBranch, setSelectedBranch] = useState(defaultBranchId ?? '1');
-  const [selectedDoctor, setSelectedDoctor] = useState(defaultDoctorId ?? '1');
-  const [selectedDate, setSelectedDate] = useState(defaultDate ?? '2026-08-09');
+  const [selectedDoctor, setSelectedDoctor] = useState(defaultDoctorId ?? '4');
+  const [selectedDate, setSelectedDate] = useState(defaultDate ?? '2026-10-12');
   const [startTime, setStartTime] = useState(defaultStart);
   const [endTime, setEndTime] = useState(addMinutesToTime(defaultStart, 30));
   const [patientId, setPatientId] = useState('');
@@ -55,15 +55,25 @@ export function BookAppointmentModal({
   useEffect(() => {
     if (open) {
       if (defaultBranchId) setSelectedBranch(defaultBranchId);
-      if (defaultDoctorId) setSelectedDoctor(defaultDoctorId);
+      const validDoc = doctors.find((d) => String(d.id) === String(defaultDoctorId));
+      if (validDoc) {
+        setSelectedDoctor(String(validDoc.id));
+      } else if (doctors.length > 0) {
+        setSelectedDoctor(String(doctors[0].id));
+      }
       if (defaultDate) setSelectedDate(defaultDate);
       if (defaultStart) {
         setStartTime(defaultStart);
         setEndTime(addMinutesToTime(defaultStart, 30));
       }
+      setPatientId((prev) =>
+        patients.length > 0 && (!prev || !patients.some((p) => String(p.id) === prev))
+          ? String(patients[0].id)
+          : prev,
+      );
       setError(null);
     }
-  }, [open, defaultBranchId, defaultDoctorId, defaultDate, defaultStart]);
+  }, [open, defaultBranchId, defaultDoctorId, defaultDate, defaultStart, doctors, patients]);
 
   const handleStartTimeChange = (newStart: string) => {
     setStartTime(newStart);
@@ -71,8 +81,9 @@ export function BookAppointmentModal({
   };
 
   const branchDoctors = doctors.filter(
-    (doc) => !doc.branchId || String(doc.branchId) === String(selectedBranch) || String(doc.id) === String(selectedDoctor),
+    (doc) => !doc.branchId || String(doc.branchId) === String(selectedBranch) || doc.branchId === 'all',
   );
+  const availableDoctors = branchDoctors.length > 0 ? branchDoctors : doctors;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -145,8 +156,10 @@ export function BookAppointmentModal({
               className="input"
               value={selectedBranch}
               onChange={(e) => {
-                setSelectedBranch(e.target.value);
-                const first = doctors.find((d) => String(d.branchId) === e.target.value);
+                const nextBranch = e.target.value;
+                setSelectedBranch(nextBranch);
+                const nextDocs = doctors.filter((d) => !d.branchId || String(d.branchId) === nextBranch || d.branchId === 'all');
+                const first = nextDocs[0] || doctors[0];
                 if (first) setSelectedDoctor(String(first.id));
               }}
               required
@@ -168,19 +181,11 @@ export function BookAppointmentModal({
               required
               aria-label="Select doctor"
             >
-              {branchDoctors.length > 0 ? (
-                branchDoctors.map((d) => (
-                  <option value={String(d.id)} key={String(d.id)}>
-                    {d.name} {d.specialties?.[0] ? `· ${d.specialties[0]}` : ''}
-                  </option>
-                ))
-              ) : (
-                doctors.map((d) => (
-                  <option value={String(d.id)} key={String(d.id)}>
-                    {d.name}
-                  </option>
-                ))
-              )}
+              {availableDoctors.map((d) => (
+                <option value={String(d.id)} key={String(d.id)}>
+                  {d.name} {d.specialties?.[0] ? `· ${d.specialties[0]}` : ''}
+                </option>
+              ))}
             </select>
           </Field>
 

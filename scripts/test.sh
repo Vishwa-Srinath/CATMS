@@ -43,12 +43,12 @@ section(){ echo ""; bold "──── $* ────"; }
 # ── parse --layer flag ────────────────────────────────────────────────────────
 LAYER="all"
 
-for arg in "$@"; do
-  case "${arg}" in
-    --layer=*) LAYER="${arg#--layer=}" ;;
-    --layer)   shift; LAYER="${1:-all}" ;;
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --layer=*) LAYER="${1#--layer=}"; shift ;;
+    --layer)   LAYER="${2:-all}"; shift 2 ;;
     *)
-      red "Unknown argument: ${arg}"
+      red "Unknown argument: $1"
       info "Usage: ./scripts/test.sh [--layer schema|rules|api|frontend|all]"
       exit 1
       ;;
@@ -65,6 +65,8 @@ esac
 
 # ── test database settings (matches compose.test.yaml) ───────────────────────
 export POSTGRES_HOST="localhost"
+export POSTGRES_PORT="5433"
+export POSTGRES_DB="catms_test"
 export POSTGRES_SUPERUSER="catms_super_test"
 export POSTGRES_SUPERUSER_PASSWORD="catms_test_password"
 export PGPASSWORD="${POSTGRES_SUPERUSER_PASSWORD}"

@@ -120,7 +120,7 @@ ok "Database dropped"
 
 # ── 3. Recreate database ──────────────────────────────────────────────────────
 info "Creating database '${PG_DB}'..."
-psql_maint -c "CREATE DATABASE \"${PG_DB}\" ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8';" >/dev/null 2>&1
+psql_maint -c "CREATE DATABASE \"${PG_DB}\" ENCODING 'UTF8' LC_COLLATE 'en_US.utf8' LC_CTYPE 'en_US.utf8';" >/dev/null 2>&1
 ok "Database created"
 
 # ── 4. Re-run init SQL (create roles if not exists) ───────────────────────────

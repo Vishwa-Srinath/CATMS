@@ -34,14 +34,15 @@ export function Badge({ children, tone }: { children: ReactNode; tone?: string }
   return <span className={`status-badge inline-flex items-center gap-1.5 whitespace-nowrap px-2 py-1 text-[10px] font-medium ring-1 ring-inset ${badgeStyles[key] ?? 'bg-[#EFF3F3] text-[#4B5D66] ring-[#8A97A0]/20'}`}>{Icon && <Icon size={11} aria-hidden="true" />}{label}</span>
 }
 
-export function Avatar({ name, size = 'md', className = '' }: { name: string; size?: 'sm' | 'md' | 'lg'; className?: string }) {
-  const letters = name.replace('Dr. ', '').split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase()
+export function Avatar({ name, size = 'md', className = '' }: { name?: string; size?: 'sm' | 'md' | 'lg'; className?: string }) {
+  const safeName = name || 'User'
+  const letters = safeName.replace('Dr. ', '').split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase()
   const sizes = { sm: 'h-8 w-8 text-[10px]', md: 'h-10 w-10 text-xs', lg: 'h-14 w-14 text-sm' }
   return <span aria-hidden="true" className={`inline-flex shrink-0 items-center justify-center rounded-full bg-[#EFF3F3] font-semibold text-[#4B5D66] ring-1 ring-[#DCE4E4] ${sizes[size]} ${className}`}>{letters}</span>
 }
 
-export function PageHeader({ eyebrow, title, description, actions, image }: { eyebrow?: string; title: string; description?: string; actions?: ReactNode; image?: string }) {
-  return <header className={`page-hero mb-7 overflow-hidden ${image ? 'page-hero-has-image' : ''}`}>
+export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: string; title: string; description?: string; actions?: ReactNode; image?: string }) {
+  return <header className="page-hero mb-7 overflow-hidden">
     <span className="page-hero-orbit" aria-hidden="true" />
     <div className="relative z-[1] flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
       <div className="page-hero-content">
@@ -49,16 +50,20 @@ export function PageHeader({ eyebrow, title, description, actions, image }: { ey
         <h1 className="font-display text-[28px] font-semibold leading-tight text-slate-900 sm:text-[34px]">{title}</h1>
         {description && <p className="mt-2 max-w-3xl text-[14px] leading-6 text-slate-500">{description}</p>}
       </div>
-      {(actions || image) && <div className="page-hero-end flex shrink-0 flex-col items-start gap-3 lg:items-end">
-        {image && <span className="page-hero-photo" aria-hidden="true"><img src={image} alt="" loading="eager" /></span>}
-        {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      {actions && <div className="page-hero-end flex shrink-0 flex-col items-start gap-3 lg:items-end">
+        <div className="flex flex-wrap gap-2">{actions}</div>
       </div>}
     </div>
   </header>
 }
 
 export function StatCard({ label, value, detail, icon: Icon, accent = 'teal' }: { label: string; value: ReactNode; detail: string; icon: LucideIcon; accent?: 'teal' | 'blue' | 'amber' | 'coral' }) {
-  const colors = { teal: 'bg-[#E7F5EE] text-[#1E8A5F]', blue: 'bg-[#EAF4FB] text-[#1E77B8]', amber: 'bg-[#FBF2E3] text-[#C0872A]', coral: 'bg-[#FBEAEE] text-[#C4425A]' }
+  const colors = {
+    teal: 'bg-[#E7F5EE]/80 text-[#1E8A5F] shadow-xs backdrop-blur-xs',
+    blue: 'bg-[#EAF4FB]/80 text-[#1E77B8] shadow-xs backdrop-blur-xs',
+    amber: 'bg-[#FBF2E3]/80 text-[#C0872A] shadow-xs backdrop-blur-xs',
+    coral: 'bg-[#FBEAEE]/80 text-[#C4425A] shadow-xs backdrop-blur-xs',
+  }
   return <div className={`metric-card metric-${accent}`}>
     <span className="metric-curve" aria-hidden="true" />
     <div className="relative z-[1] flex items-start justify-between gap-3"><div><p className="text-[12px] font-semibold text-slate-500">{label}</p><p className="mt-2 text-[26px] font-bold tracking-[-.035em] text-slate-900">{value}</p></div><span className={`rounded-2xl p-2.5 ${colors[accent]}`}><Icon size={19} aria-hidden="true" /></span></div>
@@ -111,8 +116,29 @@ export function RuleError({ error }: { error: unknown }) {
   if (!error) return null
   const code = (error instanceof ClinicRuleError && error.code) || (typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code) : undefined)
   const message = error instanceof Error ? error.message : 'The operation could not be completed.'
+  const fieldErrors = (typeof error === 'object' && error !== null && 'fieldErrors' in error && Array.isArray((error as { fieldErrors: unknown }).fieldErrors))
+    ? (error as { fieldErrors: Array<{ field?: string; message?: string }> }).fieldErrors
+    : []
+
   return <div className="rule-error rounded-xl border border-[#E8C2CA] bg-[#FBEAEE] p-4" role="alert">
-    <div className="flex gap-3"><AlertTriangle className="mt-0.5 shrink-0 text-[#C4425A]" size={18} /><div><p className="font-bold text-[#962C41]">Operation rejected</p><p className="mt-1 text-sm leading-5 text-[#962C41]">{message}</p>{code && <code className="mt-2 inline-block rounded-md bg-white/60 px-2 py-1 text-[11px] font-medium text-[#962C41]">{code}</code>}</div></div>
+    <div className="flex gap-3">
+      <AlertTriangle className="mt-0.5 shrink-0 text-[#C4425A]" size={18} />
+      <div className="flex-1">
+        <p className="font-bold text-[#962C41]">Operation rejected</p>
+        <p className="mt-1 text-sm leading-5 text-[#962C41]">{message}</p>
+        {fieldErrors.length > 0 && (
+          <ul className="mt-2 list-disc list-inside text-xs space-y-1 text-[#962C41]">
+            {fieldErrors.map((fe, idx) => (
+              <li key={idx}>
+                {fe.field ? <strong className="capitalize">{fe.field}: </strong> : null}
+                {fe.message}
+              </li>
+            ))}
+          </ul>
+        )}
+        {code && <code className="mt-2 inline-block rounded-md bg-white/60 px-2 py-1 text-[11px] font-medium text-[#962C41]">{code}</code>}
+      </div>
+    </div>
   </div>
 }
 

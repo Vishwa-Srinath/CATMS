@@ -168,6 +168,19 @@ Each of the five portals shares the same layout system, type scale, and state la
 
 A user always knows which portal they're in without reading a label, purely from the accent color threading through the chrome — and because that color never appears on data (§2.2), it never competes with the actual status information on screen.
 
+### 8.1 Staff Portal Login Experience (Unified Harbor Blue & Glassmorphism)
+
+The staff login screen uses a unified **Harbor Blue** (`portal-reception`) palette across all roles to maintain a calm, welcoming gateway before role selection:
+- **Dynamic Ambient Glow**: Utilizes `<AmbientGlowSpheres role="Receptionist" interactive intensity="medium" />` with floating blurred orbs that dynamically move across the canvas.
+- **Two-Column Composition**: Balanced layout pairing an editorial clinic brand illustration (`login-illustration.png`) on the left with the optical glassmorphism login card on the right.
+- **Glassmorphism & Refraction Design Tokens**:
+  - `--glass-blur`: controls frosting diffusion (`24px`).
+  - `--glass-saturate`: controls prism chromatic intensity (`190%`).
+  - `--glass-bg-opacity`: controls card glass transparency (`0.52`).
+  - `--glass-border-opacity`: controls beveled rim reflection (`0.75`).
+  - Includes corner specular glare (`-top-16 -left-16` radial gradient) and top specular rim highlight (`h-[1.5px]`).
+- **Role Tabs**: Frosted backdrop-blur tab buttons allowing staff to instantly switch between demonstration roles (`Receptionist`, `Clinician`, `Manager`, `Admin`) with live email synchronization.
+
 ---
 
 ## 9. Empty, Error & Loading States
