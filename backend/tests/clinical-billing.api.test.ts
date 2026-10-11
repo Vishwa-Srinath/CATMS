@@ -357,7 +357,11 @@ describe('clinical, invoice, catalogue and payment APIs (CATMS-052 through CATMS
     const response = await request(app)
       .post('/api/v1/payments/55/reverse')
       .set('Authorization', `Bearer ${token('Admin')}`)
-      .send({ amount: '10.00', reason: 'Duplicate receipt' });
+      .send({
+        amount: '10.00',
+        reason: 'Duplicate receipt',
+        idempotencyKey: '770e8400-e29b-41d4-a716-446655440001',
+      });
 
     expect(response.status).toBe(201);
     expect(paymentsService.reverse).toHaveBeenCalledWith(
@@ -365,7 +369,21 @@ describe('clinical, invoice, catalogue and payment APIs (CATMS-052 through CATMS
       9,
       '10.00',
       'Duplicate receipt',
+      '770e8400-e29b-41d4-a716-446655440001',
     );
+  });
+
+  it('rejects a reversal request without an idempotency key before service execution', async () => {
+    const response = await request(app)
+      .post('/api/v1/payments/55/reverse')
+      .set('Authorization', `Bearer ${token('Admin')}`)
+      .send({
+        amount: '10.00',
+        reason: 'Duplicate receipt',
+      });
+
+    expect(response.status).toBe(422);
+    expect(paymentsService.reverse).not.toHaveBeenCalled();
   });
 
   it('returns a sanitized domain error when the database rejects overpayment', async () => {
@@ -401,5 +419,100 @@ describe('clinical, invoice, catalogue and payment APIs (CATMS-052 through CATMS
 
     expect(response.status).toBe(422);
     expect(paymentsService.post).not.toHaveBeenCalled();
+  });
+
+  it('handles idempotent payment posting and reversal retry workflows (Task 4.2)', async () => {
+    const k1 = '11111111-1111-4111-8111-111111111111';
+    const r1 = '22222222-2222-4222-8222-222222222222';
+
+    const paymentPayload = {
+      invoiceId: '100',
+      payerType: 'Patient',
+      amount: '75.00',
+      paymentMethod: 'Cash',
+      idempotencyKey: k1,
+    };
+
+    const paymentReceipt = {
+      paymentId: '55',
+      invoiceId: '100',
+      receiptNumber: 'RCT-55',
+      payerType: 'Patient',
+      insuranceClaimId: null,
+      amount: '75.00',
+      paymentMethod: 'Cash',
+      paymentStatus: 'Settled',
+      paidAt: '2026-10-01T10:00:00.000Z',
+      referenceNumber: null,
+      reversedAmount: '0.00',
+      netAmount: '75.00',
+      reversals: [],
+    };
+
+    // 1. Post a payment with idempotencyKey = K1
+    paymentsService.post.mockResolvedValueOnce(paymentReceipt);
+    const postRes1 = await request(app)
+      .post('/api/v1/payments')
+      .set('Authorization', `Bearer ${token('Admin')}`)
+      .send(paymentPayload);
+    expect(postRes1.status).toBe(200);
+    expect(postRes1.body.data.paymentId).toBe('55');
+    expect(paymentsService.post).toHaveBeenCalledTimes(1);
+
+    // 2. Re-send the same payment payload with K1 (verifies duplicate rejection / idempotent return)
+    paymentsService.post.mockResolvedValueOnce(paymentReceipt);
+    const postRes2 = await request(app)
+      .post('/api/v1/payments')
+      .set('Authorization', `Bearer ${token('Admin')}`)
+      .send(paymentPayload);
+    expect(postRes2.status).toBe(200);
+    expect(postRes2.body.data.paymentId).toBe('55');
+    expect(paymentsService.post).toHaveBeenCalledTimes(2);
+
+    const reversalPayload = {
+      amount: '25.00',
+      reason: 'Partial adjustment',
+      idempotencyKey: r1,
+    };
+
+    const reversalReceipt = {
+      paymentReversalId: '805',
+      payment: {
+        ...paymentReceipt,
+        paymentStatus: 'PartiallyReversed',
+        reversedAmount: '25.00',
+        netAmount: '50.00',
+        reversals: [
+          {
+            paymentReversalId: '805',
+            amount: '25.00',
+            reason: 'Partial adjustment',
+            reversedAt: '2026-10-01T10:05:00.000Z',
+          },
+        ],
+      },
+    };
+
+    // 3. Reverse the payment with reversalKey = R1
+    paymentsService.reverse.mockResolvedValueOnce(reversalReceipt);
+    const revRes1 = await request(app)
+      .post('/api/v1/payments/55/reverse')
+      .set('Authorization', `Bearer ${token('Admin')}`)
+      .send(reversalPayload);
+    expect(revRes1.status).toBe(201);
+    expect(revRes1.body.data.paymentReversalId).toBe('805');
+    expect(revRes1.body.data.payment.reversedAmount).toBe('25.00');
+    expect(paymentsService.reverse).toHaveBeenCalledWith('55', 9, '25.00', 'Partial adjustment', r1);
+
+    // 4. Re-send the reversal with R1 (verifies idempotency and returns existing receipt without double reversal)
+    paymentsService.reverse.mockResolvedValueOnce(reversalReceipt);
+    const revRes2 = await request(app)
+      .post('/api/v1/payments/55/reverse')
+      .set('Authorization', `Bearer ${token('Admin')}`)
+      .send(reversalPayload);
+    expect(revRes2.status).toBe(201);
+    expect(revRes2.body.data.paymentReversalId).toBe('805');
+    expect(revRes2.body.data.payment.reversedAmount).toBe('25.00');
+    expect(paymentsService.reverse).toHaveBeenCalledTimes(2);
   });
 });

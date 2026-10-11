@@ -12,7 +12,8 @@ const poolConfig: PoolConfig = {
   min: 2,
   max: 10,
   idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 5_000,
+  connectionTimeoutMillis: 10_000,
+  ...(env.POSTGRES_SSL ? { ssl: { rejectUnauthorized: false } } : {}),
 };
 
 export const pool = new Pool(poolConfig);

@@ -23,6 +23,9 @@ function mapPaymentDatabaseError(error: unknown): never {
   if (message.startsWith('PAYMENT_KEY_CONFLICT:')) {
     throw new AppError(ErrorCode.PAYMENT_DUPLICATE, 'This idempotency key was used with different payment details.', 409);
   }
+  if (message.startsWith('REVERSAL_KEY_CONFLICT:')) {
+    throw new AppError(ErrorCode.CONFLICT, 'This idempotency key was used with different reversal details.', 409);
+  }
   if (
     message.startsWith('PAYMENT_AMOUNT_INVALID:')
     || message.startsWith('PAYMENT_TYPE_INVALID:')
@@ -275,12 +278,38 @@ export class PaymentsService {
     actorUserId: number,
     amount: string,
     reason: string,
+    idempotencyKey?: string,
   ): Promise<{ paymentReversalId: string; payment: PaymentDto }> {
     try {
       return await withTransaction(async (client) => {
+        // Query catms.payment_reversal by idempotency_key prior to invoking catms.reverse_payment().
+        // If a record already exists with that key, return the existing reversal receipt instead of repeating the deduction.
+        if (idempotencyKey) {
+          const existing = await client.query<{ payment_reversal_id: string }>(
+            `SELECT payment_reversal_id
+             FROM catms.payment_reversal
+             WHERE idempotency_key = $1::uuid`,
+            [idempotencyKey],
+          );
+          if (existing.rows.length > 0 && existing.rows[0]) {
+            const reversalId = existing.rows[0].payment_reversal_id;
+            const paymentResult = await client.query<PaymentRow>(
+              `${PAYMENT_PROJECTION}
+               WHERE p.payment_id = $1
+               GROUP BY p.payment_id`,
+              [paymentId],
+            );
+            const payment = paymentResult.rows[0];
+            if (!payment) {
+              throw AppError.notFound('Payment');
+            }
+            return { paymentReversalId: String(reversalId), payment: toPaymentDto(payment) };
+          }
+        }
+
         const reversal = await client.query<{ payment_reversal_id: string }>(
-          `SELECT catms.reverse_payment($1, $2, $3, $4) AS payment_reversal_id`,
-          [paymentId, amount, reason, actorUserId],
+          `SELECT catms.reverse_payment($1, $2, $3, $4, $5) AS payment_reversal_id`,
+          [paymentId, amount, reason, actorUserId, idempotencyKey ?? null],
         );
         const reversalId = reversal.rows[0]?.payment_reversal_id;
         if (!reversalId) {
