@@ -198,7 +198,7 @@ const importCsvHandler = async (req: Request, res: Response, next: NextFunction)
       csvData = String(req.body.csvData);
     }
     
-    const data = await ReportsService.importCsv(csvData);
+    const data = await ReportsService.importCsv(csvData, req.user?.userId);
     const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
     res.status(200).json(successEnvelope(data, correlationId));
   } catch (error) {

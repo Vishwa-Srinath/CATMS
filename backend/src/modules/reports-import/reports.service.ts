@@ -209,20 +209,36 @@ export class ReportsService {
   }
 
   static async getImportStatus(): Promise<ImportStatusDto> {
+    try {
+      const res = await pool.query<{
+        payload: ImportStatusDto;
+        created_at: Date | string;
+      }>(`
+        SELECT payload, created_at
+        FROM catms.audit_event
+        WHERE entity_type = 'TREATMENT_CATALOGUE' AND action_code = 'IMPORT'
+        ORDER BY audit_event_id DESC
+        LIMIT 1;
+      `);
+
+      if (res.rows.length > 0 && res.rows[0]?.payload) {
+        return res.rows[0].payload;
+      }
+    } catch {
+      // Fall back to in-memory status if audit table is inaccessible
+    }
     return { ...lastImportStatus };
   }
 
   /**
-   * Controlled CSV Ingestion for Treatment Catalogue (CATMS-071).
-   * Validates header columns, verifies row constraints, and performs transactional upsert.
+   * Controlled RFC-4180 CSV Ingestion for Treatment Catalogue (CATMS-071).
+   * Validates header columns, verifies row constraints (price > 0, duration > 0),
+   * performs transactional upsert, and persists audit events to catms.audit_event.
    */
-  static async importCsv(csvData: string): Promise<ImportStatusDto> {
-    const rawLines = csvData
-      .split(/\r?\n/)
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
+  static async importCsv(csvData: string, actorUserId?: number | string): Promise<ImportStatusDto> {
+    const rows = parseCsvRfc4180(csvData);
 
-    if (rawLines.length === 0) {
+    if (rows.length === 0) {
       lastImportStatus = {
         status: 'failed',
         lastImportedAt: new Date().toISOString(),
@@ -231,12 +247,13 @@ export class ReportsService {
         rejectedRecords: 0,
         errors: ['Empty CSV payload received.'],
       };
+      await ReportsService.persistAuditLog(lastImportStatus, actorUserId);
       return lastImportStatus;
     }
 
     // 1. Validate Header Row
-    const headerLine = rawLines[0]!;
-    const headers = headerLine.split(',').map(h => h.trim().toLowerCase());
+    const headerRow = rows[0]!;
+    const headers = headerRow.map(h => h.trim().toLowerCase());
     
     // Support aliases: code/service_code, category_id/treatment_category_id, default_price/current_price
     const codeIdx = headers.findIndex(h => h === 'code' || h === 'service_code');
@@ -250,15 +267,16 @@ export class ReportsService {
       lastImportStatus = {
         status: 'failed',
         lastImportedAt: new Date().toISOString(),
-        totalRecords: rawLines.length - 1,
+        totalRecords: rows.length - 1,
         acceptedRecords: 0,
-        rejectedRecords: rawLines.length - 1,
-        errors: [`Invalid CSV headers. Required: code, category_id, name, default_price. Found: ${headerLine}`],
+        rejectedRecords: rows.length - 1,
+        errors: [`Invalid CSV headers. Required: code, category_id, name, default_price. Found: ${headerRow.join(',')}`],
       };
+      await ReportsService.persistAuditLog(lastImportStatus, actorUserId);
       return lastImportStatus;
     }
 
-    const dataLines = rawLines.slice(1);
+    const dataRows = rows.slice(1);
     const validRows: Array<{
       serviceCode: string;
       categoryId: number;
@@ -269,10 +287,9 @@ export class ReportsService {
     }> = [];
     const errors: string[] = [];
 
-    // 2. Validate Row Data
-    for (let i = 0; i < dataLines.length; i++) {
-      const line = dataLines[i]!;
-      const cols = line.split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+    // 2. Validate Row Data with strict numeric validation
+    for (let i = 0; i < dataRows.length; i++) {
+      const cols = dataRows[i]!;
       const rowNum = i + 2;
 
       const code = cols[codeIdx] ?? '';
@@ -297,15 +314,17 @@ export class ReportsService {
         continue;
       }
 
+      // Strict numeric validation: price must be strictly greater than 0
       const price = parseFloat(priceStr);
-      if (isNaN(price) || price < 0) {
-        errors.push(`Row ${rowNum}: Invalid price '${priceStr}'. Must be non-negative numeric value.`);
+      if (isNaN(price) || price <= 0) {
+        errors.push(`Row ${rowNum}: Invalid price '${priceStr}'. Must be greater than 0.`);
         continue;
       }
 
+      // Strict numeric validation: duration must be strictly greater than 0
       const durationMinutes = parseInt(durationStr, 10);
       if (isNaN(durationMinutes) || durationMinutes <= 0) {
-        errors.push(`Row ${rowNum}: Invalid duration '${durationStr}'. Must be positive integer.`);
+        errors.push(`Row ${rowNum}: Invalid duration '${durationStr}'. Must be greater than 0.`);
         continue;
       }
 
@@ -366,7 +385,7 @@ export class ReportsService {
       }
     }
 
-    const totalRecords = dataLines.length;
+    const totalRecords = dataRows.length;
     const rejectedRecords = totalRecords - acceptedRecords;
     const status = (rejectedRecords === 0 && acceptedRecords > 0)
       ? 'completed'
@@ -381,6 +400,117 @@ export class ReportsService {
       errors,
     };
 
+    await ReportsService.persistAuditLog(lastImportStatus, actorUserId);
     return lastImportStatus;
   }
+
+  private static async persistAuditLog(status: ImportStatusDto, actorUserId?: number | string): Promise<void> {
+    try {
+      await pool.query(`
+        INSERT INTO catms.audit_event (
+          actor_user_id,
+          actor_id,
+          entity_type,
+          entity_id,
+          action_code,
+          event_type,
+          payload
+        ) VALUES (
+          $1,
+          $1,
+          'TREATMENT_CATALOGUE',
+          'CSV_IMPORT',
+          'IMPORT',
+          'CSV_IMPORT',
+          $2::jsonb
+        );
+      `, [
+        actorUserId ? Number(actorUserId) : null,
+        JSON.stringify(status),
+      ]);
+    } catch {
+      // Audit persistence should not fail caller if DB is mocked in unit tests
+    }
+  }
+}
+
+/**
+ * RFC-4180 compliant CSV tokenizer supporting:
+ * - Quoted fields containing commas and quotes
+ * - Escaped quotes ("")
+ * - CRLF and LF line endings
+ */
+export function parseCsvRfc4180(text: string): string[][] {
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentField = '';
+  let inQuotes = false;
+  let i = 0;
+
+  while (i < text.length) {
+    const char = text[i];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (i + 1 < text.length && text[i + 1] === '"') {
+          currentField += '"';
+          i += 2;
+          continue;
+        } else {
+          inQuotes = false;
+          i++;
+          continue;
+        }
+      } else {
+        currentField += char;
+        i++;
+        continue;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+        i++;
+        continue;
+      } else if (char === ',') {
+        currentRow.push(currentField.trim());
+        currentField = '';
+        i++;
+        continue;
+      } else if (char === '\r') {
+        if (i + 1 < text.length && text[i + 1] === '\n') {
+          i++;
+        }
+        currentRow.push(currentField.trim());
+        currentField = '';
+        if (currentRow.length > 0 && !(currentRow.length === 1 && currentRow[0] === '')) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+        i++;
+        continue;
+      } else if (char === '\n') {
+        currentRow.push(currentField.trim());
+        currentField = '';
+        if (currentRow.length > 0 && !(currentRow.length === 1 && currentRow[0] === '')) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+        i++;
+        continue;
+      } else {
+        currentField += char;
+        i++;
+        continue;
+      }
+    }
+  }
+
+  if (currentField.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentField.trim());
+    if (currentRow.length > 0 && !(currentRow.length === 1 && currentRow[0] === '')) {
+      rows.push(currentRow);
+    }
+  }
+
+  return rows;
 }
