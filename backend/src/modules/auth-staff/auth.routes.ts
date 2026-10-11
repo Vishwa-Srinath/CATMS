@@ -110,7 +110,7 @@ authRouter.post(
       if (token) {
         try {
           const decoded = verifyToken(token);
-          await authService.logout(decoded.userId, correlationId, req.ip, token);
+          await authService.logout(decoded.userId, correlationId, req.ip);
         } catch {
           // If token was expired/invalid, still proceed with invalidation & clearing cookie
         }
