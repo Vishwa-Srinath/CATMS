@@ -46,7 +46,43 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
 });
 
+import fs from 'fs';
+import path from 'path';
+
+function tryLoadDotEnv(): void {
+  const candidatePaths = [
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(process.cwd(), '../.env'),
+    path.resolve(__dirname, '../../../.env'),
+    path.resolve(__dirname, '../../.env'),
+  ];
+
+  for (const envPath of candidatePaths) {
+    if (fs.existsSync(envPath)) {
+      try {
+        const content = fs.readFileSync(envPath, 'utf-8');
+        for (const line of content.split('\n')) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx !== -1) {
+            const key = trimmed.slice(0, eqIdx).trim();
+            const val = trimmed.slice(eqIdx + 1).trim();
+            if (process.env[key] === undefined) {
+              process.env[key] = val;
+            }
+          }
+        }
+        break;
+      } catch {
+        // ignore read error
+      }
+    }
+  }
+}
+
 function loadEnv() {
+  tryLoadDotEnv();
   const result = envSchema.safeParse(process.env);
 
   if (!result.success) {
