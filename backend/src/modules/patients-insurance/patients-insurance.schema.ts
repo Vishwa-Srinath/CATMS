@@ -13,6 +13,17 @@
 
 import { z } from 'zod';
 
+export const CLINIC_TIMEZONE = 'Asia/Colombo';
+
+export function getClinicTodayString(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: CLINIC_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
 // ── Patient Master & Registration Schemas ───────────────────────────────────
@@ -34,9 +45,7 @@ export const registerPatientSchema = z
       .regex(dateRegex, 'Date format must be YYYY-MM-DD.')
       .refine(
         (val) => {
-          const d = new Date(val);
-          const today = new Date();
-          return d <= today;
+          return val <= getClinicTodayString();
         },
         { message: 'Date of birth cannot be in the future.' },
       ),
@@ -107,9 +116,7 @@ export const updatePatientSchema = z
       .regex(dateRegex, 'Date format must be YYYY-MM-DD.')
       .refine(
         (val) => {
-          const d = new Date(val);
-          const today = new Date();
-          return d <= today;
+          return val <= getClinicTodayString();
         },
         { message: 'Date of birth cannot be in the future.' },
       )

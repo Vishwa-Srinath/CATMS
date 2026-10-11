@@ -55,10 +55,15 @@ function resolveDbRole(user?: JwtPayload): DbRole {
   return 'catms_app';
 }
 
-function formatDateOnly(val: unknown): string {
+export function formatDateOnly(val: unknown): string {
   if (!val) return '';
   if (val instanceof Date) {
-    return val.toISOString().slice(0, 10);
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Colombo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(val);
   }
   const str = String(val);
   return str.length >= 10 ? str.slice(0, 10) : str;
@@ -1026,7 +1031,7 @@ export class PatientsInsuranceService {
     serviceDate: string,
   ): Promise<EffectiveCoverageDto> {
     const res = await pool.query(
-      `SELECT * FROM catms.get_effective_coverage($1, $2, $3)`,
+      `SELECT * FROM catms.get_effective_coverage($1, $2, $3::date)`,
       [policyId, treatmentId, serviceDate],
     );
 

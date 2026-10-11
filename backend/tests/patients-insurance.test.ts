@@ -1689,4 +1689,62 @@ describe('Suite 8: Policy Coverage Terms & Effective Coverage Lifecycle', () => 
     expect(res.body.data.isEligible).toBe(false);
     expect(res.body.data.ineligibilityReason).toContain('outside policy validity window');
   });
+
+  describe('Task 3.3: Explicit Clinic Timezone (Asia/Colombo) Handling', () => {
+    it('accepts date of birth matching today in Asia/Colombo timezone', async () => {
+      const todayColombo = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Colombo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
+
+      const res = await request(app)
+        .post('/api/v1/patients')
+        .set('Authorization', `Bearer ${receptionToken}`)
+        .send({
+          firstName: 'Newborn',
+          lastName: 'Baby',
+          dateOfBirth: todayColombo,
+          gender: 'Female',
+          contactNumber: '0771239999',
+          identityType: 'Passport',
+          identityNumber: 'N99887766',
+          contactName: 'Parent Baby',
+          relationship: 'Mother',
+          emergencyPhone: '0779998888',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.dateOfBirth).toBe(todayColombo);
+    });
+
+    it('rejects date of birth in the future according to Asia/Colombo timezone', async () => {
+      const now = new Date();
+      now.setUTCDate(now.getUTCDate() + 2);
+      const futureDate = now.toISOString().slice(0, 10);
+
+      const res = await request(app)
+        .post('/api/v1/patients')
+        .set('Authorization', `Bearer ${receptionToken}`)
+        .send({
+          firstName: 'Future',
+          lastName: 'Person',
+          dateOfBirth: futureDate,
+          gender: 'Male',
+          contactNumber: '0771239999',
+          identityType: 'Passport',
+          identityNumber: 'F99887766',
+          contactName: 'Parent Future',
+          relationship: 'Father',
+          emergencyPhone: '0779998888',
+        });
+
+      expect(res.status).toBe(422);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      expect(res.body.error.fieldErrors.some((fe: { field: string; message: string }) => fe.message.includes('future'))).toBe(true);
+    });
+  });
 });
+
+
