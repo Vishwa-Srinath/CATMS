@@ -150,19 +150,19 @@ BEGIN
 
     -- Insurance Providers
     INSERT INTO catms.insurance_provider (name, provider_code, contact_phone, contact_email, status)
-    VALUES ('Ceylinco General Insurance Ltd', 'CEY-75', '+94112461461', 'claims@ceylinco-scale.lk', 'ACTIVE')
+    VALUES ('Ceylinco General Insurance Ltd - Scale 75', 'CEY-75', '+94112461461', 'claims@ceylinco-scale.lk', 'ACTIVE')
     RETURNING provider_id INTO v_prov_ceylinco_id;
 
     INSERT INTO catms.insurance_provider (name, provider_code, contact_phone, contact_email, status)
-    VALUES ('Sri Lanka Insurance Corporation', 'SLIC-75', '+94112357357', 'medical@slic-scale.lk', 'ACTIVE')
+    VALUES ('Sri Lanka Insurance Corporation - Scale 75', 'SLIC-75', '+94112357357', 'medical@slic-scale.lk', 'ACTIVE')
     RETURNING provider_id INTO v_prov_slic_id;
 
     INSERT INTO catms.insurance_provider (name, provider_code, contact_phone, contact_email, status)
-    VALUES ('AIA Insurance Lanka PLC', 'AIA-75', '+94112444444', 'health@aia-scale.lk', 'ACTIVE')
+    VALUES ('AIA Insurance Lanka PLC - Scale 75', 'AIA-75', '+94112444444', 'health@aia-scale.lk', 'ACTIVE')
     RETURNING provider_id INTO v_prov_aia_id;
 
     INSERT INTO catms.insurance_provider (name, provider_code, contact_phone, contact_email, status)
-    VALUES ('Deactivated Insurance Corp', 'DEACT-75', '+94112999999', 'info@deact.lk', 'INACTIVE')
+    VALUES ('Deactivated Insurance Corp - Scale 75', 'DEACT-75', '+94112999999', 'info@deact.lk', 'INACTIVE')
     RETURNING provider_id INTO v_prov_inactive_id;
 
     -- ─────────────────────────────────────────────────────────────────────────
