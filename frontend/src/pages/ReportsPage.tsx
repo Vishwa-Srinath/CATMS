@@ -21,19 +21,46 @@ export default function ReportsPage() {
   const { user } = useSession()
   const { data, notify } = useClinic()
   
-  const allowedReports: ReportKey[] = user?.role === 'Manager' ? ['appointments'] : ['appointments', 'revenue', 'outstanding', 'treatments', 'coverage']
+  const role = user?.role ?? ''
+  const isNonFinancialStaff = role === 'Reception' || role === 'Clinician'
+  const isManager = role === 'Manager' || role === 'Branch Manager'
+  const canViewFinancial = !isNonFinancialStaff && !isManager
+
+  // Non-financial staff only see R1. Managers see R1 and R4 (treatments). Financial/admin see all.
+  const allowedReports: ReportKey[] = isNonFinancialStaff
+    ? ['appointments']
+    : isManager
+      ? ['appointments', 'treatments']
+      : ['appointments', 'revenue', 'outstanding', 'treatments', 'coverage']
+
   const [active, setActive] = useState<ReportKey>('appointments')
   const [date, setDate] = useState(DEMO_TODAY)
   const [from, setFrom] = useState('2026-07-01')
   const [to, setTo] = useState('2026-08-09')
-  const meta = reportMeta[active]
+  const meta = reportMeta[active] ?? reportMeta['appointments']
 
   // BranchId passed if manager, though backend enforces it anyway
-  const branchSummaryQuery = useBranchSummary({ startDate: date, endDate: date, branchId: user?.role === 'Manager' && user.branchId !== 'all' ? (user.branchId as number) : undefined })
-  const doctorRevenueQuery = useDoctorRevenue({ startDate: from, endDate: to })
-  const patientBalancesQuery = usePatientBalances()
-  const treatmentCountsQuery = useTreatmentCounts({ startDate: from, endDate: to })
-  const insuranceReceiptsQuery = useInsuranceReceipts()
+  const branchSummaryQuery = useBranchSummary({
+    startDate: date,
+    endDate: date,
+    branchId: isManager && user?.branchId !== 'all' ? (user?.branchId as number) : undefined,
+  })
+  const doctorRevenueQuery = useDoctorRevenue(
+    { startDate: from, endDate: to },
+    { enabled: canViewFinancial }
+  )
+  const patientBalancesQuery = usePatientBalances(
+    undefined,
+    { enabled: canViewFinancial }
+  )
+  const treatmentCountsQuery = useTreatmentCounts(
+    { startDate: from, endDate: to, branchId: isManager && user?.branchId !== 'all' ? (user?.branchId as number) : undefined },
+    { enabled: !isNonFinancialStaff }
+  )
+  const insuranceReceiptsQuery = useInsuranceReceipts(
+    undefined,
+    { enabled: canViewFinancial }
+  )
 
   // Fallback demo datasets for offline preview
   const fallbackAppointmentRows = useMemo(() => {
@@ -195,6 +222,7 @@ export default function ReportsPage() {
     <PageHeader eyebrow="Management reporting" title="Reports" description="Verifiable management views backed by reporting objects. Every chart is paired with its raw rows." actions={<Button variant="secondary" onClick={exportReport}><Download size={16} />Export CSV</Button>} />
 
     {user?.role === 'Manager' && <div className="mb-5"><InfoNote title="Branch-manager access">You can view the daily appointment summary for {data.branches.find((branch) => branch.id === user.branchId)?.name}. Financial and clinic-wide reports require Admin / Finance access.</InfoNote></div>}
+    {isNonFinancialStaff && <div className="mb-5"><InfoNote title="Staff report access">You can view daily appointment schedules for clinic branches. Financial and operational revenue reporting is restricted to management and finance administrators.</InfoNote></div>}
 
     <div className="grid gap-6 xl:grid-cols-[14rem_1fr]">
       <aside className="card h-fit p-2">

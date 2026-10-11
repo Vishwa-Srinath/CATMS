@@ -28,23 +28,12 @@ let lastImportStatus: ImportStatusDto = {
 export class ReportsService {
   
   static async getBranchWiseSummary(filters: ReportFilterDto): Promise<BranchWiseSummaryDto[]> {
-    const conditions: string[] = [];
-    const params: unknown[] = [];
+    const params: unknown[] = [
+      filters.branchId ?? null,
+      filters.startDate ?? null,
+      filters.endDate ?? null,
+    ];
 
-    if (filters.branchId !== undefined) {
-      params.push(filters.branchId);
-      conditions.push(`branch_id = $${params.length}`);
-    }
-    if (filters.startDate) {
-      params.push(filters.startDate);
-      conditions.push(`appointment_date >= $${params.length}`);
-    }
-    if (filters.endDate) {
-      params.push(filters.endDate);
-      conditions.push(`appointment_date <= $${params.length}`);
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const sql = `
       SELECT 
         branch_name,
@@ -53,7 +42,9 @@ export class ReportsService {
         completed_count,
         cancelled_count
       FROM catms.r1_branch_appointment_summary
-      ${whereClause}
+      WHERE ($1::int IS NULL OR branch_id = $1)
+        AND ($2::date IS NULL OR appointment_date >= $2)
+        AND ($3::date IS NULL OR appointment_date <= $3)
       ORDER BY appointment_date, branch_name;
     `;
 
@@ -79,14 +70,23 @@ export class ReportsService {
   }
 
   static async getDoctorRevenue(filters: ReportFilterDto): Promise<DoctorRevenueDto[]> {
-    void filters;
+    const params: unknown[] = [
+      filters.branchId ?? null,
+      filters.startDate ?? null,
+      filters.endDate ?? null,
+    ];
+
     const sql = `
       SELECT 
         doctor_id,
         doctor_name,
-        gross_revenue,
-        actual_collections
+        COALESCE(SUM(gross_revenue), 0.00) AS gross_revenue,
+        COALESCE(SUM(actual_collections), 0.00) AS actual_collections
       FROM catms.r2_doctor_revenue
+      WHERE ($1::int IS NULL OR branch_id = $1)
+        AND ($2::date IS NULL OR revenue_date >= $2)
+        AND ($3::date IS NULL OR revenue_date <= $3)
+      GROUP BY doctor_id, doctor_name
       ORDER BY gross_revenue DESC;
     `;
 
@@ -95,7 +95,7 @@ export class ReportsService {
       doctor_name: string;
       gross_revenue: string | number;
       actual_collections: string | number;
-    }>(sql);
+    }>(sql, params);
 
     return result.rows.map(row => ({
       doctorId: Number(row.doctor_id),
@@ -106,7 +106,10 @@ export class ReportsService {
   }
 
   static async getPatientBalances(filters: ReportFilterDto): Promise<PatientBalanceDto[]> {
-    void filters;
+    const params: unknown[] = [
+      filters.branchId ?? null,
+    ];
+
     const sql = `
       SELECT 
         patient_id,
@@ -116,6 +119,7 @@ export class ReportsService {
         patient_liability_amount,
         outstanding_balance
       FROM catms.r3_patient_balances
+      WHERE ($1::int IS NULL OR branch_id = $1)
       ORDER BY outstanding_balance DESC;
     `;
 
@@ -126,7 +130,7 @@ export class ReportsService {
       subtotal_amount: string | number;
       patient_liability_amount: string | number;
       outstanding_balance: string | number;
-    }>(sql);
+    }>(sql, params);
 
     return result.rows.map(row => ({
       patientId: Number(row.patient_id),
@@ -139,19 +143,28 @@ export class ReportsService {
   }
 
   static async getTreatmentCounts(filters: ReportFilterDto): Promise<TreatmentCountDto[]> {
-    void filters;
+    const params: unknown[] = [
+      filters.branchId ?? null,
+      filters.startDate ?? null,
+      filters.endDate ?? null,
+    ];
+
     const sql = `
       SELECT 
         category_name,
-        treatment_count
+        COALESCE(SUM(treatment_count), 0) AS treatment_count
       FROM catms.r4_treatment_counts
+      WHERE ($1::int IS NULL OR branch_id = $1)
+        AND ($2::date IS NULL OR treatment_date >= $2)
+        AND ($3::date IS NULL OR treatment_date <= $3)
+      GROUP BY category_name
       ORDER BY treatment_count DESC;
     `;
 
     const result = await pool.query<{
       category_name: string;
       treatment_count: string | number;
-    }>(sql);
+    }>(sql, params);
 
     return result.rows.map(row => ({
       categoryName: row.category_name,
@@ -187,20 +200,36 @@ export class ReportsService {
   }
 
   static async getImportStatus(): Promise<ImportStatusDto> {
+    try {
+      const res = await pool.query<{
+        payload: ImportStatusDto;
+        created_at: Date | string;
+      }>(`
+        SELECT payload, created_at
+        FROM catms.audit_event
+        WHERE entity_type = 'TREATMENT_CATALOGUE' AND action_code = 'IMPORT'
+        ORDER BY audit_event_id DESC
+        LIMIT 1;
+      `);
+
+      if (res.rows.length > 0 && res.rows[0]?.payload) {
+        return res.rows[0].payload;
+      }
+    } catch {
+      // Fall back to in-memory status if audit table is inaccessible
+    }
     return { ...lastImportStatus };
   }
 
   /**
-   * Controlled CSV Ingestion for Treatment Catalogue (CATMS-071).
-   * Validates header columns, verifies row constraints, and performs transactional upsert.
+   * Controlled RFC-4180 CSV Ingestion for Treatment Catalogue (CATMS-071).
+   * Validates header columns, verifies row constraints (price > 0, duration > 0),
+   * performs transactional upsert, and persists audit events to catms.audit_event.
    */
-  static async importCsv(csvData: string): Promise<ImportStatusDto> {
-    const rawLines = csvData
-      .split(/\r?\n/)
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
+  static async importCsv(csvData: string, actorUserId?: number | string): Promise<ImportStatusDto> {
+    const rows = parseCsvRfc4180(csvData);
 
-    if (rawLines.length === 0) {
+    if (rows.length === 0) {
       lastImportStatus = {
         status: 'failed',
         lastImportedAt: new Date().toISOString(),
@@ -209,12 +238,13 @@ export class ReportsService {
         rejectedRecords: 0,
         errors: ['Empty CSV payload received.'],
       };
+      await ReportsService.persistAuditLog(lastImportStatus, actorUserId);
       return lastImportStatus;
     }
 
     // 1. Validate Header Row
-    const headerLine = rawLines[0]!;
-    const headers = headerLine.split(',').map(h => h.trim().toLowerCase());
+    const headerRow = rows[0]!;
+    const headers = headerRow.map(h => h.trim().toLowerCase());
     
     // Support aliases: code/service_code, category_id/treatment_category_id, default_price/current_price
     const codeIdx = headers.findIndex(h => h === 'code' || h === 'service_code');
@@ -228,15 +258,16 @@ export class ReportsService {
       lastImportStatus = {
         status: 'failed',
         lastImportedAt: new Date().toISOString(),
-        totalRecords: rawLines.length - 1,
+        totalRecords: rows.length - 1,
         acceptedRecords: 0,
-        rejectedRecords: rawLines.length - 1,
-        errors: [`Invalid CSV headers. Required: code, category_id, name, default_price. Found: ${headerLine}`],
+        rejectedRecords: rows.length - 1,
+        errors: [`Invalid CSV headers. Required: code, category_id, name, default_price. Found: ${headerRow.join(',')}`],
       };
+      await ReportsService.persistAuditLog(lastImportStatus, actorUserId);
       return lastImportStatus;
     }
 
-    const dataLines = rawLines.slice(1);
+    const dataRows = rows.slice(1);
     const validRows: Array<{
       serviceCode: string;
       categoryId: number;
@@ -247,10 +278,9 @@ export class ReportsService {
     }> = [];
     const errors: string[] = [];
 
-    // 2. Validate Row Data
-    for (let i = 0; i < dataLines.length; i++) {
-      const line = dataLines[i]!;
-      const cols = line.split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+    // 2. Validate Row Data with strict numeric validation
+    for (let i = 0; i < dataRows.length; i++) {
+      const cols = dataRows[i]!;
       const rowNum = i + 2;
 
       const code = cols[codeIdx] ?? '';
@@ -275,15 +305,17 @@ export class ReportsService {
         continue;
       }
 
+      // Strict numeric validation: price must be strictly greater than 0
       const price = parseFloat(priceStr);
-      if (isNaN(price) || price < 0) {
-        errors.push(`Row ${rowNum}: Invalid price '${priceStr}'. Must be non-negative numeric value.`);
+      if (isNaN(price) || price <= 0) {
+        errors.push(`Row ${rowNum}: Invalid price '${priceStr}'. Must be greater than 0.`);
         continue;
       }
 
+      // Strict numeric validation: duration must be strictly greater than 0
       const durationMinutes = parseInt(durationStr, 10);
       if (isNaN(durationMinutes) || durationMinutes <= 0) {
-        errors.push(`Row ${rowNum}: Invalid duration '${durationStr}'. Must be positive integer.`);
+        errors.push(`Row ${rowNum}: Invalid duration '${durationStr}'. Must be greater than 0.`);
         continue;
       }
 
@@ -344,7 +376,7 @@ export class ReportsService {
       }
     }
 
-    const totalRecords = dataLines.length;
+    const totalRecords = dataRows.length;
     const rejectedRecords = totalRecords - acceptedRecords;
     const status = (rejectedRecords === 0 && acceptedRecords > 0)
       ? 'completed'
@@ -359,6 +391,117 @@ export class ReportsService {
       errors,
     };
 
+    await ReportsService.persistAuditLog(lastImportStatus, actorUserId);
     return lastImportStatus;
   }
+
+  private static async persistAuditLog(status: ImportStatusDto, actorUserId?: number | string): Promise<void> {
+    try {
+      await pool.query(`
+        INSERT INTO catms.audit_event (
+          actor_user_id,
+          actor_id,
+          entity_type,
+          entity_id,
+          action_code,
+          event_type,
+          payload
+        ) VALUES (
+          $1,
+          $1,
+          'TREATMENT_CATALOGUE',
+          'CSV_IMPORT',
+          'IMPORT',
+          'CSV_IMPORT',
+          $2::jsonb
+        );
+      `, [
+        actorUserId ? Number(actorUserId) : null,
+        JSON.stringify(status),
+      ]);
+    } catch {
+      // Audit persistence should not fail caller if DB is mocked in unit tests
+    }
+  }
+}
+
+/**
+ * RFC-4180 compliant CSV tokenizer supporting:
+ * - Quoted fields containing commas and quotes
+ * - Escaped quotes ("")
+ * - CRLF and LF line endings
+ */
+export function parseCsvRfc4180(text: string): string[][] {
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentField = '';
+  let inQuotes = false;
+  let i = 0;
+
+  while (i < text.length) {
+    const char = text[i];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (i + 1 < text.length && text[i + 1] === '"') {
+          currentField += '"';
+          i += 2;
+          continue;
+        } else {
+          inQuotes = false;
+          i++;
+          continue;
+        }
+      } else {
+        currentField += char;
+        i++;
+        continue;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+        i++;
+        continue;
+      } else if (char === ',') {
+        currentRow.push(currentField.trim());
+        currentField = '';
+        i++;
+        continue;
+      } else if (char === '\r') {
+        if (i + 1 < text.length && text[i + 1] === '\n') {
+          i++;
+        }
+        currentRow.push(currentField.trim());
+        currentField = '';
+        if (currentRow.length > 0 && !(currentRow.length === 1 && currentRow[0] === '')) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+        i++;
+        continue;
+      } else if (char === '\n') {
+        currentRow.push(currentField.trim());
+        currentField = '';
+        if (currentRow.length > 0 && !(currentRow.length === 1 && currentRow[0] === '')) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+        i++;
+        continue;
+      } else {
+        currentField += char;
+        i++;
+        continue;
+      }
+    }
+  }
+
+  if (currentField.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentField.trim());
+    if (currentRow.length > 0 && !(currentRow.length === 1 && currentRow[0] === '')) {
+      rows.push(currentRow);
+    }
+  }
+
+  return rows;
 }
