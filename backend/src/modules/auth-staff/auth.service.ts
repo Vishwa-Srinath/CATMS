@@ -130,57 +130,46 @@ export class AuthService {
     const passwordValid = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordValid) {
-      const currentFailures = Number(user.failed_login_count || 0) + 1;
-      const isNowLocked = currentFailures >= MAX_FAILED_ATTEMPTS;
+      // Atomic statement to increment failed attempts and update lock status in a single roundtrip
+      const updateResult = await withTransaction(async (client) => {
+        const res = await client.query(
+          `UPDATE catms.user_account
+           SET failed_attempts = failed_attempts + 1,
+               failed_login_count = failed_login_count + 1,
+               is_locked = CASE WHEN failed_attempts + 1 >= 5 THEN TRUE ELSE is_locked END,
+               account_status = CASE WHEN failed_login_count + 1 >= 5 THEN 'Locked' ELSE account_status END,
+               updated_at = NOW()
+           WHERE username = $1
+           RETURNING failed_attempts, is_locked`,
+          [user.username],
+        );
 
-      await withTransaction(async (client) => {
-        if (isNowLocked) {
-          await client.query(
-            `UPDATE catms.user_account
-             SET failed_login_count = $1, account_status = 'Locked', updated_at = now()
-             WHERE user_account_id = $2`,
-            [currentFailures, user.user_account_id],
-          );
-          await client.query(
-            `INSERT INTO catms.audit_event (
-               actor_user_id, entity_type, entity_id, action_code, correlation_id, payload, client_ip
-             ) VALUES ($1, 'USER_ACCOUNT', $2, $3, $4, $5, $6)`,
-            [
-              user.user_account_id,
-              String(user.user_account_id),
-              'ACCOUNT_LOCKED',
-              cleanCorrelationId,
-              JSON.stringify({
-                reason: 'Max failed login attempts exceeded',
-                failedAttempts: currentFailures,
-              }),
-              cleanIp,
-            ],
-          );
-        } else {
-          await client.query(
-            `UPDATE catms.user_account
-             SET failed_login_count = $1, updated_at = now()
-             WHERE user_account_id = $2`,
-            [currentFailures, user.user_account_id],
-          );
-          await client.query(
-            `INSERT INTO catms.audit_event (
-               actor_user_id, entity_type, entity_id, action_code, correlation_id, payload, client_ip
-             ) VALUES ($1, 'USER_ACCOUNT', $2, $3, $4, $5, $6)`,
-            [
-              user.user_account_id,
-              String(user.user_account_id),
-              'LOGIN_FAILED',
-              cleanCorrelationId,
-              JSON.stringify({ failedAttempts: currentFailures }),
-              cleanIp,
-            ],
-          );
-        }
+        const row = res.rows[0];
+        const failedAttempts = row ? Number(row.failed_attempts) : Number(user.failed_login_count || 0) + 1;
+        const isLocked = row ? Boolean(row.is_locked) : failedAttempts >= MAX_FAILED_ATTEMPTS;
+
+        await client.query(
+          `INSERT INTO catms.audit_event (
+             actor_user_id, entity_type, entity_id, action_code, correlation_id, payload, client_ip
+           ) VALUES ($1, 'USER_ACCOUNT', $2, $3, $4, $5, $6)`,
+          [
+            user.user_account_id,
+            String(user.user_account_id),
+            isLocked ? 'ACCOUNT_LOCKED' : 'LOGIN_FAILED',
+            cleanCorrelationId,
+            JSON.stringify(
+              isLocked
+                ? { reason: 'Max failed login attempts exceeded', failedAttempts }
+                : { failedAttempts },
+            ),
+            cleanIp,
+          ],
+        );
+
+        return { failedAttempts, isLocked };
       });
 
-      if (isNowLocked) {
+      if (updateResult.isLocked) {
         throw new AppError(
           ErrorCode.ACCOUNT_DISABLED,
           'Account is locked due to repeated failed login attempts. Please contact an administrator.',
@@ -191,11 +180,11 @@ export class AuthService {
       throw AppError.unauthenticated('Invalid username or password.');
     }
 
-    // 5. Successful authentication — reset failures and record audit
+    // 5. Successful authentication — reset failures atomically and record audit
     await withTransaction(async (client) => {
       await client.query(
         `UPDATE catms.user_account
-         SET failed_login_count = 0, last_login_at = now(), updated_at = now()
+         SET failed_attempts = 0, failed_login_count = 0, last_login_at = now(), updated_at = now()
          WHERE user_account_id = $1`,
         [user.user_account_id],
       );
@@ -240,6 +229,7 @@ export class AuthService {
        JOIN catms.app_role r ON r.app_role_id = uar.app_role_id
        LEFT JOIN catms.branch b ON b.branch_id = uar.branch_scope_id
        WHERE uar.user_account_id = $1
+         AND (uar.valid_from IS NULL OR uar.valid_from <= CURRENT_DATE)
          AND (uar.valid_to IS NULL OR uar.valid_to > now())
          AND r.is_active = TRUE
        ORDER BY uar.user_account_role_id ASC
@@ -251,7 +241,7 @@ export class AuthService {
     const roleCode = activeRole ? activeRole.role_code : 'Reception';
     const roleDisplayName = activeRole ? activeRole.role_display_name : 'Receptionist';
 
-    // Query active primary branch assignment
+    // Query active primary branch assignment ensuring effective date window
     const branchRes = await pool.query(
       `SELECT eba.branch_id, b.branch_code, b.name AS branch_name
        FROM catms.employee_branch_assignment eba
@@ -259,7 +249,8 @@ export class AuthService {
        WHERE eba.employee_id = $1
          AND UPPER(eba.assignment_type) = 'PRIMARY'
          AND eba.is_active = TRUE
-         AND (eba.valid_to IS NULL OR eba.valid_to > now())
+         AND (eba.valid_from <= CURRENT_DATE)
+         AND (eba.valid_to IS NULL OR eba.valid_to >= CURRENT_DATE)
        LIMIT 1`,
       [employeeId],
     );
@@ -286,6 +277,10 @@ export class AuthService {
       branchId = Number(primaryBranch.branch_id);
       branchCode = primaryBranch.branch_code;
       branchName = primaryBranch.branch_name;
+    } else {
+      throw AppError.validationError(
+        `User account has no active clinic branch assignment. Active branch assignment (effective_from <= CURRENT_DATE and effective_to >= CURRENT_DATE) is required for role '${roleCode}'.`,
+      );
     }
 
     return {
