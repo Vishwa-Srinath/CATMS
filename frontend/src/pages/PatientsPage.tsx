@@ -20,7 +20,7 @@ import {
   AddPolicyModal,
 } from '../features/patients-insurance';
 import type { PatientDto } from '../api/patients.api';
-import type { InsurancePolicyDto } from '../api/insurance.api';
+import type { InsurancePolicyDto, InsurancePolicyStatus } from '../api/insurance.api';
 import type { Patient } from '../types';
 
 export default function PatientsPage() {
@@ -73,7 +73,7 @@ export default function PatientsPage() {
         providerName: pol.provider,
         insuranceProvider: pol.provider,
         policyNumber: pol.policyNo,
-        policyStatus: (pol.status?.toUpperCase() ?? 'ACTIVE') as any,
+        policyStatus: (pol.status?.toUpperCase() ?? 'ACTIVE') as InsurancePolicyStatus,
         validFrom: pol.validFrom,
         validTo: pol.validTo || null,
         notes: null,

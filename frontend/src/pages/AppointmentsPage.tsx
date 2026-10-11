@@ -105,6 +105,10 @@ export default function AppointmentsPage() {
         name: d.fullName,
         role: 'Doctor' as const,
         branchId: '1',
+        email: '',
+        phone: '',
+        nic: '',
+        joined: d.practiceStartDate || '2026-01-01',
         isActive: d.isAcceptingAppointments,
         license: d.medicalLicenseNo,
         specialties: d.specialties?.map((s) => s.name) ?? [],
@@ -126,8 +130,8 @@ export default function AppointmentsPage() {
         id: String(p.patientId),
         name: `${p.firstName} ${p.lastName}`,
         patientNo: p.patientNumber,
-        nic: p.nic || '',
-        phone: p.phone,
+        nic: p.primaryIdentity?.identityNumber || p.nationalId || '',
+        phone: p.contactNumber || p.phone || '',
       }));
     }
     return data.patients.map((p) => ({

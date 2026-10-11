@@ -65,9 +65,11 @@ export function WalkInAppointmentModal({
         setStartTime(defaultStart);
         setEndTime(addMinutesToTime(defaultStart, 30));
       }
-      if (patients.length > 0 && (!patientId || !patients.some((p) => String(p.id) === patientId))) {
-        setPatientId(String(patients[0].id));
-      }
+      setPatientId((prev) =>
+        patients.length > 0 && (!prev || !patients.some((p) => String(p.id) === prev))
+          ? String(patients[0].id)
+          : prev,
+      );
       setError(null);
     }
   }, [open, defaultBranchId, defaultDoctorId, defaultDate, defaultStart, doctors, patients]);

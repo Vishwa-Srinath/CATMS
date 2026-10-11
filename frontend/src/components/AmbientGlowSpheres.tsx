@@ -197,7 +197,7 @@ export function AmbientGlowSpheres({
         opacityClass: 'opacity-30',
       },
     ],
-    []
+    [roleAccentColor]
   )
 
   return (

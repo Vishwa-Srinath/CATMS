@@ -357,7 +357,7 @@ export default function FinancePage() {
       insuranceClaimId: null,
       amount: String(p.amount),
       netAmount: String(p.amount),
-      paymentMethod: p.method as any,
+      paymentMethod: p.method as 'Cash' | 'Card' | 'BankTransfer' | 'Online',
       paymentStatus: 'Posted',
       paidAt: p.paidAt,
       referenceNumber: p.reference || null,

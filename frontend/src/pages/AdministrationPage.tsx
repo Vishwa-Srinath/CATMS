@@ -358,6 +358,12 @@ export default function AdministrationPage() {
     return auditHook.logs.length > 0 ? auditHook.logs : fallbackAuditLogs;
   }, [auditHook.logs, fallbackAuditLogs]);
 
+  const isOfflineError = (err: unknown, message: string) =>
+    message.includes('backend') ||
+    message.includes('offline') ||
+    message.includes('Network') ||
+    (typeof err === 'object' && err !== null && 'code' in err && (err as { code?: string }).code === 'BACKEND_OFFLINE')
+
   // Handlers with toast feedback
   const handleCreateBranch = async (data: CreateBranchInput) => {
     try {
@@ -369,7 +375,7 @@ export default function AdministrationPage() {
       })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to create branch.'
-      if (message.includes('backend') || message.includes('offline') || message.includes('Network') || (err as any)?.code === 'BACKEND_OFFLINE') {
+      if (isOfflineError(err, message)) {
         notify({
           type: 'success',
           title: 'Branch facility created (Demo)',
@@ -392,7 +398,7 @@ export default function AdministrationPage() {
       })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to update branch.'
-      if (message.includes('backend') || message.includes('offline') || message.includes('Network') || (err as any)?.code === 'BACKEND_OFFLINE') {
+      if (isOfflineError(err, message)) {
         notify({
           type: 'success',
           title: 'Branch information updated (Demo)',
@@ -415,7 +421,7 @@ export default function AdministrationPage() {
       })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to assign branch manager.'
-      if (message.includes('backend') || message.includes('offline') || message.includes('Network') || (err as any)?.code === 'BACKEND_OFFLINE') {
+      if (isOfflineError(err, message)) {
         notify({
           type: 'success',
           title: 'Branch manager assigned (Demo)',
@@ -449,7 +455,7 @@ export default function AdministrationPage() {
       })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to register employee.'
-      if (message.includes('backend') || message.includes('offline') || message.includes('Network') || (err as any)?.code === 'BACKEND_OFFLINE') {
+      if (isOfflineError(err, message)) {
         notify({
           type: 'success',
           title: 'Employee registered (Demo)',
@@ -472,7 +478,7 @@ export default function AdministrationPage() {
       })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to reassign branch.'
-      if (message.includes('backend') || message.includes('offline') || message.includes('Network') || (err as any)?.code === 'BACKEND_OFFLINE') {
+      if (isOfflineError(err, message)) {
         notify({
           type: 'success',
           title: 'Home branch reassigned (Demo)',
@@ -495,7 +501,7 @@ export default function AdministrationPage() {
       })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to modify employment status.'
-      if (message.includes('backend') || message.includes('offline') || message.includes('Network') || (err as any)?.code === 'BACKEND_OFFLINE') {
+      if (isOfflineError(err, message)) {
         notify({
           type: 'info',
           title: 'Employment status modified (Demo)',
@@ -518,7 +524,7 @@ export default function AdministrationPage() {
       })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to register doctor credentials.'
-      if (message.includes('backend') || message.includes('offline') || message.includes('Network') || (err as any)?.code === 'BACKEND_OFFLINE') {
+      if (isOfflineError(err, message)) {
         notify({
           type: 'success',
           title: 'Doctor credentials recorded (Demo)',
@@ -541,7 +547,7 @@ export default function AdministrationPage() {
       })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to create user account.'
-      if (message.includes('backend') || message.includes('offline') || message.includes('Network') || (err as any)?.code === 'BACKEND_OFFLINE') {
+      if (isOfflineError(err, message)) {
         notify({
           type: 'success',
           title: 'User account provisioned (Demo)',
@@ -564,7 +570,7 @@ export default function AdministrationPage() {
       })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to unlock user account.'
-      if (message.includes('backend') || message.includes('offline') || message.includes('Network') || (err as any)?.code === 'BACKEND_OFFLINE') {
+      if (isOfflineError(err, message)) {
         notify({
           type: 'success',
           title: 'User account unlocked (Demo)',
@@ -587,7 +593,7 @@ export default function AdministrationPage() {
       })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to update user role.'
-      if (message.includes('backend') || message.includes('offline') || message.includes('Network') || (err as any)?.code === 'BACKEND_OFFLINE') {
+      if (isOfflineError(err, message)) {
         notify({
           type: 'success',
           title: 'Role authorization updated (Demo)',
