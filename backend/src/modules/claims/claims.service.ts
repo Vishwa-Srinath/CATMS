@@ -664,7 +664,10 @@ export class ClaimsService {
   /**
    * List claims with optional filtering and pagination.
    */
-  async listClaims(filters: ClaimFilters): Promise<{
+  async listClaims(
+    filters: ClaimFilters,
+    user?: JwtPayload,
+  ): Promise<{
     claims: ClaimDto[];
     total: number;
     page: number;
@@ -689,6 +692,12 @@ export class ClaimsService {
     if (filters.status) {
       conditions.push(`c.claim_status = $${pIdx++}`);
       params.push(filters.status);
+    }
+
+    // Branch isolation for non-clinic-wide users (Branch Manager, Reception, Clinician)
+    if (user && user.branchId !== 'all') {
+      conditions.push(`app.branch_id = $${pIdx++}`);
+      params.push(user.branchId);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

@@ -858,6 +858,18 @@ function handleMockQuery(text: string, params: unknown[] = []): { rows: unknown[
       const invId = Number(params[0]);
       filtered = filtered.filter((c) => c.invoice_id === invId);
     }
+    if (text.includes('app.branch_id = $')) {
+      const match = text.match(/app\.branch_id = \$(\d+)/);
+      if (match) {
+        const pIdx = parseInt(match[1], 10) - 1;
+        const bId = Number(params[pIdx]);
+        filtered = filtered.filter((c) => {
+          const inv = invoices.find((i) => i.invoice_id === c.invoice_id);
+          const app = appointments.find((a) => a.appointment_id === inv?.appointment_id);
+          return app && app.branch_id === bId;
+        });
+      }
+    }
     return { rows: [{ count: String(filtered.length) }] };
   }
 
@@ -867,6 +879,18 @@ function handleMockQuery(text: string, params: unknown[] = []): { rows: unknown[
     if (text.includes('c.invoice_id = $')) {
       const invId = Number(params[0]);
       filtered = filtered.filter((c) => c.invoice_id === invId);
+    }
+    if (text.includes('app.branch_id = $')) {
+      const match = text.match(/app\.branch_id = \$(\d+)/);
+      if (match) {
+        const pIdx = parseInt(match[1], 10) - 1;
+        const bId = Number(params[pIdx]);
+        filtered = filtered.filter((c) => {
+          const inv = invoices.find((i) => i.invoice_id === c.invoice_id);
+          const app = appointments.find((a) => a.appointment_id === inv?.appointment_id);
+          return app && app.branch_id === bId;
+        });
+      }
     }
     const rows = filtered.map((c) => {
       const pol = policies.find((p) => p.policy_id === c.policy_id);
@@ -1536,6 +1560,26 @@ describe('CATMS-049 — Claims API & Reconciliation Integration Test Suite', () 
 
       expect(res.status).toBe(422);
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('enforces branch isolation on GET /api/v1/claims for single-branch roles', async () => {
+      const branch2Token = makeToken({
+        userId: 99,
+        employeeId: 199,
+        username: 'other.branch.rec',
+        role: 'Reception',
+        branchId: 2,
+        fullName: 'Branch 2 Receptionist',
+      });
+
+      // Claims in fixture belong to branch 1
+      const res = await request(app)
+        .get('/api/v1/claims')
+        .set('Authorization', `Bearer ${branch2Token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.claims).toHaveLength(0);
+      expect(res.body.data.total).toBe(0);
     });
   });
 });

@@ -112,7 +112,7 @@ claimRouter.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const query = claimListQuerySchema.parse(req.query);
-      const result = await claimsService.listClaims(query);
+      const result = await claimsService.listClaims(query, req.user!);
       const correlationId = res.locals['correlationId'] as string;
       res.status(200).json(successEnvelope(result, correlationId));
     } catch (err) {
