@@ -116,8 +116,29 @@ export function RuleError({ error }: { error: unknown }) {
   if (!error) return null
   const code = (error instanceof ClinicRuleError && error.code) || (typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code) : undefined)
   const message = error instanceof Error ? error.message : 'The operation could not be completed.'
+  const fieldErrors = (typeof error === 'object' && error !== null && 'fieldErrors' in error && Array.isArray((error as { fieldErrors: unknown }).fieldErrors))
+    ? (error as { fieldErrors: Array<{ field?: string; message?: string }> }).fieldErrors
+    : []
+
   return <div className="rule-error rounded-xl border border-[#E8C2CA] bg-[#FBEAEE] p-4" role="alert">
-    <div className="flex gap-3"><AlertTriangle className="mt-0.5 shrink-0 text-[#C4425A]" size={18} /><div><p className="font-bold text-[#962C41]">Operation rejected</p><p className="mt-1 text-sm leading-5 text-[#962C41]">{message}</p>{code && <code className="mt-2 inline-block rounded-md bg-white/60 px-2 py-1 text-[11px] font-medium text-[#962C41]">{code}</code>}</div></div>
+    <div className="flex gap-3">
+      <AlertTriangle className="mt-0.5 shrink-0 text-[#C4425A]" size={18} />
+      <div className="flex-1">
+        <p className="font-bold text-[#962C41]">Operation rejected</p>
+        <p className="mt-1 text-sm leading-5 text-[#962C41]">{message}</p>
+        {fieldErrors.length > 0 && (
+          <ul className="mt-2 list-disc list-inside text-xs space-y-1 text-[#962C41]">
+            {fieldErrors.map((fe, idx) => (
+              <li key={idx}>
+                {fe.field ? <strong className="capitalize">{fe.field}: </strong> : null}
+                {fe.message}
+              </li>
+            ))}
+          </ul>
+        )}
+        {code && <code className="mt-2 inline-block rounded-md bg-white/60 px-2 py-1 text-[11px] font-medium text-[#962C41]">{code}</code>}
+      </div>
+    </div>
   </div>
 }
 

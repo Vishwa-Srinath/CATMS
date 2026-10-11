@@ -1,29 +1,52 @@
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useClinic } from '../context/ClinicContext'
-import type { SessionUser } from '../types'
+import { useSession } from '../app/useSession'
+import { ApiError } from '../api/errors'
+import type { Role, SessionUser } from '../types'
 import { Button, Field } from '../components/ui'
 import { AmbientGlowSpheres } from '../components/AmbientGlowSpheres'
 import medSyncLogo from '../assets/brand/medsync-logo.png'
 import loginIllustration from '../assets/brand/login-illustration.png'
 
+const defaultCredentials: Record<Role, { username: string; password: string }> = {
+  Receptionist: { username: 'reception.user', password: 'CorrectPassword123!' },
+  Clinician: { username: 's.silva', password: 'CorrectPassword123!' },
+  Manager: { username: 'k.perera', password: 'CorrectPassword123!' },
+  Admin: { username: 'admin.user', password: 'CorrectPassword123!' },
+}
+
 export default function LoginPage() {
+  const session = useSession()
   const { demoUsers, signIn } = useClinic()
   const [selected, setSelected] = useState<SessionUser>(demoUsers[0])
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('medsync-demo')
+  const [username, setUsername] = useState(defaultCredentials[demoUsers[0].role]?.username ?? 'reception.user')
+  const [password, setPassword] = useState(defaultCredentials[demoUsers[0].role]?.password ?? 'CorrectPassword123!')
   const [showPassword, setShowPassword] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  // Keep email in sync with selected staff member
-  useEffect(() => {
-    const computedEmail =
-      selected.name.toLowerCase().replace('dr. ', '').replace(' ', '.') + '@medsync.lk'
-    setEmail(computedEmail)
-  }, [selected])
+  const handleSelectRole = (demoUser: SessionUser) => {
+    setSelected(demoUser)
+    setErrorMessage(null)
+    const creds = defaultCredentials[demoUser.role]
+    if (creds) {
+      setUsername(creds.username)
+      setPassword(creds.password)
+    }
+  }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    signIn(selected)
+    setErrorMessage(null)
+    try {
+      await session.login({ username, password })
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setErrorMessage(err.message)
+      } else {
+        setErrorMessage('Failed to sign in. Please verify credentials.')
+      }
+    }
   }
 
   // Color theme unified to Receptionist (Harbor Blue) across all roles
@@ -108,7 +131,7 @@ export default function LoginPage() {
                     type="button"
                     role="tab"
                     aria-selected={active}
-                    onClick={() => setSelected(demoUser)}
+                    onClick={() => handleSelectRole(demoUser)}
                     className={`tab-button flex-1 text-center py-2 text-xs font-semibold transition ${active
                       ? 'tab-button-active bg-white/95 font-bold text-[var(--portal-accent)] shadow-sm border border-white/80'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
@@ -120,16 +143,24 @@ export default function LoginPage() {
               })}
             </div>
 
+            {errorMessage && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50/90 p-3 text-xs text-red-800 backdrop-blur-sm" role="alert">
+                <p className="font-semibold">{errorMessage}</p>
+              </div>
+            )}
+
             {/* Credentials Form */}
             <form className="relative space-y-4" onSubmit={handleSubmit}>
-              <Field label="Work email">
+              <Field label="Username or work email">
                 <input
                   className="input h-11 border-white/70 bg-white/65 shadow-[inset_0_1px_2px_rgba(18,35,43,0.02)] backdrop-blur-md focus:bg-white/95 focus:border-[var(--portal-accent)] transition-all"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   autoComplete="username"
+                  disabled={session.isLoggingIn}
+                  placeholder="e.g. reception.user"
                 />
               </Field>
 
@@ -142,6 +173,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
+                    disabled={session.isLoggingIn}
                   />
                   <button
                     type="button"
@@ -165,14 +197,16 @@ export default function LoginPage() {
                 </label>
                 <button
                   type="button"
+                  onClick={() => signIn(selected)}
                   className="font-semibold text-[var(--portal-accent)] hover:underline"
+                  title="Direct demo bypass for offline testing"
                 >
-                  Forgot password?
+                  Offline demo bypass
                 </button>
               </div>
 
-              <Button type="submit" className="mt-2 h-11 w-full text-[14px] shadow-sm hover:shadow">
-                Sign in to workspace
+              <Button type="submit" className="mt-2 h-11 w-full text-[14px] shadow-sm hover:shadow" disabled={session.isLoggingIn}>
+                {session.isLoggingIn ? 'Signing in to workspace…' : 'Sign in to workspace'}
                 <ArrowRight size={16} />
               </Button>
             </form>
