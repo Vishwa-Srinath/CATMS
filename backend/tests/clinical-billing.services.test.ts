@@ -313,4 +313,49 @@ describe('clinical and payment database workflows', () => {
       String(sql).includes('greatest(patient_liability_amount - patient_paid_amount'),
     )).toBe(true);
   });
+
+  it('returns the existing reversal without invoking catms.reverse_payment when idempotencyKey matches', async () => {
+    const service = new PaymentsService();
+    const reversalId = '802';
+    const idempotencyKey = '550e8400-e29b-41d4-a716-446655440000';
+
+    mockClientQuery.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM catms.payment_reversal') && sql.includes('WHERE idempotency_key = $1::uuid')) {
+        return dbResult([{ payment_reversal_id: reversalId }]);
+      }
+      if (sql.includes('FROM catms.payment p')) {
+        return dbResult([{
+          payment_id: '501',
+          invoice_id: '100',
+          receipt_number: 'RCT-501',
+          payer_type: 'Patient',
+          insurance_claim_id: null,
+          amount: '75.00',
+          payment_method: 'Cash',
+          payment_status: 'PartiallyReversed',
+          paid_at: '2026-10-01T10:00:00.000Z',
+          reference_number: null,
+          reversed_amount: '25.00',
+          net_amount: '50.00',
+          reversals: [{
+            paymentReversalId: reversalId,
+            amount: '25.00',
+            reason: 'Partial refund',
+            reversedAt: '2026-10-01T10:05:00.000Z',
+          }],
+        }]);
+      }
+      return dbResult();
+    });
+
+    const result = await service.reverse('501', 9, '25.00', 'Partial refund', idempotencyKey);
+    expect(result.paymentReversalId).toBe(reversalId);
+    expect(result.payment.reversedAmount).toBe('25.00');
+
+    // Asserts catms.reverse_payment was NOT called because idempotencyKey already existed
+    const procedureCalls = mockClientQuery.mock.calls.filter(([sql]) =>
+      String(sql).includes('catms.reverse_payment'),
+    );
+    expect(procedureCalls).toHaveLength(0);
+  });
 });

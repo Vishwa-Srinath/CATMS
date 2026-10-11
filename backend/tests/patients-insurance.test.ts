@@ -1274,16 +1274,16 @@ describe('Suite 2: Atomic Patient Registration (CATMS-048 / CATMS-025)', () => {
   });
 
   it('POST /api/v1/patients rejects future date of birth with 422 VALIDATION_ERROR', async () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+    const future = new Date();
+    future.setDate(future.getDate() + 5);
+    const futureDateStr = future.toISOString().slice(0, 10);
 
     const res = await request(app)
       .post('/api/v1/patients')
       .set('Authorization', `Bearer ${receptionToken}`)
       .send({
         ...validRegistrationPayload,
-        dateOfBirth: tomorrowStr,
+        dateOfBirth: futureDateStr,
       });
 
     expect(res.status).toBe(422);

@@ -188,7 +188,10 @@ export async function postPayment(input: CreatePaymentRequest): Promise<ApiPayme
 
 export async function reversePayment(
   paymentId: string,
-  input: { amount: string; reason: string },
+  input: { amount: string; reason: string; idempotencyKey?: string },
 ): Promise<{ paymentReversalId: string; payment: ApiPayment }> {
-  return apiClient.post(`/payments/${encodeURIComponent(paymentId)}/reverse`, input)
+  return apiClient.post(`/payments/${encodeURIComponent(paymentId)}/reverse`, {
+    ...input,
+    idempotencyKey: input.idempotencyKey ?? (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-0000-0000-000000000000'),
+  })
 }
