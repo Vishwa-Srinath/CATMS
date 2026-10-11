@@ -7,7 +7,7 @@
  * reschedules, cancellations, completion, and detailed audit history.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -39,6 +39,8 @@ import {
   mapDtoToAppointment,
   parseNumericId,
 } from '../features/appointments';
+import { useBranches, useDoctors } from '../features/administration';
+import { usePatients } from '../features/patients-insurance';
 import type {
   AppointmentStatus,
   BookAppointmentInput,
@@ -55,9 +57,13 @@ export default function AppointmentsPage() {
     notify,
   } = useClinic();
 
+  const branchesQuery = useBranches();
+  const doctorsQuery = useDoctors();
+  const patientsQuery = usePatients();
+
   const [date, setDate] = useState(DEMO_TODAY);
   const [branch, setBranch] = useState(
-    user?.branchId === 'all' || !user?.branchId ? 'b1' : user.branchId,
+    user?.branchId === 'all' || !user?.branchId ? '1' : String(user.branchId),
   );
   const [doctorFilter, setDoctorFilter] = useState(
     user?.role === 'Clinician' ? user.id : 'all',
@@ -66,7 +72,7 @@ export default function AppointmentsPage() {
   const [dialog, setDialog] = useState<DialogType>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [bookingDoctor, setBookingDoctor] = useState(
-    user?.role === 'Clinician' ? user.id : 'e1',
+    user?.role === 'Clinician' ? user.id : '4',
   );
   const [bookingStart, setBookingStart] = useState('11:30');
 
@@ -74,21 +80,75 @@ export default function AppointmentsPage() {
   const canManage = user?.role === 'Receptionist' || user?.role === 'Admin';
   const canComplete = user?.role === 'Clinician' || user?.role === 'Admin';
 
-  // Branch and Doctor data
-  const doctors = useMemo(
-    () =>
-      data.staff.filter(
-        (staff) =>
-          staff.role === 'Doctor' &&
-          staff.isActive &&
-          (branch === 'all' || staff.branchId === branch || staff.id === user?.id),
-      ),
-    [data.staff, branch, user?.id],
-  );
+  // Live branches from database with demo fallback
+  const effectiveBranches = useMemo(() => {
+    if (branchesQuery.branches && branchesQuery.branches.length > 0) {
+      return branchesQuery.branches.map((b) => ({
+        id: String(b.branchId),
+        code: b.branchCode,
+        name: b.name,
+      }));
+    }
+    return data.branches.map((b) => ({
+      id: String(b.id),
+      code: b.code,
+      name: b.name,
+    }));
+  }, [branchesQuery.branches, data.branches]);
+
+  // Live doctors from database with demo fallback
+  const effectiveDoctors = useMemo<StaffMember[]>(() => {
+    if (doctorsQuery.doctors && doctorsQuery.doctors.length > 0) {
+      return doctorsQuery.doctors.map((d) => ({
+        id: String(d.doctorId),
+        employeeNo: d.employeeNumber,
+        name: d.fullName,
+        role: 'Doctor' as const,
+        branchId: '1',
+        isActive: d.isAcceptingAppointments,
+        license: d.medicalLicenseNo,
+        specialties: d.specialties?.map((s) => s.name) ?? [],
+        consultationFee: d.defaultConsultationFee ?? 2500,
+      }));
+    }
+    return data.staff.filter(
+      (staff) =>
+        staff.role === 'Doctor' &&
+        staff.isActive &&
+        (branch === 'all' || staff.branchId === branch || staff.id === user?.id),
+    );
+  }, [doctorsQuery.doctors, data.staff, branch, user?.id]);
+
+  // Live patients from database with demo fallback
+  const effectivePatients = useMemo(() => {
+    if (patientsQuery.patients && patientsQuery.patients.length > 0) {
+      return patientsQuery.patients.map((p) => ({
+        id: String(p.patientId),
+        name: `${p.firstName} ${p.lastName}`,
+        patientNo: p.patientNumber,
+        nic: p.nic || '',
+        phone: p.phone,
+      }));
+    }
+    return data.patients.map((p) => ({
+      id: String(p.id),
+      name: p.name,
+      patientNo: p.patientNo,
+      nic: p.nic || '',
+      phone: p.phone,
+    }));
+  }, [patientsQuery.patients, data.patients]);
+
+  // Auto-synchronize default booking doctor to first available real doctor
+  useEffect(() => {
+    if (effectiveDoctors.length > 0 && !effectiveDoctors.some((d) => d.id === bookingDoctor)) {
+      setBookingDoctor(effectiveDoctors[0].id);
+    }
+  }, [effectiveDoctors, bookingDoctor]);
 
   const displayDoctors = useMemo(
-    () => doctors.filter((doc) => doctorFilter === 'all' || doc.id === doctorFilter),
-    [doctors, doctorFilter],
+    () => effectiveDoctors.filter((doc) => doctorFilter === 'all' || doc.id === doctorFilter),
+    [effectiveDoctors, doctorFilter],
   );
 
   // Live Query Hook
@@ -131,19 +191,19 @@ export default function AppointmentsPage() {
   // Lookup maps
   const patientNameMap = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const p of data.patients) {
+    for (const p of effectivePatients) {
       map[p.id] = p.name;
     }
     return map;
-  }, [data.patients]);
+  }, [effectivePatients]);
 
   const doctorMap = useMemo(() => {
     const map: Record<string, StaffMember> = {};
-    for (const d of data.staff) {
+    for (const d of effectiveDoctors) {
       map[d.id] = d;
     }
     return map;
-  }, [data.staff]);
+  }, [effectiveDoctors]);
 
   const shiftDate = (days: number) => {
     const next = new Date(`${date}T12:00:00`);
@@ -154,8 +214,8 @@ export default function AppointmentsPage() {
   const changeBranch = (newBranchId: string) => {
     setBranch(newBranchId);
     setDoctorFilter('all');
-    const firstDoctor = data.staff.find(
-      (s) => s.role === 'Doctor' && s.isActive && s.branchId === newBranchId,
+    const firstDoctor = effectiveDoctors.find(
+      (s) => s.role === 'Doctor' && s.isActive && (s.branchId === newBranchId || !s.branchId),
     );
     if (firstDoctor) setBookingDoctor(firstDoctor.id);
   };
@@ -256,13 +316,13 @@ export default function AppointmentsPage() {
 
   // Patient and Doctor for selected appointment
   const selectedPatient = selectedAppointment
-    ? data.patients.find((p) => p.id === selectedAppointment.patientId)
+    ? effectivePatients.find((p) => p.id === selectedAppointment.patientId)
     : undefined;
   const selectedDoctorInfo = selectedAppointment
     ? doctorMap[selectedAppointment.doctorId]
     : undefined;
   const selectedBranchName = selectedAppointment
-    ? data.branches.find((b) => b.id === selectedAppointment.branchId)?.name
+    ? effectiveBranches.find((b) => b.id === selectedAppointment.branchId)?.name
     : undefined;
 
   return (
@@ -326,7 +386,7 @@ export default function AppointmentsPage() {
             <option value="all" disabled>
               Select branch
             </option>
-            {data.branches.map((item) => (
+            {effectiveBranches.map((item) => (
               <option value={item.id} key={item.id}>
                 {item.name}
               </option>
@@ -341,7 +401,7 @@ export default function AppointmentsPage() {
             disabled={user?.role === 'Clinician'}
           >
             <option value="all">All doctors</option>
-            {doctors.map((doc) => (
+            {effectiveDoctors.map((doc) => (
               <option value={doc.id} key={doc.id}>
                 {doc.name}
               </option>
@@ -479,9 +539,9 @@ export default function AppointmentsPage() {
         defaultDoctorId={bookingDoctor}
         defaultDate={date}
         defaultStart={bookingStart}
-        branches={data.branches}
-        doctors={data.staff.filter((s) => s.role === 'Doctor' && s.isActive)}
-        patients={data.patients}
+        branches={effectiveBranches}
+        doctors={effectiveDoctors}
+        patients={effectivePatients}
       />
 
       <WalkInAppointmentModal
@@ -492,9 +552,9 @@ export default function AppointmentsPage() {
         defaultDoctorId={bookingDoctor}
         defaultDate={date}
         defaultStart={bookingStart}
-        branches={data.branches}
-        doctors={data.staff.filter((s) => s.role === 'Doctor' && s.isActive)}
-        patients={data.patients}
+        branches={effectiveBranches}
+        doctors={effectiveDoctors}
+        patients={effectivePatients}
       />
 
       <RescheduleAppointmentModal
