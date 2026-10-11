@@ -22,6 +22,7 @@ const envSchema = z.object({
   POSTGRES_DB:   z.string().min(1),
   POSTGRES_USER: z.string().min(1),
   POSTGRES_PASSWORD: z.string().min(1),
+  POSTGRES_SSL:  z.string().optional().transform(v => v === 'true' || v === 'require' || v === '1').default('false'),
 
   // ── Authentication ────────────────────────────────────────────────────────
   JWT_SECRET: z.string().min(64, {
