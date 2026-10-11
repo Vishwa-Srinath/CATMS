@@ -31,6 +31,7 @@ import request from 'supertest';
 import type { Express } from 'express';
 import type { PoolClient } from 'pg';
 import jwt from 'jsonwebtoken';
+import { getClinicTodayString } from '../src/modules/patients-insurance/patients-insurance.schema';
 
 const JWT_SECRET = 'a'.repeat(64);
 
@@ -1274,8 +1275,8 @@ describe('Suite 2: Atomic Patient Registration (CATMS-048 / CATMS-025)', () => {
   });
 
   it('POST /api/v1/patients rejects future date of birth with 422 VALIDATION_ERROR', async () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrow = new Date(`${getClinicTodayString()}T00:00:00.000Z`);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
     const tomorrowStr = tomorrow.toISOString().slice(0, 10);
 
     const res = await request(app)
