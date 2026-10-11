@@ -14,6 +14,7 @@ const defaultCredentials: Record<Role, { username: string; password: string }> =
   Clinician: { username: 's.silva', password: 'CorrectPassword123!' },
   Manager: { username: 'k.perera', password: 'CorrectPassword123!' },
   Admin: { username: 'admin.user', password: 'CorrectPassword123!' },
+  QA: { username: 'admin.user', password: 'CorrectPassword123!' },
 }
 
 export default function LoginPage() {
