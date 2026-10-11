@@ -32,7 +32,7 @@ export function useSession() {
           signal.addEventListener('abort', () => controller.abort(), { once: true });
         }
 
-        const session = await authApi.getMe(controller.signal);
+        const session = await authApi.getMe({ signal: controller.signal, skipSessionExpiry: true });
         clearTimeout(timeoutId);
         return session;
       } catch (err) {
@@ -60,7 +60,7 @@ export function useSession() {
 
   const logoutMutation = useMutation({
     mutationFn: () => authApi.logout(),
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.setQueryData(SESSION_QUERY_KEY, null);
       queryClient.clear();
     },

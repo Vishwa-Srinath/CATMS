@@ -439,10 +439,11 @@ describe('CATMS-060 — Claims Submission and Review Frontend API & RBAC Integra
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: async () => ({ data: mockClaims }),
+        json: async () => ({ data: { claims: mockClaims, total: 1, page: 1, limit: 100 } }),
       });
 
-      const claims = await claimsApi.list({ invoiceId: 701 });
+      const paginatedClaims = await claimsApi.list({ invoiceId: 701 });
+      const claims = paginatedClaims.claims;
       expect(claims).toHaveLength(1);
       expect(claims[0].claimNumber).toBe('CLM-1001');
       expect(globalThis.fetch).toHaveBeenCalledWith(

@@ -293,4 +293,156 @@ describe('CATMS-055 — Reports & Import API Contract Skeleton', () => {
       expect(res.body).toHaveProperty('data');
     });
   });
+
+  // ── 6. Controlled CSV Ingestion (CATMS-071) ──────────────────────────────────
+  describe('Controlled CSV Ingestion (CATMS-071)', () => {
+    it('rejects unauthenticated import requests with 401', async () => {
+      const res = await request(app)
+        .post('/api/v1/reports/import-csv')
+        .set('Content-Type', 'text/plain')
+        .send('code,category_id,name,default_price,duration_minutes,is_active\nTEST,1,Sample,500,15,true');
+      expect(res.status).toBe(401);
+    });
+
+    it('rejects Reception users from CSV import with 403 FORBIDDEN', async () => {
+      const res = await request(app)
+        .post('/api/v1/reports/import-csv')
+        .set('Authorization', `Bearer ${receptionToken}`)
+        .set('Content-Type', 'text/plain')
+        .send('code,category_id,name,default_price,duration_minutes,is_active\nTEST,1,Sample,500,15,true');
+      expect(res.status).toBe(403);
+    });
+
+    it('rejects Branch Manager from CSV import with 403 FORBIDDEN', async () => {
+      const res = await request(app)
+        .post('/api/v1/reports/import-csv')
+        .set('Authorization', `Bearer ${managerTokenBranch1}`)
+        .set('Content-Type', 'text/plain')
+        .send('code,category_id,name,default_price,duration_minutes,is_active\nTEST,1,Sample,500,15,true');
+      expect(res.status).toBe(403);
+    });
+
+    it('handles empty CSV input with failed status', async () => {
+      const res = await request(app)
+        .post('/api/v1/reports/import-csv')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Content-Type', 'text/plain')
+        .send('');
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({
+        status: 'failed',
+        totalRecords: 0,
+        acceptedRecords: 0,
+      });
+      expect(res.body.data.errors).toContain('Empty CSV payload received.');
+    });
+
+    it('rejects CSV with missing required header columns', async () => {
+      const invalidCsv = 'invalid_header,random_column\nval1,val2';
+      const res = await request(app)
+        .post('/api/v1/reports/import-csv')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Content-Type', 'text/plain')
+        .send(invalidCsv);
+      expect(res.status).toBe(200);
+      expect(res.body.data.status).toBe('failed');
+      expect(res.body.data.errors[0]).toContain('Invalid CSV headers');
+    });
+
+    it('successfully processes valid reference CSV data and returns summary', async () => {
+      const validCsv = [
+        'code,category_id,name,default_price,duration_minutes,is_active',
+        'TREAT-101,1,General Dental Checkup,2500.00,30,true',
+        'TREAT-102,2,Digital Dental X-Ray,1800.00,15,true',
+      ].join('\n');
+
+      const res = await request(app)
+        .post('/api/v1/reports/import-csv')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Content-Type', 'text/plain')
+        .send(validCsv);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({
+        status: 'completed',
+        totalRecords: 2,
+        acceptedRecords: 2,
+        rejectedRecords: 0,
+        errors: [],
+      });
+    });
+
+    it('validates row constraints and logs errors for invalid price or category', async () => {
+      const mixedCsv = [
+        'code,category_id,name,default_price,duration_minutes,is_active',
+        'TREAT-201,1,Valid Treatment,1500.00,20,true',
+        'TREAT-202,-1,Invalid Category,1000.00,15,true',
+        'TREAT-203,1,Invalid Price,-50.00,15,true',
+      ].join('\n');
+
+      const res = await request(app)
+        .post('/api/v1/reports/import-csv')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Content-Type', 'text/plain')
+        .send(mixedCsv);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.totalRecords).toBe(3);
+      expect(res.body.data.acceptedRecords).toBe(1);
+      expect(res.body.data.rejectedRecords).toBe(2);
+      expect(res.body.data.errors.length).toBe(2);
+    });
+
+    it('reflects updated ingestion status in GET /import-status', async () => {
+      const res = await request(app)
+        .get('/api/v1/reports/import-status')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data.lastImportedAt).not.toBeNull();
+    });
+  });
+
+  // ── 7. Report Objects & Data Mappings (CATMS-072) ───────────────────────────
+  describe('Report Objects & Data Mappings (CATMS-072)', () => {
+    it('returns R1 branch summary with correct mapped fields', async () => {
+      const res = await request(app)
+        .get('/api/v1/reports/daily-appointments')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+
+    it('returns R2 doctor revenue with gross and collections fields', async () => {
+      const res = await request(app)
+        .get('/api/v1/reports/doctor-revenue')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+
+    it('returns R3 patient balances with outstanding balance calculations', async () => {
+      const res = await request(app)
+        .get('/api/v1/reports/patient-outstanding')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+
+    it('returns R4 treatment counts aggregated by category', async () => {
+      const res = await request(app)
+        .get('/api/v1/reports/treatments-by-category')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+
+    it('returns R5 insurance receipts aggregated by month', async () => {
+      const res = await request(app)
+        .get('/api/v1/reports/insurance-vs-cash')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+  });
 });
+

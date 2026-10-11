@@ -1,0 +1,3 @@
+code,category_id,name,default_price,duration_minutes,is_active
+TEST-01,1,Routine Test,500.00,15,true
+TEST-02,2,Blood Test,1000.00,20,true

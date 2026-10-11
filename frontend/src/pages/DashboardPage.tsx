@@ -108,7 +108,8 @@ export default function DashboardPage() {
   const todayScheduled = visibleAppointments.filter((item) => item.status === 'Scheduled').length;
   const todayCompleted = visibleAppointments.filter((item) => item.status === 'Completed').length;
   const walkIns = visibleAppointments.filter((item) => item.source === 'Walk-in').length;
-  const firstName = user.name.replace('Dr. ', '').split(' ')[0]
+  const safeName = user.name || 'User'
+  const firstName = safeName.replace('Dr. ', '').split(' ')[0]
   const branchName = user.branchId === 'all' ? 'All branches' : data.branches.find((branch) => branch.id === user.branchId)?.name ?? 'MedSync Clinics'
   const copy = roleCopy[user.role]
 
