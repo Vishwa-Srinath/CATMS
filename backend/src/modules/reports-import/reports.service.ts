@@ -79,14 +79,23 @@ export class ReportsService {
   }
 
   static async getDoctorRevenue(filters: ReportFilterDto): Promise<DoctorRevenueDto[]> {
-    void filters;
+    const params: unknown[] = [
+      filters.branchId ?? null,
+      filters.startDate ?? null,
+      filters.endDate ?? null,
+    ];
+
     const sql = `
       SELECT 
         doctor_id,
         doctor_name,
-        gross_revenue,
-        actual_collections
+        COALESCE(SUM(gross_revenue), 0.00) AS gross_revenue,
+        COALESCE(SUM(actual_collections), 0.00) AS actual_collections
       FROM catms.r2_doctor_revenue
+      WHERE ($1::int IS NULL OR branch_id = $1)
+        AND ($2::date IS NULL OR revenue_date >= $2)
+        AND ($3::date IS NULL OR revenue_date <= $3)
+      GROUP BY doctor_id, doctor_name
       ORDER BY gross_revenue DESC;
     `;
 
@@ -95,7 +104,7 @@ export class ReportsService {
       doctor_name: string;
       gross_revenue: string | number;
       actual_collections: string | number;
-    }>(sql);
+    }>(sql, params);
 
     return result.rows.map(row => ({
       doctorId: Number(row.doctor_id),
@@ -106,7 +115,10 @@ export class ReportsService {
   }
 
   static async getPatientBalances(filters: ReportFilterDto): Promise<PatientBalanceDto[]> {
-    void filters;
+    const params: unknown[] = [
+      filters.branchId ?? null,
+    ];
+
     const sql = `
       SELECT 
         patient_id,
@@ -116,6 +128,7 @@ export class ReportsService {
         patient_liability_amount,
         outstanding_balance
       FROM catms.r3_patient_balances
+      WHERE ($1::int IS NULL OR branch_id = $1)
       ORDER BY outstanding_balance DESC;
     `;
 
@@ -126,7 +139,7 @@ export class ReportsService {
       subtotal_amount: string | number;
       patient_liability_amount: string | number;
       outstanding_balance: string | number;
-    }>(sql);
+    }>(sql, params);
 
     return result.rows.map(row => ({
       patientId: Number(row.patient_id),
@@ -139,19 +152,28 @@ export class ReportsService {
   }
 
   static async getTreatmentCounts(filters: ReportFilterDto): Promise<TreatmentCountDto[]> {
-    void filters;
+    const params: unknown[] = [
+      filters.branchId ?? null,
+      filters.startDate ?? null,
+      filters.endDate ?? null,
+    ];
+
     const sql = `
       SELECT 
         category_name,
-        treatment_count
+        COALESCE(SUM(treatment_count), 0) AS treatment_count
       FROM catms.r4_treatment_counts
+      WHERE ($1::int IS NULL OR branch_id = $1)
+        AND ($2::date IS NULL OR treatment_date >= $2)
+        AND ($3::date IS NULL OR treatment_date <= $3)
+      GROUP BY category_name
       ORDER BY treatment_count DESC;
     `;
 
     const result = await pool.query<{
       category_name: string;
       treatment_count: string | number;
-    }>(sql);
+    }>(sql, params);
 
     return result.rows.map(row => ({
       categoryName: row.category_name,
