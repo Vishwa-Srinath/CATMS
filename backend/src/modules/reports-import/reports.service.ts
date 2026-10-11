@@ -28,23 +28,12 @@ let lastImportStatus: ImportStatusDto = {
 export class ReportsService {
   
   static async getBranchWiseSummary(filters: ReportFilterDto): Promise<BranchWiseSummaryDto[]> {
-    const conditions: string[] = [];
-    const params: unknown[] = [];
+    const params: unknown[] = [
+      filters.branchId ?? null,
+      filters.startDate ?? null,
+      filters.endDate ?? null,
+    ];
 
-    if (filters.branchId !== undefined) {
-      params.push(filters.branchId);
-      conditions.push(`branch_id = $${params.length}`);
-    }
-    if (filters.startDate) {
-      params.push(filters.startDate);
-      conditions.push(`appointment_date >= $${params.length}`);
-    }
-    if (filters.endDate) {
-      params.push(filters.endDate);
-      conditions.push(`appointment_date <= $${params.length}`);
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const sql = `
       SELECT 
         branch_name,
@@ -53,7 +42,9 @@ export class ReportsService {
         completed_count,
         cancelled_count
       FROM catms.r1_branch_appointment_summary
-      ${whereClause}
+      WHERE ($1::int IS NULL OR branch_id = $1)
+        AND ($2::date IS NULL OR appointment_date >= $2)
+        AND ($3::date IS NULL OR appointment_date <= $3)
       ORDER BY appointment_date, branch_name;
     `;
 
