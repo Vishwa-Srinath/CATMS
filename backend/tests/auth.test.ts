@@ -20,6 +20,7 @@ import request from 'supertest';
 import type { Express } from 'express';
 import bcrypt from 'bcryptjs';
 import type { PoolClient } from 'pg';
+import { clearRevokedTokens } from '../src/app/middleware/auth';
 
 // ── Mock shared/env ──────────────────────────────────────────────────────────
 vi.mock('../src/shared/env', () => ({
@@ -247,16 +248,45 @@ vi.mock('../src/db/transaction', () => ({
       query: vi.fn(async (text: string, params: unknown[] = []) => {
         // UPDATE user_account
         if (text.includes('UPDATE catms.user_account')) {
-          const id = Number(params[params.length - 1]);
-          const user = Object.values(users).find((u) => u.user_account_id === id);
+          let user: TestUser | undefined;
+          if (text.includes('WHERE username = $1')) {
+            const username = String(params[0]).toLowerCase();
+            user = Object.values(users).find((u) => u.username.toLowerCase() === username);
+          } else {
+            const id = Number(params[params.length - 1]);
+            user = Object.values(users).find((u) => u.user_account_id === id);
+          }
           if (user) {
+            if (
+              text.includes('failed_login_count = failed_login_count + 1') ||
+              text.includes('failed_attempts = failed_attempts + 1')
+            ) {
+              user.failed_login_count = (user.failed_login_count || 0) + 1;
+              if (user.failed_login_count >= 5 || text.includes("account_status = 'Locked'")) {
+                user.account_status = 'Locked';
+              }
+              return {
+                rows: [
+                  {
+                    failed_attempts: user.failed_login_count,
+                    is_locked: user.failed_login_count >= 5,
+                    failed_login_count: user.failed_login_count,
+                    account_status: user.account_status,
+                  },
+                ],
+                rowCount: 1,
+              };
+            }
             if (text.includes("account_status = 'Locked'")) {
               user.account_status = 'Locked';
             }
             if (text.includes('failed_login_count = $1')) {
               user.failed_login_count = Number(params[0]);
-            } else if (text.includes('failed_login_count = 0')) {
+            } else if (text.includes('failed_login_count = 0') || text.includes('failed_attempts = 0')) {
               user.failed_login_count = 0;
+            }
+            if (text.includes("account_status = 'Active'")) {
+              user.account_status = 'Active';
             }
           }
           return { rows: [], rowCount: 1 };
@@ -296,6 +326,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   resetMockDb();
+  clearRevokedTokens();
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -525,6 +556,40 @@ describe('POST /api/v1/auth/logout', () => {
 
     expect(logoutRes.status).toBe(200);
     expect(logoutRes.body.data.success).toBe(true);
+
+    // Subsequent request with the revoked Bearer token is rejected with 401 UNAUTHENTICATED
+    const meRes = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${token}`);
+    expect(meRes.status).toBe(401);
+    expect(meRes.body.error.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('revoking cookie token on logout also blocks subsequent Bearer token usage with that token', async () => {
+    const csrfRes = await request(app).get('/api/v1/auth/csrf');
+    const csrfToken = csrfRes.body.data.csrfToken;
+    const csrfCookie = csrfRes.headers['set-cookie'].find((c: string) => c.startsWith('_csrf='));
+
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ username: 'k.perera', password: TEST_PASSWORD });
+
+    const sessionCookieStr = loginRes.headers['set-cookie'].find((c: string) => c.startsWith('catms_session='));
+    const token = sessionCookieStr.split(';')[0].replace('catms_session=', '');
+
+    // Logout via Cookie
+    const logoutRes = await request(app)
+      .post('/api/v1/auth/logout')
+      .set('Cookie', [sessionCookieStr, csrfCookie])
+      .set('X-CSRF-Token', csrfToken);
+    expect(logoutRes.status).toBe(200);
+
+    // Subsequent Bearer request with same token fails with 401
+    const postLogoutRes = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${token}`);
+    expect(postLogoutRes.status).toBe(401);
+    expect(postLogoutRes.body.error.code).toBe('UNAUTHENTICATED');
   });
 });
 
@@ -637,5 +702,15 @@ describe('Auth & Role Guards', () => {
     const nextAdmin = vi.fn();
     branchGuard(adminReq, {} as any, nextAdmin);
     expect(nextAdmin).toHaveBeenCalled();
+  });
+});
+
+describe('Branch Assignment Safe Handling (Task 2.3)', () => {
+  it('throws validation error when non-admin user has no active branch assignment', async () => {
+    const { authService } = await import('../src/modules/auth-staff/auth.service');
+    // User 999 does not exist in mock fixtures and has no branch assignment
+    await expect(
+      authService.buildSessionUser(999, 999, 'unassigned.user', 'Unassigned User', 'Staff'),
+    ).rejects.toThrow();
   });
 });

@@ -58,7 +58,7 @@ import request from 'supertest';
 import type { Express } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { AUTH_COOKIE_NAME } from '../src/app/middleware/auth';
+import { AUTH_COOKIE_NAME, clearRevokedTokens } from '../src/app/middleware/auth';
 
 const JWT_SECRET = 'a'.repeat(64);
 const CSRF_SECRET = 'b'.repeat(32);
@@ -495,15 +495,45 @@ vi.mock('../src/db/pool', () => ({
       query: vi.fn(async (text: string, params: unknown[] = []) => {
         // Handle failed login count update inside withTransaction
         if (text.includes('UPDATE catms.user_account')) {
-          if (text.includes('failed_login_count = $1')) {
-            const count = Number(params[0]);
-            const uId = Number(params[1]);
+          if (
+            text.includes('failed_login_count = 0') ||
+            text.includes('failed_attempts = 0')
+          ) {
+            const uId = Number(params[0]);
             const u = Object.values(dynamicUsers).find((x) => x.user_account_id === uId);
             if (u) {
-              u.failed_login_count = count;
-              if (text.includes("account_status = 'Locked'")) {
+              u.failed_login_count = 0;
+              return { rows: [{ ...u }] };
+            }
+            return { rows: [] };
+          }
+          if (
+            text.includes('failed_login_count = failed_login_count + 1') ||
+            text.includes('failed_attempts = failed_attempts + 1') ||
+            text.includes('failed_login_count = $1')
+          ) {
+            const username = String(params[0]).toLowerCase();
+            const u =
+              dynamicUsers[username] ||
+              Object.values(dynamicUsers).find((x) => x.user_account_id === Number(params[1] ?? params[0]));
+            if (u) {
+              const newCount = text.includes('failed_login_count = $1')
+                ? Number(params[0])
+                : (u.failed_login_count || 0) + 1;
+              u.failed_login_count = newCount;
+              if (newCount >= 5 || text.includes("account_status = 'Locked'")) {
                 u.account_status = 'Locked';
               }
+              return {
+                rows: [
+                  {
+                    failed_attempts: u.failed_login_count,
+                    is_locked: u.failed_login_count >= 5,
+                    failed_login_count: u.failed_login_count,
+                    account_status: u.account_status,
+                  },
+                ],
+              };
             }
             return { rows: [] };
           }
@@ -674,6 +704,7 @@ describe('CATMS-074 — Complete Authentication, RBAC & Security Audit Suite', (
   beforeEach(() => {
     dynamicUsers = JSON.parse(JSON.stringify(seedUsers));
     simulatedDbDenial = false;
+    clearRevokedTokens();
   });
 
   // ===========================================================================

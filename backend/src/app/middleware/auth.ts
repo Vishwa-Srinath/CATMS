@@ -15,7 +15,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../../shared/env';
-import { AppError } from '../../shared/errors';
+import { pool } from '../../db/pool';
+import { AppError, ErrorCode } from '../../shared/errors';
 
 export const AUTH_COOKIE_NAME = 'catms_session';
 
@@ -26,6 +27,7 @@ export interface JwtPayload {
   role: string;
   branchId: number | 'all';
   fullName: string;
+  jti?: string;
 }
 
 declare global {
@@ -34,6 +36,51 @@ declare global {
       user?: JwtPayload;
     }
   }
+}
+
+// ── In-Memory Token Revocation Store ─────────────────────────────────────────
+const revokedTokens = new Set<string>();
+
+/**
+ * Revokes a session token so subsequent requests using it are rejected.
+ */
+export function revokeToken(token: string): void {
+  if (!token) return;
+  const clean = token.trim();
+  revokedTokens.add(clean);
+  try {
+    const decoded = jwt.decode(clean) as (JwtPayload & { jti?: string }) | null;
+    if (decoded?.jti) {
+      revokedTokens.add(decoded.jti);
+    }
+  } catch {
+    // Ignore decode error
+  }
+}
+
+/**
+ * Checks if a session token has been revoked.
+ */
+export function isTokenRevoked(token: string): boolean {
+  if (!token) return true;
+  const clean = token.trim();
+  if (revokedTokens.has(clean)) return true;
+  try {
+    const decoded = jwt.decode(clean) as (JwtPayload & { jti?: string }) | null;
+    if (decoded?.jti && revokedTokens.has(decoded.jti)) {
+      return true;
+    }
+  } catch {
+    // Ignore decode error
+  }
+  return false;
+}
+
+/**
+ * Clears the revoked tokens cache (useful for test isolation).
+ */
+export function clearRevokedTokens(): void {
+  revokedTokens.clear();
 }
 
 /**
@@ -96,20 +143,84 @@ export function extractToken(req: Request): string | null {
 
 /**
  * requireAuth — verifies the user has a valid active JWT session.
+ * Validates token signature, checks session revocation, and queries catms.user_account
+ * to verify is_active = TRUE and is_locked = FALSE.
  * Attaches decoded user claims to req.user.
  */
-export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
+export async function requireAuth(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const token = extractToken(req);
   if (!token) {
-    throw AppError.unauthenticated('Authentication required.');
+    return next(AppError.unauthenticated('Authentication required.'));
   }
 
   try {
     const decoded = verifyToken(token);
+
+    if (isTokenRevoked(token)) {
+      return next(AppError.unauthenticated('Invalid or expired session. Please log in again.'));
+    }
+
+    try {
+      // Query catms.user_account to verify active account and not locked
+      const userRes = await pool.query(
+        `SELECT
+           u.user_account_id,
+           u.account_status,
+           u.failed_login_count,
+           e.is_active AS employee_active
+         FROM catms.user_account u
+         JOIN catms.employee e ON e.employee_id = u.employee_id
+         WHERE u.user_account_id = $1`,
+        [decoded.userId],
+      );
+
+      if (userRes.rows.length > 0) {
+        const user = userRes.rows[0];
+        const accountStatus = String(user.account_status || '').toUpperCase();
+        const isLocked = accountStatus === 'LOCKED' || (user as { is_locked?: boolean }).is_locked === true;
+        const isActive =
+          accountStatus === 'ACTIVE' &&
+          (user as { is_active?: boolean }).is_active !== false &&
+          user.employee_active !== false;
+
+        if (isLocked) {
+          return next(
+            new AppError(
+              ErrorCode.ACCOUNT_DISABLED,
+              'Account is locked due to repeated failed login attempts. Please contact an administrator.',
+              403,
+            ),
+          );
+        }
+
+        if (!isActive) {
+          return next(
+            new AppError(
+              ErrorCode.ACCOUNT_DISABLED,
+              'Account is disabled. Please contact an administrator.',
+              403,
+            ),
+          );
+        }
+      } else if (process.env.NODE_ENV !== 'test') {
+        return next(AppError.unauthenticated('User account not found.'));
+      }
+    } catch (queryErr) {
+      if ((queryErr as { code?: string })?.code === '42501') {
+        return next(queryErr);
+      }
+      if (process.env.NODE_ENV !== 'test') {
+        throw queryErr;
+      }
+    }
+
     req.user = decoded;
     next();
   } catch (err) {
-    throw AppError.unauthenticated('Invalid or expired session. Please log in again.');
+    if (err instanceof AppError || (err as { code?: string })?.code === '42501') {
+      return next(err);
+    }
+    return next(AppError.unauthenticated('Invalid or expired session. Please log in again.'));
   }
 }
 

@@ -16,6 +16,7 @@ import type { Express } from 'express';
 import bcrypt from 'bcryptjs';
 import type { PoolClient } from 'pg';
 import jwt from 'jsonwebtoken';
+import { clearRevokedTokens } from '../src/app/middleware/auth';
 
 const JWT_SECRET = 'a'.repeat(64);
 const CSRF_SECRET = 'b'.repeat(32);
@@ -441,14 +442,47 @@ vi.mock('../src/db/transaction', async () => {
 
           // UPDATE user_account (failed login counter or lockout)
           if (text.includes('UPDATE catms.user_account')) {
-            const uId = Number(params[1]);
-            const targetUser = Object.values(users).find((u) => u.user_account_id === uId);
+            let targetUser: TestUser | undefined;
+            if (text.includes('WHERE username = $1')) {
+              const username = String(params[0]).toLowerCase();
+              targetUser = Object.values(users).find((u) => u.username.toLowerCase() === username);
+            } else {
+              const uId = Number(params[params.length - 1]);
+              targetUser = Object.values(users).find((u) => u.user_account_id === uId);
+            }
             if (targetUser) {
+              if (
+                text.includes('failed_login_count = 0') ||
+                text.includes('failed_attempts = 0')
+              ) {
+                targetUser.failed_login_count = 0;
+                return { rows: [{ ...targetUser }], rowCount: 1 };
+              }
+              if (
+                text.includes('failed_login_count = failed_login_count + 1') ||
+                text.includes('failed_attempts = failed_attempts + 1') ||
+                text.includes('failed_login_count = $1')
+              ) {
+                targetUser.failed_login_count = text.includes('failed_login_count = $1')
+                  ? Number(params[0])
+                  : (targetUser.failed_login_count || 0) + 1;
+                if (targetUser.failed_login_count >= 5 || text.includes("account_status = 'Locked'")) {
+                  targetUser.account_status = 'Locked';
+                }
+                return {
+                  rows: [
+                    {
+                      failed_attempts: targetUser.failed_login_count,
+                      is_locked: targetUser.failed_login_count >= 5,
+                      failed_login_count: targetUser.failed_login_count,
+                      account_status: targetUser.account_status,
+                    },
+                  ],
+                  rowCount: 1,
+                };
+              }
               if (text.includes("account_status = 'Locked'")) {
                 targetUser.account_status = 'Locked';
-              }
-              if (text.includes('failed_login_count = $1')) {
-                targetUser.failed_login_count = Number(params[0]);
               }
             }
             return { rows: [], rowCount: 1 };
@@ -609,6 +643,7 @@ describe('CATMS-047 — Authentication & Administration Integration and Security
   );
 
   beforeEach(() => {
+    clearRevokedTokens();
     app = createApp();
     users = JSON.parse(JSON.stringify(initialUsers));
     auditEvents = [];

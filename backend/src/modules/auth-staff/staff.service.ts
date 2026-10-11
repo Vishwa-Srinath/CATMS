@@ -301,7 +301,8 @@ export class StaffService {
         ON eba.employee_id = e.employee_id
        AND UPPER(eba.assignment_type) = 'PRIMARY'
        AND eba.is_active = TRUE
-       AND (eba.valid_to IS NULL OR eba.valid_to > now())
+       AND (eba.valid_from <= CURRENT_DATE)
+       AND (eba.valid_to IS NULL OR eba.valid_to >= CURRENT_DATE)
       LEFT JOIN catms.branch b ON b.branch_id = eba.branch_id
       LEFT JOIN catms.user_account u ON u.employee_id = e.employee_id
       LEFT JOIN catms.user_account_role uar
@@ -602,12 +603,46 @@ export class StaffService {
 
       const appRoleId = roleRes.rows[0].app_role_id;
 
+      // 4b. Safe handling of missing / future branch assignments
+      const normalizedRole = input.roleCode.trim().toLowerCase();
+      let resolvedBranchScopeId = input.branchScopeId ?? null;
+
+      if (normalizedRole !== 'admin' && normalizedRole !== 'qa') {
+        if (!resolvedBranchScopeId) {
+          const activeBranchRes = await client.query(
+            `SELECT branch_id
+             FROM catms.employee_branch_assignment
+             WHERE employee_id = $1
+               AND UPPER(assignment_type) = 'PRIMARY'
+               AND is_active = TRUE
+               AND (valid_from <= CURRENT_DATE)
+               AND (valid_to IS NULL OR valid_to >= CURRENT_DATE)
+             LIMIT 1`,
+            [input.employeeId],
+          );
+          if (activeBranchRes.rows.length === 0) {
+            throw AppError.validationError(
+              `Cannot create user account: Employee has no active branch assignment. An active branch assignment (effective_from <= CURRENT_DATE and effective_to >= CURRENT_DATE) is required for role '${input.roleCode}'.`,
+            );
+          }
+          resolvedBranchScopeId = Number(activeBranchRes.rows[0].branch_id);
+        } else {
+          const branchRes = await client.query(
+            `SELECT branch_id FROM catms.branch WHERE branch_id = $1`,
+            [resolvedBranchScopeId],
+          );
+          if (branchRes.rows.length === 0 || (branchRes.rows[0].is_active !== undefined && !branchRes.rows[0].is_active)) {
+            throw AppError.validationError('Assigned branch does not exist or is inactive.');
+          }
+        }
+      }
+
       // 5. Insert role assignment
       await client.query(
         `INSERT INTO catms.user_account_role (
            user_account_id, app_role_id, branch_scope_id, assigned_by_user_id
          ) VALUES ($1, $2, $3, $4)`,
-        [userAccountId, appRoleId, input.branchScopeId ?? null, actorUserId ?? null],
+        [userAccountId, appRoleId, resolvedBranchScopeId, actorUserId ?? null],
       );
 
       // 6. Audit event
@@ -619,10 +654,10 @@ export class StaffService {
       );
 
       let branchCode: string | null = null;
-      if (input.branchScopeId) {
+      if (resolvedBranchScopeId) {
         const branchRes = await client.query(
           `SELECT branch_code FROM catms.branch WHERE branch_id = $1`,
-          [input.branchScopeId],
+          [resolvedBranchScopeId],
         );
         branchCode = branchRes.rows[0]?.branch_code ?? null;
       }
@@ -639,7 +674,7 @@ export class StaffService {
         roles: [
           {
             roleCode: input.roleCode.trim(),
-            branchScopeId: input.branchScopeId ?? null,
+            branchScopeId: resolvedBranchScopeId,
             branchCode,
           },
         ],
@@ -711,12 +746,51 @@ export class StaffService {
         [userAccountId],
       );
 
+      // Safe handling of missing / future branch assignments
+      const normalizedRole = input.roleCode.trim().toLowerCase();
+      let resolvedBranchScopeId = input.branchScopeId ?? null;
+
+      if (normalizedRole !== 'admin' && normalizedRole !== 'qa') {
+        if (!resolvedBranchScopeId) {
+          const empRes = await client.query(
+            `SELECT employee_id FROM catms.user_account WHERE user_account_id = $1`,
+            [userAccountId],
+          );
+          const empId = empRes.rows[0]?.employee_id;
+          const activeBranchRes = await client.query(
+            `SELECT branch_id
+             FROM catms.employee_branch_assignment
+             WHERE employee_id = $1
+               AND UPPER(assignment_type) = 'PRIMARY'
+               AND is_active = TRUE
+               AND (valid_from <= CURRENT_DATE)
+               AND (valid_to IS NULL OR valid_to >= CURRENT_DATE)
+             LIMIT 1`,
+            [empId],
+          );
+          if (activeBranchRes.rows.length === 0) {
+            throw AppError.validationError(
+              `Cannot assign role '${input.roleCode}': Employee has no active branch assignment. An active branch assignment (effective_from <= CURRENT_DATE and effective_to >= CURRENT_DATE) is required for branch-scoped roles.`,
+            );
+          }
+          resolvedBranchScopeId = Number(activeBranchRes.rows[0].branch_id);
+        } else {
+          const branchRes = await client.query(
+            `SELECT branch_id FROM catms.branch WHERE branch_id = $1`,
+            [resolvedBranchScopeId],
+          );
+          if (branchRes.rows.length === 0 || (branchRes.rows[0].is_active !== undefined && !branchRes.rows[0].is_active)) {
+            throw AppError.validationError('Assigned branch does not exist or is inactive.');
+          }
+        }
+      }
+
       // Insert new active role
       await client.query(
         `INSERT INTO catms.user_account_role (
            user_account_id, app_role_id, branch_scope_id, assigned_by_user_id
          ) VALUES ($1, $2, $3, $4)`,
-        [userAccountId, appRoleId, input.branchScopeId ?? null, actorUserId ?? null],
+        [userAccountId, appRoleId, resolvedBranchScopeId, actorUserId ?? null],
       );
 
       // Audit event

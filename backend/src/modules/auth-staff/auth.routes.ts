@@ -23,6 +23,7 @@ import {
   requireAuth,
   extractToken,
   verifyToken,
+  revokeToken,
 } from '../../app/middleware/auth';
 import { csrfProtection } from '../../app/middleware/csrf';
 import { successEnvelope, errorEnvelope, ErrorCode } from '../../shared/errors';
@@ -104,15 +105,16 @@ authRouter.post(
     try {
       const correlationId = (res.locals['correlationId'] as string | undefined) ?? 'unknown';
 
-      // If user was logged in, log audit record
+      // If user was logged in, log audit record and revoke token so subsequent usage is blocked
       const token = extractToken(req);
       if (token) {
         try {
           const decoded = verifyToken(token);
-          await authService.logout(decoded.userId, correlationId, req.ip);
+          await authService.logout(decoded.userId, correlationId, req.ip, token);
         } catch {
-          // If token was expired/invalid, still proceed with clearing cookie
+          // If token was expired/invalid, still proceed with invalidation & clearing cookie
         }
+        revokeToken(token);
       }
 
       clearAuthCookie(res);
