@@ -11,10 +11,10 @@ CREATE OR REPLACE VIEW catms.r2_doctor_revenue AS
 SELECT 
     d.doctor_id,
     e.full_name AS doctor_name,
-    a.branch_id,
-    DATE(i.issued_at AT TIME ZONE 'Asia/Colombo') AS revenue_date,
     COALESCE(SUM(i.subtotal_amount), 0.00) AS gross_revenue,
-    COALESCE(SUM(i.patient_paid_amount + i.insurer_paid_amount), 0.00) AS actual_collections
+    COALESCE(SUM(i.patient_paid_amount + i.insurer_paid_amount), 0.00) AS actual_collections,
+    a.branch_id,
+    DATE(i.issued_at AT TIME ZONE 'Asia/Colombo') AS revenue_date
 FROM catms.invoice i
 JOIN catms.appointment a ON i.appointment_id = a.appointment_id
 JOIN catms.doctor_profile d ON a.doctor_id = d.doctor_id
@@ -31,10 +31,10 @@ SELECT
     p.patient_id,
     p.first_name || ' ' || p.last_name AS patient_name,
     i.invoice_id,
-    a.branch_id,
     i.subtotal_amount,
     i.patient_liability_amount,
-    (i.patient_liability_amount - i.patient_paid_amount) AS outstanding_balance
+    (i.patient_liability_amount - i.patient_paid_amount) AS outstanding_balance,
+    a.branch_id
 FROM catms.invoice i
 JOIN catms.appointment a ON i.appointment_id = a.appointment_id
 JOIN catms.patient p ON a.patient_id = p.patient_id
@@ -48,9 +48,9 @@ COMMENT ON VIEW catms.r3_patient_balances IS 'Pending liability and outstanding 
 CREATE OR REPLACE VIEW catms.r4_treatment_counts AS
 SELECT 
     tc.name AS category_name,
+    COUNT(at.treatment_id) AS treatment_count,
     a.branch_id,
-    DATE(at.administered_at AT TIME ZONE 'Asia/Colombo') AS treatment_date,
-    COUNT(at.treatment_id) AS treatment_count
+    DATE(at.administered_at AT TIME ZONE 'Asia/Colombo') AS treatment_date
 FROM catms.appointment_treatment at
 JOIN catms.appointment a ON at.appointment_id = a.appointment_id
 JOIN catms.treatment_catalogue cat ON at.treatment_id = cat.treatment_id
