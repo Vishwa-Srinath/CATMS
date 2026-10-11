@@ -87,6 +87,7 @@ interface InvoiceLineRow {
 interface AppointmentRow {
   appointment_id: number;
   patient_id: number;
+  branch_id: number;
   start_at: string;
   status: string;
 }
@@ -209,12 +210,14 @@ function seedGoldenFixture(): void {
     {
       appointment_id: 501,
       patient_id: 1001,
+      branch_id: 1,
       start_at: '2026-09-10T09:00:00.000Z',
       status: 'Completed',
     },
     {
       appointment_id: 502,
       patient_id: 1001,
+      branch_id: 1,
       start_at: '2026-09-15T09:00:00.000Z',
       status: 'Booked', // Not issued
     },
@@ -625,10 +628,20 @@ function handleMockQuery(text: string, params: unknown[] = []): { rows: unknown[
           invoice_state: inv.invoice_state,
           patient_id: app?.patient_id,
           service_date: app ? app.start_at.slice(0, 10) : '',
+          branch_id: app?.branch_id ?? 1,
           patient_full_name: pat ? `${pat.first_name} ${pat.last_name}` : '',
         },
       ],
     };
+  }
+
+  // Branch check query in resolveClaim
+  if (text.includes('SELECT a.branch_id') && text.includes('FROM catms.insurance_claim c')) {
+    const clmId = Number(params[0]);
+    const clm = claims.find((c) => c.claim_id === clmId);
+    const inv = invoices.find((i) => i.invoice_id === clm?.invoice_id);
+    const app = appointments.find((a) => a.appointment_id === inv?.appointment_id);
+    return { rows: app ? [{ branch_id: app.branch_id }] : [] };
   }
 
   // 2. SELECT policy header for preview
@@ -845,6 +858,18 @@ function handleMockQuery(text: string, params: unknown[] = []): { rows: unknown[
       const invId = Number(params[0]);
       filtered = filtered.filter((c) => c.invoice_id === invId);
     }
+    if (text.includes('app.branch_id = $')) {
+      const match = text.match(/app\.branch_id = \$(\d+)/);
+      if (match) {
+        const pIdx = parseInt(match[1], 10) - 1;
+        const bId = Number(params[pIdx]);
+        filtered = filtered.filter((c) => {
+          const inv = invoices.find((i) => i.invoice_id === c.invoice_id);
+          const app = appointments.find((a) => a.appointment_id === inv?.appointment_id);
+          return app && app.branch_id === bId;
+        });
+      }
+    }
     return { rows: [{ count: String(filtered.length) }] };
   }
 
@@ -854,6 +879,18 @@ function handleMockQuery(text: string, params: unknown[] = []): { rows: unknown[
     if (text.includes('c.invoice_id = $')) {
       const invId = Number(params[0]);
       filtered = filtered.filter((c) => c.invoice_id === invId);
+    }
+    if (text.includes('app.branch_id = $')) {
+      const match = text.match(/app\.branch_id = \$(\d+)/);
+      if (match) {
+        const pIdx = parseInt(match[1], 10) - 1;
+        const bId = Number(params[pIdx]);
+        filtered = filtered.filter((c) => {
+          const inv = invoices.find((i) => i.invoice_id === c.invoice_id);
+          const app = appointments.find((a) => a.appointment_id === inv?.appointment_id);
+          return app && app.branch_id === bId;
+        });
+      }
     }
     const rows = filtered.map((c) => {
       const pol = policies.find((p) => p.policy_id === c.policy_id);
@@ -1215,6 +1252,29 @@ describe('CATMS-049 — Claims API & Reconciliation Integration Test Suite', () 
       expect(res.status).toBe(422);
       expect(res.body.error.message).toContain('validity window');
     });
+
+    it('rejects preview when invoice belongs to another branch for single-branch user (403 FORBIDDEN)', async () => {
+      const otherBranchToken = makeToken({
+        userId: 99,
+        employeeId: 199,
+        username: 'other.branch.user',
+        role: 'Reception',
+        branchId: 2,
+        fullName: 'Branch 2 Receptionist',
+      });
+
+      const res = await request(app)
+        .post('/api/v1/claims/preview')
+        .set('Authorization', `Bearer ${otherBranchToken}`)
+        .send({
+          invoiceId: 701, // belongs to branch 1
+          policyIds: [11],
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('FORBIDDEN');
+      expect(res.body.error.message).toContain('assigned clinic branch');
+    });
   });
 
   // ── 3. Claim Submission & Pending Invariant ─────────────────────────────────
@@ -1500,6 +1560,26 @@ describe('CATMS-049 — Claims API & Reconciliation Integration Test Suite', () 
 
       expect(res.status).toBe(422);
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('enforces branch isolation on GET /api/v1/claims for single-branch roles', async () => {
+      const branch2Token = makeToken({
+        userId: 99,
+        employeeId: 199,
+        username: 'other.branch.rec',
+        role: 'Reception',
+        branchId: 2,
+        fullName: 'Branch 2 Receptionist',
+      });
+
+      // Claims in fixture belong to branch 1
+      const res = await request(app)
+        .get('/api/v1/claims')
+        .set('Authorization', `Bearer ${branch2Token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.claims).toHaveLength(0);
+      expect(res.body.data.total).toBe(0);
     });
   });
 });
