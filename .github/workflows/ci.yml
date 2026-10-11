@@ -283,7 +283,7 @@ jobs:
           POSTGRES_USER: catms_super_test
           POSTGRES_PASSWORD: catms_test_password
           JWT_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-          CSRF_SECRET: bbbbbbbbbbbbbbbbbbbbbbbbbbbb
+          CSRF_SECRET: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 
       # ── Tear down disposable container ────────────────────────────────────
       # tmpfs data is already gone; this just removes the container.
