@@ -443,6 +443,65 @@ describe('CATMS-055 — Reports & Import API Contract Skeleton', () => {
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body.data)).toBe(true);
     });
+
+    it('correctly parses RFC-4180 quoted fields containing commas', async () => {
+      const quotedCsv = [
+        'code,category_id,name,default_price,duration_minutes,is_active',
+        'TREAT-301,1,"General Care, Routine Consultation",1500.00,20,true',
+        'TREAT-302,2,"Diagnostics, Full Blood Panel",2500.00,30,true',
+      ].join('\n');
+
+      const res = await request(app)
+        .post('/api/v1/reports/import-csv')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Content-Type', 'text/plain')
+        .send(quotedCsv);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.totalRecords).toBe(2);
+      expect(res.body.data.acceptedRecords).toBe(2);
+      expect(res.body.data.rejectedRecords).toBe(0);
+      expect(res.body.data.errors).toHaveLength(0);
+    });
+
+    it('enforces strict numeric validation rejecting price <= 0 and duration <= 0', async () => {
+      const invalidNumericCsv = [
+        'code,category_id,name,default_price,duration_minutes,is_active',
+        'TREAT-303,1,Free Treatment,0.00,15,true',
+        'TREAT-304,1,Zero Duration Treatment,1000.00,0,true',
+      ].join('\n');
+
+      const res = await request(app)
+        .post('/api/v1/reports/import-csv')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Content-Type', 'text/plain')
+        .send(invalidNumericCsv);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.totalRecords).toBe(2);
+      expect(res.body.data.acceptedRecords).toBe(0);
+      expect(res.body.data.rejectedRecords).toBe(2);
+      expect(res.body.data.errors).toHaveLength(2);
+      expect(res.body.data.errors[0]).toContain('Must be greater than 0');
+      expect(res.body.data.errors[1]).toContain('Must be greater than 0');
+    });
+
+    it('propagates branchId and date filters to R2, R3, R4 queries', async () => {
+      const resR2 = await request(app)
+        .get('/api/v1/reports/doctor-revenue?branchId=1&startDate=2026-07-01&endDate=2026-08-31')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(resR2.status).toBe(200);
+
+      const resR3 = await request(app)
+        .get('/api/v1/reports/patient-outstanding?branchId=1')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(resR3.status).toBe(200);
+
+      const resR4 = await request(app)
+        .get('/api/v1/reports/treatments-by-category?branchId=1&startDate=2026-07-01&endDate=2026-08-31')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(resR4.status).toBe(200);
+    });
   });
 });
 
