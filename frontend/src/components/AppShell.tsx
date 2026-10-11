@@ -21,7 +21,7 @@ const navItems: NavItem[] = [
   { label: 'Appointments', to: '/appointments', icon: CalendarDays, roles: ['Receptionist', 'Clinician', 'Manager', 'Admin'] },
   { label: 'Billing', to: '/finance', icon: CreditCard, roles: ['Admin'] },
   { label: 'Reports', to: '/reports', icon: BarChart3, roles: ['Manager', 'Admin'] },
-  { label: 'Settings', to: '/administration', icon: Settings, roles: ['Admin', 'Manager', 'Receptionist', 'Clinician'] },
+  { label: 'Administration', to: '/administration', icon: ShieldCheck, roles: ['Admin'] },
 ]
 
 function Brand() {
