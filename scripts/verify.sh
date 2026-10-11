@@ -28,8 +28,8 @@ PASS=0
 FAIL=0
 
 # ── helpers ───────────────────────────────────────────────────────────────────
-ok()   { printf '  ✅ PASS  %s\n' "$*"; ((PASS++)); }
-fail() { printf '  ❌ FAIL  %s\n' "$*"; ((FAIL++)); }
+ok()   { printf '  ✅ PASS  %s\n' "$*"; PASS=$((PASS + 1)); }
+fail() { printf '  ❌ FAIL  %s\n' "$*"; FAIL=$((FAIL + 1)); }
 warn() { printf '  ⚠️  WARN  %s\n' "$*"; }
 info() { printf '  ℹ  INFO  %s\n' "$*"; }
 
@@ -82,8 +82,9 @@ else
   if [[ "${POSTGRES_PASSWORD:-}" == "change_me_dev" ]]; then
     warn "\$POSTGRES_PASSWORD is still the default placeholder — fine for dev, rotate before demo"
   fi
-  if [[ "${JWT_SECRET:-}" == "replace_with_64_plus_random_hex_characters" ]] || \
-     [[ "${#JWT_SECRET:-}" -lt 64 ]]; then
+  JWT_VAL="${JWT_SECRET:-}"
+  if [[ "${JWT_VAL}" == "replace_with_64_plus_random_hex_characters" ]] || \
+     [[ "${#JWT_VAL}" -lt 64 ]]; then
     warn "\$JWT_SECRET is too short or is still the placeholder — generate a 64+ char secret"
   fi
 
