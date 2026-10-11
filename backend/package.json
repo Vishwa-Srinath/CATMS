@@ -15,7 +15,8 @@
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:security": "vitest run tests/security-rbac-audit.test.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
