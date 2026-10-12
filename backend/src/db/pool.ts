@@ -9,17 +9,24 @@ const poolConfig: PoolConfig = {
   database: env.POSTGRES_DB,
   user: env.POSTGRES_USER,
   password: env.POSTGRES_PASSWORD,
-  min: 2,
+  min: 0,
   max: 10,
-  idleTimeoutMillis: 30_000,
+  idleTimeoutMillis: 15_000,
   connectionTimeoutMillis: 10_000,
+  keepAlive: true,
   ...(env.POSTGRES_SSL ? { ssl: { rejectUnauthorized: false } } : {}),
 };
 
 export const pool = new Pool(poolConfig);
 
+pool.on('connect', (client) => {
+  client.on('error', (err) => {
+    logger.warn({ err }, 'PostgreSQL client connection error (handled)');
+  });
+});
+
 pool.on('error', (err) => {
-  logger.error({ err }, 'Unexpected PostgreSQL pool error');
+  logger.warn({ err }, 'Unexpected PostgreSQL pool error (handled)');
 });
 
 export async function query<R extends QueryResultRow = QueryResultRow>(
