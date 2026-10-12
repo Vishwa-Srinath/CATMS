@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   BarChart3, Bell, CalendarDays, Clock,
-  CreditCard, LayoutDashboard, LogOut, Menu, Moon, Search, Settings, ShieldCheck,
+  CreditCard, LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck,
   Stethoscope, Sun, UsersRound, X,
   type LucideIcon,
 } from 'lucide-react'
