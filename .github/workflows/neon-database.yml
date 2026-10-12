@@ -1,0 +1,206 @@
+# =============================================================================
+# CATMS — Neon Cloud Database Migration CI/CD
+#
+# Automated database migration pipeline for Neon PostgreSQL.
+#
+# Triggers:
+#   - push: Applies pending migrations to Neon whenever migration files are
+#           merged/pushed to 'main'.
+#   - pull_request: Runs pre-flight verification & dry-run against Neon without
+#                   mutating the database, validating checksums and order.
+#   - workflow_dispatch: Manual trigger from the GitHub Actions UI with options
+#                        to inspect status, verify checksums, dry-run, or apply.
+#
+# Required GitHub Secret:
+#   - NEON_DATABASE_URL (or DATABASE_URL)
+#     Format: postgresql://[user]:[password]@[neon-host]/[database]?sslmode=require
+# =============================================================================
+
+name: Neon Database CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'database/migrations/**'
+      - 'scripts/migrate.sh'
+      - '.github/workflows/neon-database.yml'
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'database/migrations/**'
+      - 'scripts/migrate.sh'
+
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Migration operation to execute against Neon'
+        required: true
+        type: choice
+        default: 'apply'
+        options:
+          - 'apply'
+          - 'dry-run'
+          - 'status'
+          - 'verify'
+      sync_sequences:
+        description: 'Synchronize database sequence counters with current max table IDs'
+        required: false
+        type: boolean
+        default: true
+
+# Ensure only one migration workflow runs at a time to prevent concurrent lock collisions.
+# Never cancel an in-progress migration run midway!
+concurrency:
+  group: neon-database-migration
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate-neon:
+    name: Neon DB Migration (${{ github.event_name == 'pull_request' && 'dry-run' || (inputs.action || 'apply') }})
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+          echo "psql version: $(psql --version)"
+
+      - name: Verify Neon credentials & connectivity
+        id: check_creds
+        env:
+          RAW_URL: ${{ secrets.NEON_DATABASE_URL || secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${RAW_URL}" ]; then
+            if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ]; then
+              echo "⚠️ Pull request from fork does not have access to repository secrets."
+              echo "skip_step=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::error::Missing required secret: NEON_DATABASE_URL (or DATABASE_URL)."
+            echo "Please configure NEON_DATABASE_URL in: Repository Settings -> Secrets and variables -> Actions"
+            exit 1
+          fi
+
+          # Mask secret URL in GitHub Actions logs
+          echo "::add-mask::${RAW_URL}"
+          echo "DATABASE_URL=${RAW_URL}" >> "$GITHUB_ENV"
+          echo "skip_step=false" >> "$GITHUB_OUTPUT"
+
+          # Pre-flight ping to Neon database
+          echo "Testing connection to Neon cloud PostgreSQL..."
+          if ! psql "${RAW_URL}" --no-password -c "SELECT 'Connected to ' || current_database() || ' (PostgreSQL ' || split_part(version(), ' ', 2) || ')';" ; then
+            echo "::error::Failed to connect to Neon PostgreSQL database using provided credentials."
+            exit 1
+          fi
+          echo "✅ Successfully connected to Neon cloud database."
+
+      - name: Verify checksums of applied migrations
+        if: steps.check_creds.outputs.skip_step != 'true'
+        run: |
+          echo "Verifying checksums against previously recorded migrations..."
+          bash scripts/migrate.sh --verify
+          echo "✅ Existing migration checksums are intact."
+
+      - name: Run migration action (PR Dry-Run)
+        if: steps.check_creds.outputs.skip_step != 'true' && github.event_name == 'pull_request'
+        run: |
+          echo "🔍 Pull Request detected — running dry-run check (non-mutating)..."
+          bash scripts/migrate.sh --dry-run
+          echo "Current status on target Neon database:"
+          bash scripts/migrate.sh --status
+
+      - name: Run migration action (Manual Mode)
+        if: steps.check_creds.outputs.skip_step != 'true' && github.event_name == 'workflow_dispatch'
+        run: |
+          ACTION="${{ inputs.action }}"
+          echo "Executing manual migration action: ${ACTION}"
+          case "${ACTION}" in
+            dry-run)
+              bash scripts/migrate.sh --dry-run
+              ;;
+            status)
+              bash scripts/migrate.sh --status
+              ;;
+            verify)
+              bash scripts/migrate.sh --verify
+              ;;
+            apply)
+              bash scripts/migrate.sh
+              ;;
+            *)
+              echo "Unknown action: ${ACTION}"
+              exit 1
+              ;;
+          esac
+
+      - name: Run migration action (Push to Main Apply)
+        if: steps.check_creds.outputs.skip_step != 'true' && github.event_name == 'push'
+        run: |
+          echo "🚀 Push to main detected with migration updates — applying pending migrations..."
+          bash scripts/migrate.sh
+
+      - name: Synchronize sequences with maximum table IDs
+        if: >
+          steps.check_creds.outputs.skip_step != 'true' &&
+          (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply' && inputs.sync_sequences == true))
+        run: |
+          echo "Synchronizing PostgreSQL identity and serial sequences in schema 'catms'..."
+          psql "${DATABASE_URL}" --no-password --set=ON_ERROR_STOP=1 -c "
+          DO \$\$
+          DECLARE
+            r RECORD;
+          BEGIN
+            FOR r IN (
+              SELECT table_schema, table_name, column_name,
+                     pg_get_serial_sequence(table_schema || '.' || table_name, column_name) AS seq
+              FROM information_schema.columns
+              WHERE table_schema = 'catms'
+                AND (column_default LIKE 'nextval%' OR is_identity = 'YES')
+            ) LOOP
+              IF r.seq IS NOT NULL THEN
+                EXECUTE format(
+                  'SELECT setval(%L, coalesce((SELECT max(%I) FROM %I.%I), 1), true)',
+                  r.seq, r.column_name, r.table_schema, r.table_name
+                );
+              END IF;
+            END LOOP;
+          END \$\$;
+          "
+          echo "✅ Sequences synchronized successfully."
+
+      - name: Generate summary report
+        if: steps.check_creds.outputs.skip_step != 'true' && always()
+        run: |
+          STATUS_OUTPUT=$(bash scripts/migrate.sh --status 2>&1 || true)
+          TOTAL_MIGRATIONS=$(find database/migrations -maxdepth 1 -name '[0-9][0-9][0-9]_*.sql' | wc -l)
+          APPLIED_COUNT=$(psql "${DATABASE_URL}" --no-password -tAc "SELECT count(*) FROM catms.schema_migrations;" 2>/dev/null || echo "N/A")
+
+          cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ## 🐘 Neon Database Migration Summary
+
+          | Property | Value |
+          | :--- | :--- |
+          | **Trigger Event** | \`${{ github.event_name }}\` |
+          | **Action Performed** | \`${{ github.event_name == 'pull_request' && 'dry-run' || (inputs.action || 'apply') }}\` |
+          | **Total Migration Files** | \`${TOTAL_MIGRATIONS}\` |
+          | **Recorded Applied in DB** | \`${APPLIED_COUNT}\` |
+          | **Execution Timestamp** | \`$(date -u '+%Y-%m-%d %H:%M:%S UTC')\` |
+
+          ### 📋 Migration Status Log
+          \`\`\`text
+          ${STATUS_OUTPUT}
+          \`\`\`
+          EOF
