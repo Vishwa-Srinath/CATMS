@@ -7,7 +7,7 @@
 **Status:** COMPLETE — READY FOR GATE G5 REVIEW  
 **Labels:** `module:A-staff`, `security`, `layer:test`, `priority:critical`  
 **Dependencies:** CATMS-047 (Auth & Staff Baseline), CATMS-065 (Admin Frontend Journey), CATMS-070 (Realistic Bulk Dataset at Scale)  
-**Traceability:** SRS §2.3 (User Characteristics), SRS §5.5 (Business Rules BR-6, BR-7), NFR-2 (Security, Authentication & Role-Based Access Control), CATMS-003 (Binding 3-Layer Role Matrix & Branch Scope)
+**Traceability:** SRS §2.3 (User Characteraistics), SRS §5.5 (Business Rules BR-6, BR-7), NFR-2 (Security, Authentication & Role-Based Access Control), CATMS-003 (Binding 3-Layer Role Matrix & Branch Scope)
 
 ---
 

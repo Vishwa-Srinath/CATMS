@@ -170,8 +170,8 @@ export async function fetchInvoices(): Promise<ApiInvoiceSummary[]> {
   return apiClient.get('/invoices')
 }
 
-export async function fetchPayments(invoiceId: string): Promise<ApiPayment[]> {
-  return apiClient.get('/payments', { params: { invoiceId } })
+export async function fetchPayments(invoiceId?: string): Promise<ApiPayment[]> {
+  return apiClient.get('/payments', { params: invoiceId ? { invoiceId } : undefined })
 }
 
 export async function previewPayment(input: {
