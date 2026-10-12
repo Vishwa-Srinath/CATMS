@@ -73,7 +73,11 @@ async function main(): Promise<void> {
   process.on('SIGINT',  () => shutdown('SIGINT'));
 
   // Catch uncaught exceptions — log and exit so the container restarts cleanly
-  process.on('uncaughtException', (err) => {
+  process.on('uncaughtException', (err: Error) => {
+    if (err.message && err.message.includes('Connection terminated unexpectedly')) {
+      logger.warn({ err }, 'PostgreSQL connection terminated by remote serverless host (handled transient idle disconnect)');
+      return;
+    }
     logger.fatal({ err }, 'Uncaught exception — exiting');
     process.exit(1);
   });
