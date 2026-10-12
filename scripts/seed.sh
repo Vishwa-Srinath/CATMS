@@ -63,5 +63,29 @@ for seed_file in "${SEED_FILES[@]}"; do
   ok "$(basename "${seed_file}") loaded"
 done
 
+info "Synchronizing database sequences with seeded IDs..."
+"${PSQL[@]}" -c "
+DO \$\$
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN (
+    SELECT table_schema, table_name, column_name,
+           pg_get_serial_sequence(table_schema || '.' || table_name, column_name) AS seq
+    FROM information_schema.columns
+    WHERE table_schema = 'catms'
+      AND (column_default LIKE 'nextval%' OR is_identity = 'YES')
+  ) LOOP
+    IF r.seq IS NOT NULL THEN
+      EXECUTE format(
+        'SELECT setval(%L, coalesce((SELECT max(%I) FROM %I.%I), 1), true)',
+        r.seq, r.column_name, r.table_schema, r.table_name
+      );
+    END IF;
+  END LOOP;
+END \$\$;
+" >/dev/null
+ok "Database sequences synchronized"
+
 echo ""
 green "All foundational seed data loaded successfully ✅"

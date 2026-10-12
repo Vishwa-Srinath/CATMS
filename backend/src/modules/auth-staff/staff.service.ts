@@ -457,6 +457,28 @@ export class StaffService {
       );
 
       const doctorId = Number(res.rows[0]?.p_doctor_id);
+
+      // Provision initial weekly recurring availability so the doctor can accept appointments
+      await client.query(
+        `INSERT INTO catms.doctor_availability (
+           doctor_id, branch_id, day_of_week, start_time, end_time, valid_from
+         )
+         SELECT 
+           $1,
+           coalesce(eba.branch_id, 1),
+           dow.day,
+           '08:00:00'::time,
+           '18:00:00'::time,
+           CURRENT_DATE
+         FROM catms.employee_branch_assignment eba
+         CROSS JOIN (
+           SELECT unnest(ARRAY['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']::catms.day_of_week[]) AS day
+         ) dow
+         WHERE eba.employee_id = $1 AND eba.is_active = TRUE
+         ON CONFLICT DO NOTHING`,
+        [doctorId],
+      );
+
       return { doctorId };
     }, 'catms_admin');
   }
