@@ -18,7 +18,7 @@ BEGIN
     FROM pg_indexes
     WHERE schemaname = 'catms'
       AND tablename = 'payment_reversal'
-      AND indexname = 'uq_payment_reversal_idempotency_key'
+      AND indexname = 'uq_payment_reversal_idempotency'
       AND indexdef ILIKE '%UNIQUE%';
     IF v_count <> 1 THEN
         RAISE EXCEPTION 'payment reversal idempotency unique index is missing';

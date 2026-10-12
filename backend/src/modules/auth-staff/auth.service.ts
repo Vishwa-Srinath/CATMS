@@ -229,7 +229,7 @@ export class AuthService {
        JOIN catms.app_role r ON r.app_role_id = uar.app_role_id
        LEFT JOIN catms.branch b ON b.branch_id = uar.branch_scope_id
        WHERE uar.user_account_id = $1
-         AND (uar.valid_from IS NULL OR uar.valid_from <= CURRENT_DATE)
+         AND (uar.valid_from IS NULL OR uar.valid_from <= now())
          AND (uar.valid_to IS NULL OR uar.valid_to > now())
          AND r.is_active = TRUE
        ORDER BY uar.user_account_role_id ASC

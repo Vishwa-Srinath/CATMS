@@ -272,7 +272,7 @@ jobs:
         working-directory: backend
 
       - name: Verify payment and reversal idempotency against PostgreSQL
-        run: ./node_modules/.bin/vitest run tests/clinical-billing.api.test.ts
+        run: ./node_modules/.bin/vitest run tests/clinical-billing.idempotency.integration.test.ts
         working-directory: backend
         env:
           CATMS_LIVE_DB_TESTS: 'true'

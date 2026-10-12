@@ -57,23 +57,37 @@ else
   DB_HOST="${POSTGRES_HOST:-localhost}"
   DB_PORT="${POSTGRES_PORT:-5432}"
   DB_NAME="${POSTGRES_DB:-catms_dev}"
-  DB_USER="${POSTGRES_SUPERUSER:-catms_super}"
-  DB_PASSWORD="${POSTGRES_SUPERUSER_PASSWORD:-change_me_super}"
+  DB_USER="${POSTGRES_SUPERUSER:-${POSTGRES_USER:-catms_super}}"
+  DB_PASSWORD="${POSTGRES_SUPERUSER_PASSWORD:-${POSTGRES_PASSWORD:-change_me_super}}"
+fi
+
+# Enable SSL mode automatically if cloud or POSTGRES_SSL=true
+if [[ "${POSTGRES_SSL:-false}" == "true" ]] || [[ "${POSTGRES_SSL:-false}" == "require" ]]; then
+  export PGSSLMODE="${PGSSLMODE:-require}"
 fi
 
 export PGPASSWORD="${DB_PASSWORD}"
 
-PSQL=(
-  psql
-  --host="${DB_HOST}"
-  --port="${DB_PORT}"
-  --username="${DB_USER}"
-  --dbname="${DB_NAME}"
-  --no-password
-  --set=ON_ERROR_STOP=1
-)
-
-echo "Connected to ${DB_HOST}:${DB_PORT}/${DB_NAME}"
+if [[ -n "${DATABASE_URL:-}" ]]; then
+  PSQL=(
+    psql
+    "${DATABASE_URL}"
+    --no-password
+    --set=ON_ERROR_STOP=1
+  )
+  echo "Connected via DATABASE_URL to PostgreSQL"
+else
+  PSQL=(
+    psql
+    --host="${DB_HOST}"
+    --port="${DB_PORT}"
+    --username="${DB_USER}"
+    --dbname="${DB_NAME}"
+    --no-password
+    --set=ON_ERROR_STOP=1
+  )
+  echo "Connected to ${DB_HOST}:${DB_PORT}/${DB_NAME}"
+fi
 
 # Verify connectivity
 if ! "${PSQL[@]}" -c '\q' >/dev/null 2>&1; then

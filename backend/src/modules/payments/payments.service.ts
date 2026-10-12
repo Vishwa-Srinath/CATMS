@@ -283,10 +283,9 @@ export class PaymentsService {
   ): Promise<{ paymentReversalId: string; payment: PaymentDto }> {
     try {
       return await withTransaction(async (client) => {
-        // Serialize retries by key in the service, and keep the database
-        // procedure as the final authority for concurrent callers.
+        // Serialize API retries with the same lock key used by the database function.
         await client.query(
-          `SELECT pg_advisory_xact_lock(hashtextextended('catms.reversal:' || $1::uuid::text, 0))`,
+          `SELECT pg_advisory_xact_lock(hashtextextended('catms.payment_reversal:' || $1::uuid::text, 0))`,
           [idempotencyKey],
         );
         const existing = await client.query<{

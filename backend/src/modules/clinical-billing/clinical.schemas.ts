@@ -188,6 +188,8 @@ export const reversePaymentBodySchema = z.object({
   idempotencyKey: z.string().uuid(),
 }).strict();
 
+export type ReversePaymentBody = z.infer<typeof reversePaymentBodySchema>;
+
 export type AppointmentParams = z.infer<
   typeof appointmentParamsSchema
 >;

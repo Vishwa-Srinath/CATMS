@@ -162,4 +162,23 @@ INSERT INTO catms.policy_coverage (
 (2, 2, 1, 70.00, 2000.00, '2026-01-01', '2026-12-31')
 ON CONFLICT (coverage_id) DO NOTHING;
 
+-- 13. Default Doctor Availability (Weekly recurring schedules)
+-- -----------------------------------------------------------------------------
+INSERT INTO catms.doctor_availability (
+    doctor_id, branch_id, day_of_week, start_time, end_time, valid_from
+)
+SELECT
+    dp.doctor_id,
+    coalesce(eba.branch_id, 1),
+    dow.day,
+    '08:00:00'::time,
+    '18:00:00'::time,
+    '2026-01-01'::date
+FROM catms.doctor_profile dp
+LEFT JOIN catms.employee_branch_assignment eba ON eba.employee_id = dp.doctor_id AND eba.is_active = TRUE
+CROSS JOIN (
+    SELECT unnest(ARRAY['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']::catms.day_of_week[]) AS day
+) dow
+ON CONFLICT DO NOTHING;
+
 COMMIT;
