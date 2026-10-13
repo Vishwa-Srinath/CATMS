@@ -399,18 +399,7 @@ describe('CATMS-066 — Administration Frontend Tests', () => {
   // Suite 2: Login Interface
   // ===========================================================================
   describe('Suite 2: Login Interface (LoginPage)', () => {
-    it('renders staff access gateway with branding and role presets', () => {
-      vi.mocked(useClinic).mockReturnValue({
-        demoUsers: [
-          { id: 'e8', name: 'Nimali Perera', role: 'Receptionist', jobTitle: 'Receptionist', branchId: 'b1', initials: 'NP' },
-          { id: 'e1', name: 'Dr. Anjali Fernando', role: 'Clinician', jobTitle: 'Doctor', branchId: 'b1', initials: 'AF' },
-          { id: 'e6', name: 'Tharindu Jayasinghe', role: 'Manager', jobTitle: 'Manager', branchId: 'b1', initials: 'TJ' },
-          { id: 'e7', name: 'Ishara Bandara', role: 'Admin', jobTitle: 'Admin', branchId: 'all', initials: 'IB' },
-        ],
-        signIn: vi.fn(),
-        notify: vi.fn(),
-      } as unknown as ReturnType<typeof useClinic>);
-
+    it('renders staff access gateway with branding and credential inputs', () => {
       const queryClient = new QueryClient({
         defaultOptions: { queries: { retry: false } },
       });
@@ -424,11 +413,9 @@ describe('CATMS-066 — Administration Frontend Tests', () => {
       );
 
       expect(html).toContain('Staff Portal Login');
-      expect(html).toContain('Select your role and sign in to access your workspace');
-      expect(html).toContain('Receptionist');
-      expect(html).toContain('Clinician');
-      expect(html).toContain('Manager');
-      expect(html).toContain('Admin');
+      expect(html).toContain('Enter your credentials to access your workspace');
+      expect(html).toContain('Username or work email');
+      expect(html).toContain('Password');
       expect(html).toContain('Sign in to workspace');
       expect(html).toContain('MedSync Clinics');
     });
