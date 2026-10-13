@@ -172,7 +172,7 @@ export const createPaymentBodySchema = z.object({
 }).strict().superRefine(validatePaymentPayer);
 
 export const listPaymentsQuerySchema = z.object({
-  invoiceId: databaseIdSchema,
+  invoiceId: databaseIdSchema.optional(),
 }).strict();
 
 export const reversePaymentParamsSchema = z.object({

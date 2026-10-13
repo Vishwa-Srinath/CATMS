@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Banknote,
   CircleDollarSign,
+  Download,
   History,
   Landmark,
   ReceiptText,
@@ -19,6 +20,10 @@ import {
   ShieldCheck,
   WalletCards,
 } from 'lucide-react';
+import {
+  downloadPaymentReceiptPdf,
+  downloadMonthlyPaymentReportPdf,
+} from '../lib/pdf/pdfReports';
 import { useClinic } from '../context/ClinicContext';
 import { ApiError } from '../api/errors';
 import {
@@ -108,6 +113,12 @@ export default function FinancePage() {
     enabled: invoiceDetailTarget !== null,
   });
 
+  const allPaymentsQuery = useQuery({
+    queryKey: ['all-payments'],
+    queryFn: () => fetchPayments(),
+    enabled: user?.role === 'Admin',
+  });
+
   const paymentPreviewQuery = useQuery({
     queryKey: ['payment-preview', paymentTarget?.invoiceId, payerType, claimId],
     queryFn: () =>
@@ -156,17 +167,50 @@ export default function FinancePage() {
   // Live mutations
   const postPaymentMutation = useMutation({
     mutationFn: postPayment,
-    onSuccess: async () => {
+    onSuccess: async (createdPayment) => {
       idempotencyKey.current = null;
       submittingPayment.current = false;
+
+      // Automatically generate and download detailed official PDF receipt
+      try {
+        const subtotal = Number(paymentTarget?.subtotalAmount || createdPayment.amount);
+        const insuranceApproved = Number(paymentTarget?.approvedInsuranceAmount || 0);
+        const liability = Number(paymentTarget?.patientLiabilityAmount || (subtotal - insuranceApproved));
+        const prevPaid = Number(paymentTarget?.patientPaidAmount || 0);
+        const paidNow = Number(createdPayment.amount || 0);
+        const remaining = Math.max(0, liability - (prevPaid + paidNow));
+
+        downloadPaymentReceiptPdf({
+          receiptNumber: createdPayment.receiptNumber,
+          paidAt: createdPayment.paidAt || new Date().toISOString(),
+          invoiceNumber: paymentTarget?.invoiceNumber || createdPayment.invoiceId,
+          appointmentNumber: paymentTarget?.appointmentNumber,
+          patientName: paymentTarget?.patientName || 'Patient',
+          patientNumber: paymentTarget?.patientNumber,
+          payerType: createdPayment.payerType,
+          paymentMethod: createdPayment.paymentMethod,
+          referenceNumber: createdPayment.referenceNumber,
+          paymentAmount: createdPayment.amount,
+          subtotalAmount: subtotal,
+          approvedInsuranceAmount: insuranceApproved,
+          patientLiabilityAmount: liability,
+          patientPaidAmountTotal: prevPaid + paidNow,
+          remainingBalanceDue: remaining,
+          cashierName: user?.name,
+        });
+      } catch (pdfErr) {
+        console.error('Failed to auto-download receipt PDF:', pdfErr);
+      }
+
       setPaymentTarget(null);
       notify({
         type: 'success',
-        title: 'Payment posted',
-        message: 'Payment recorded in database and outstanding liability updated.',
+        title: 'Payment posted & receipt downloaded',
+        message: 'Payment recorded in database and official PDF receipt downloaded.',
       });
       await queryClient.invalidateQueries({ queryKey: ['invoices'] });
       await queryClient.invalidateQueries({ queryKey: ['payments'] });
+      await queryClient.invalidateQueries({ queryKey: ['all-payments'] });
       await queryClient.invalidateQueries({ queryKey: ['invoice-detail'] });
     },
   });
@@ -553,12 +597,48 @@ export default function FinancePage() {
     };
   }, [claimTarget, data.patients, patientPoliciesQuery.data]);
 
+  const handleDownloadMonthlyReport = () => {
+    const rawPayments = allPaymentsQuery.data || [];
+    const invoiceMap = new Map((invoicesQuery.data || []).map((inv) => [inv.invoiceId, inv]));
+
+    const rows = rawPayments.map((p) => {
+      const inv = invoiceMap.get(p.invoiceId);
+      return {
+        receiptNumber: p.receiptNumber,
+        paidAt: p.paidAt,
+        invoiceNumber: inv?.invoiceNumber || p.invoiceId,
+        patientName: inv?.patientName || 'Patient',
+        payerType: p.payerType,
+        paymentMethod: p.paymentMethod,
+        referenceNumber: p.referenceNumber,
+        amount: Number(p.amount || 0),
+        status: p.paymentStatus,
+      };
+    });
+
+    const monthLabel = new Date().toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+    downloadMonthlyPaymentReportPdf(rows, monthLabel);
+    notify({
+      type: 'success',
+      title: 'Report downloaded',
+      message: `Monthly payment collections report for ${monthLabel} was downloaded as a PDF.`,
+    });
+  };
+
   return (
     <>
       <PageHeader
         eyebrow="Finance workspace"
         title="Billing & claims"
         description="Review database-generated invoices, post payer-specific payments, track internal insurance claims, and manage treatment catalogue."
+        actions={
+          user?.role === 'Admin' ? (
+            <Button variant="secondary" onClick={handleDownloadMonthlyReport}>
+              <Download size={15} />
+              Monthly Collections (PDF)
+            </Button>
+          ) : undefined
+        }
       />
 
       {/* Database KPI Stat Cards */}
@@ -947,19 +1027,48 @@ export default function FinancePage() {
                           of {formatCurrency(Number(payment.amount))}
                         </span>
                       </p>
-                      {Number(payment.netAmount) > 0 && (
+                      <div className="flex items-center gap-1.5">
                         <Button
                           size="sm"
                           variant="secondary"
                           onClick={() => {
-                            setReverseTarget(payment);
-                            setReverseError(null);
+                            downloadPaymentReceiptPdf({
+                              receiptNumber: payment.receiptNumber,
+                              paidAt: payment.paidAt,
+                              invoiceNumber: invoiceDetailTarget?.invoiceNumber || payment.invoiceId,
+                              appointmentNumber: invoiceDetailTarget?.appointmentNumber,
+                              patientName: invoiceDetailTarget?.patientName || 'Patient',
+                              patientNumber: invoiceDetailTarget?.patientNumber,
+                              payerType: payment.payerType,
+                              paymentMethod: payment.paymentMethod,
+                              referenceNumber: payment.referenceNumber,
+                              paymentAmount: payment.amount,
+                              subtotalAmount: invoiceDetailTarget?.subtotalAmount || payment.amount,
+                              approvedInsuranceAmount: invoiceDetailTarget?.approvedInsuranceAmount,
+                              patientLiabilityAmount: invoiceDetailTarget?.patientLiabilityAmount,
+                              patientPaidAmountTotal: invoiceDetailTarget?.patientPaidAmount,
+                              remainingBalanceDue: Math.max(0, Number(invoiceDetailTarget?.patientLiabilityAmount || 0) - Number(invoiceDetailTarget?.patientPaidAmount || 0)),
+                              cashierName: user?.name,
+                            });
                           }}
                         >
-                          <RotateCcw size={14} />
-                          Reverse
+                          <Download size={13} />
+                          Receipt (PDF)
                         </Button>
-                      )}
+                        {Number(payment.netAmount) > 0 && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              setReverseTarget(payment);
+                              setReverseError(null);
+                            }}
+                          >
+                            <RotateCcw size={14} />
+                            Reverse
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     {payment.reversals.map((item) => (
                       <p className="mt-2 text-xs text-amber-800" key={item.paymentReversalId}>

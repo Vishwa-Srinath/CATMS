@@ -212,21 +212,28 @@ export class PaymentsService {
     }, databaseRole('Admin'));
   }
 
-  async list(invoiceId: string): Promise<PaymentDto[]> {
+  async list(invoiceId?: string): Promise<PaymentDto[]> {
     const result = await withTransaction(async (client) => {
-      const invoice = await client.query(
-        'SELECT 1 FROM catms.invoice WHERE invoice_id = $1',
-        [invoiceId],
-      );
-      if (invoice.rowCount === 0) {
-        throw AppError.notFound('Invoice');
+      if (invoiceId) {
+        const invoice = await client.query(
+          'SELECT 1 FROM catms.invoice WHERE invoice_id = $1',
+          [invoiceId],
+        );
+        if (invoice.rowCount === 0) {
+          throw AppError.notFound('Invoice');
+        }
+        return client.query<PaymentRow>(
+          `${PAYMENT_PROJECTION}
+           WHERE p.invoice_id = $1
+           GROUP BY p.payment_id
+           ORDER BY p.paid_at DESC, p.payment_id DESC`,
+          [invoiceId],
+        );
       }
       return client.query<PaymentRow>(
         `${PAYMENT_PROJECTION}
-         WHERE p.invoice_id = $1
          GROUP BY p.payment_id
          ORDER BY p.paid_at DESC, p.payment_id DESC`,
-        [invoiceId],
       );
     }, 'catms_admin');
     return result.rows.map(toPaymentDto);

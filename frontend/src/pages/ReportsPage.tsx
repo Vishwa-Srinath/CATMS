@@ -6,6 +6,13 @@ import { useSession } from '../app/useSession'
 import { useBranchSummary, useDoctorRevenue, usePatientBalances, useTreatmentCounts, useInsuranceReceipts } from '../features/reports/hooks/useReports'
 import { DEMO_TODAY, formatCurrency, formatDate } from '../lib/domain'
 import { Badge, Button, InfoNote, PageHeader } from '../components/ui'
+import {
+  downloadBranchAppointmentsReportPdf,
+  downloadDoctorRevenueReportPdf,
+  downloadPatientBalancesReportPdf,
+  downloadTreatmentCountsReportPdf,
+  downloadInsuranceCoverageReportPdf,
+} from '../lib/pdf/pdfReports'
 
 type ReportKey = 'appointments' | 'revenue' | 'outstanding' | 'treatments' | 'coverage'
 
@@ -218,8 +225,69 @@ export default function ReportsPage() {
     notify({ type: 'success', title: 'Report exported', message: `${meta.label} was downloaded as a CSV file.` })
   }
 
+  const exportPdfReport = () => {
+    switch (active) {
+      case 'appointments':
+        downloadBranchAppointmentsReportPdf(appointmentRows, date);
+        break;
+      case 'revenue':
+        downloadDoctorRevenueReportPdf(revenueRows, `${from} to ${to}`);
+        break;
+      case 'outstanding':
+        downloadPatientBalancesReportPdf(
+          outstandingRows.map((r) => ({
+            patient: r.patient,
+            invoiceNumber: r.invoice,
+            subtotal: r.payable,
+            insuranceCovered: 0,
+            patientLiability: r.payable,
+            amountPaid: r.paid,
+            outstanding: r.due,
+          }))
+        );
+        break;
+      case 'treatments':
+        downloadTreatmentCountsReportPdf(
+          treatmentRows.map((r) => ({ category: r.category, count: r.count })),
+          `${from} to ${to}`
+        );
+        break;
+      case 'coverage':
+        downloadInsuranceCoverageReportPdf(
+          coverageRows.map((r) => ({
+            month: r.month,
+            approvedInsurance: r.insurance,
+            insurerReceipts: r.insurance,
+            patientReceipts: r.patientPaid,
+          }))
+        );
+        break;
+    }
+    notify({
+      type: 'success',
+      title: 'PDF Report downloaded',
+      message: `${meta.label} was downloaded as an official PDF document.`,
+    });
+  };
+
   return <>
-    <PageHeader eyebrow="Management reporting" title="Reports" description="Verifiable management views backed by reporting objects. Every chart is paired with its raw rows." actions={<Button variant="secondary" onClick={exportReport}><Download size={16} />Export CSV</Button>} />
+    <PageHeader
+      eyebrow="Management reporting"
+      title="Reports"
+      description="Verifiable management views backed by reporting objects. Every chart is paired with its raw rows."
+      actions={
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={exportReport}>
+            <Download size={15} />
+            Export CSV
+          </Button>
+          <Button variant="primary" onClick={exportPdfReport}>
+            <Download size={15} />
+            Download PDF Report
+          </Button>
+        </div>
+      }
+    />
 
     {user?.role === 'Manager' && <div className="mb-5"><InfoNote title="Branch-manager access">You can view the daily appointment summary for {data.branches.find((branch) => branch.id === user.branchId)?.name}. Financial and clinic-wide reports require Admin / Finance access.</InfoNote></div>}
     {isNonFinancialStaff && <div className="mb-5"><InfoNote title="Staff report access">You can view daily appointment schedules for clinic branches. Financial and operational revenue reporting is restricted to management and finance administrators.</InfoNote></div>}
