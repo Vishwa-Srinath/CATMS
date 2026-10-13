@@ -1,40 +1,18 @@
 import { useState, type FormEvent } from 'react'
 import { ArrowRight, Eye, EyeOff } from 'lucide-react'
-import { useClinic } from '../context/ClinicContext'
 import { useSession } from '../app/useSession'
 import { ApiError } from '../api/errors'
-import type { Role, SessionUser } from '../types'
 import { Button, Field } from '../components/ui'
 import { AmbientGlowSpheres } from '../components/AmbientGlowSpheres'
 import medSyncLogo from '../assets/brand/medsync-logo.png'
 import loginIllustration from '../assets/brand/login-illustration.png'
 
-const defaultCredentials: Record<Role, { username: string; password: string }> = {
-  Receptionist: { username: 'reception.user', password: 'CorrectPassword123!' },
-  Clinician: { username: 's.silva', password: 'CorrectPassword123!' },
-  Manager: { username: 'k.perera', password: 'CorrectPassword123!' },
-  Admin: { username: 'admin.user', password: 'CorrectPassword123!' },
-  QA: { username: 'admin.user', password: 'CorrectPassword123!' },
-}
-
 export default function LoginPage() {
   const session = useSession()
-  const { demoUsers, signIn } = useClinic()
-  const [selected, setSelected] = useState<SessionUser>(demoUsers[0])
-  const [username, setUsername] = useState(defaultCredentials[demoUsers[0].role]?.username ?? 'reception.user')
-  const [password, setPassword] = useState(defaultCredentials[demoUsers[0].role]?.password ?? 'CorrectPassword123!')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  const handleSelectRole = (demoUser: SessionUser) => {
-    setSelected(demoUser)
-    setErrorMessage(null)
-    const creds = defaultCredentials[demoUser.role]
-    if (creds) {
-      setUsername(creds.username)
-      setPassword(creds.password)
-    }
-  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -50,12 +28,9 @@ export default function LoginPage() {
     }
   }
 
-  // Color theme unified to Receptionist (Harbor Blue) across all roles
-  const portalClass = 'portal-reception'
-
   return (
     <main
-      className={`relative min-h-screen flex flex-col justify-center p-4 pt-16 sm:p-6 lg:p-12 ${portalClass} bg-[#F5F7F7] overflow-hidden`}
+      className={`relative min-h-screen flex flex-col justify-center p-4 pt-16 sm:p-6 lg:p-12 portal-reception bg-[#F5F7F7] overflow-hidden`}
     >
       {/* Brand logo in top left corner */}
       <div className="absolute top-5 left-5 sm:top-8 sm:left-8 lg:top-10 lg:left-12 z-20">
@@ -114,44 +89,18 @@ export default function LoginPage() {
                 Staff Portal Login
               </h1>
               <p className="mt-1.5 text-xs text-slate-500">
-                Select your role and sign in to access your workspace
+                Enter your credentials to access your workspace
               </p>
             </div>
 
-            {/* Role selector tabs with frosted glass styling */}
-            <div
-              className="tab-list relative mt-6 mb-5 rounded-xl border border-white/60 bg-white/40 p-1 shadow-[inset_0_1px_2px_rgba(18,35,43,0.03)] backdrop-blur-md"
-              role="tablist"
-              aria-label="Select role"
-            >
-              {demoUsers.map((demoUser) => {
-                const active = selected.role === demoUser.role
-                return (
-                  <button
-                    key={demoUser.role}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => handleSelectRole(demoUser)}
-                    className={`tab-button flex-1 text-center py-2 text-xs font-semibold transition ${active
-                      ? 'tab-button-active bg-white/95 font-bold text-[var(--portal-accent)] shadow-sm border border-white/80'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
-                      }`}
-                  >
-                    {demoUser.role}
-                  </button>
-                )
-              })}
-            </div>
-
             {errorMessage && (
-              <div className="mb-4 rounded-xl border border-red-200 bg-red-50/90 p-3 text-xs text-red-800 backdrop-blur-sm" role="alert">
+              <div className="mt-5 rounded-xl border border-red-200 bg-red-50/90 p-3 text-xs text-red-800 backdrop-blur-sm" role="alert">
                 <p className="font-semibold">{errorMessage}</p>
               </div>
             )}
 
             {/* Credentials Form */}
-            <form className="relative space-y-4" onSubmit={handleSubmit}>
+            <form className="relative mt-6 space-y-4" onSubmit={handleSubmit}>
               <Field label="Username or work email">
                 <input
                   className="input h-11 border-white/70 bg-white/65 shadow-[inset_0_1px_2px_rgba(18,35,43,0.02)] backdrop-blur-md focus:bg-white/95 focus:border-[var(--portal-accent)] transition-all"
@@ -161,7 +110,7 @@ export default function LoginPage() {
                   required
                   autoComplete="username"
                   disabled={session.isLoggingIn}
-                  placeholder="e.g. reception.user"
+                  placeholder="Username or work email"
                 />
               </Field>
 
@@ -175,6 +124,7 @@ export default function LoginPage() {
                     required
                     autoComplete="current-password"
                     disabled={session.isLoggingIn}
+                    placeholder="Password"
                   />
                   <button
                     type="button"
@@ -187,7 +137,7 @@ export default function LoginPage() {
                 </div>
               </Field>
 
-              <div className="flex items-center justify-between pt-1 text-xs">
+              <div className="flex items-center pt-1 text-xs">
                 <label className="flex items-center gap-2 font-medium text-slate-600 cursor-pointer">
                   <input
                     type="checkbox"
@@ -196,14 +146,6 @@ export default function LoginPage() {
                   />
                   Keep me signed in
                 </label>
-                <button
-                  type="button"
-                  onClick={() => signIn(selected)}
-                  className="font-semibold text-[var(--portal-accent)] hover:underline"
-                  title="Direct demo bypass for offline testing"
-                >
-                  Offline demo bypass
-                </button>
               </div>
 
               <Button type="submit" className="mt-2 h-11 w-full text-[14px] shadow-sm hover:shadow" disabled={session.isLoggingIn}>
