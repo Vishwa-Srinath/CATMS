@@ -91,8 +91,12 @@ fi
 
 # Verify connectivity
 if ! "${PSQL[@]}" -c '\q' >/dev/null 2>&1; then
-  echo "❌ Cannot connect to PostgreSQL at ${DB_HOST}:${DB_PORT}/${DB_NAME}" >&2
-  echo "ℹ  Check container status or connection parameters." >&2
+  if [[ -n "${DATABASE_URL:-}" ]]; then
+    echo "❌ Cannot connect to PostgreSQL via DATABASE_URL" >&2
+  else
+    echo "❌ Cannot connect to PostgreSQL at ${DB_HOST}:${DB_PORT}/${DB_NAME}" >&2
+  fi
+  echo "ℹ  Check network connectivity, credentials, or container status." >&2
   exit 1
 fi
 
