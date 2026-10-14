@@ -14,9 +14,10 @@ import { z } from 'zod';
 const envSchema = z.object({
   // ── Server ────────────────────────────────────────────────────────────────
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  API_PORT: z.coerce.number().int().min(1024).max(65535).default(3000),
+  API_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
 
   // ── PostgreSQL ────────────────────────────────────────────────────────────
+  DATABASE_URL: z.string().optional(),
   POSTGRES_HOST: z.string().min(1),
   POSTGRES_PORT: z.coerce.number().int().min(1).max(65535).default(5432),
   POSTGRES_DB:   z.string().min(1),
@@ -83,6 +84,32 @@ function tryLoadDotEnv(): void {
 
 function loadEnv() {
   tryLoadDotEnv();
+
+  // If running on Render or other PaaS where PORT is dynamically assigned
+  if (process.env.PORT && !process.env.API_PORT) {
+    process.env.API_PORT = process.env.PORT;
+  }
+
+  // If DATABASE_URL is provided (e.g., from Neon or Render PostgreSQL addon)
+  if (process.env.DATABASE_URL) {
+    try {
+      const url = new URL(process.env.DATABASE_URL);
+      if (!process.env.POSTGRES_HOST && url.hostname) process.env.POSTGRES_HOST = url.hostname;
+      if (!process.env.POSTGRES_PORT && url.port) process.env.POSTGRES_PORT = url.port;
+      if (!process.env.POSTGRES_USER && url.username) process.env.POSTGRES_USER = decodeURIComponent(url.username);
+      if (!process.env.POSTGRES_PASSWORD && url.password) process.env.POSTGRES_PASSWORD = decodeURIComponent(url.password);
+      if (!process.env.POSTGRES_DB && url.pathname) process.env.POSTGRES_DB = url.pathname.replace(/^\//, '');
+      if (!process.env.POSTGRES_SSL) {
+        const sslmode = url.searchParams.get('sslmode');
+        if (sslmode === 'require' || sslmode === 'verify-full' || sslmode === 'verify-ca' || url.searchParams.get('ssl') === 'true') {
+          process.env.POSTGRES_SSL = 'true';
+        }
+      }
+    } catch {
+      // If DATABASE_URL fails to parse as URL, validation below will catch any missing variables
+    }
+  }
+
   const result = envSchema.safeParse(process.env);
 
   if (!result.success) {

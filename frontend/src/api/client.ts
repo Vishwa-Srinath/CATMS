@@ -14,7 +14,7 @@
 import { ApiError } from './errors';
 import type { ApiResponse, ApiErrorEnvelope, HttpMethod, RequestOptions } from './types';
 
-const API_BASE = '/api/v1';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, '') || '/api/v1';
 
 type SessionExpiredHandler = () => void;
 const sessionExpiredHandlers = new Set<SessionExpiredHandler>();
