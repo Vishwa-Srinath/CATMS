@@ -61,6 +61,11 @@ const START_TIME = Date.now();
 export function createApp(): express.Application {
   const app = express();
 
+  // ── 0. Reverse proxy trust (Render / cloud load balancers) ───────────────
+  if (env.NODE_ENV === 'production' || process.env.RENDER) {
+    app.set('trust proxy', 1);
+  }
+
   // ── 1. Correlation ID ───────────────────────────────────────────────────────
   app.use(correlationId);
 
@@ -71,6 +76,8 @@ export function createApp(): express.Application {
       genReqId: (_req, res) => res.locals['correlationId'] as string,
       autoLogging: {
         ignore: (req) =>
+          req.url === '/' ||
+          req.url === '/health' ||
           req.url === '/api/v1/health' ||
           req.url === '/api/v1/health/live' ||
           req.url === '/api/v1/readiness' ||
@@ -182,6 +189,8 @@ export function createApp(): express.Application {
     res.status(200).json(successEnvelope(body, correlationId));
   };
 
+  app.get('/', livenessHandler);
+  app.get('/health', livenessHandler);
   app.get('/api/v1/health', livenessHandler);
   app.get('/api/v1/health/live', livenessHandler);
 

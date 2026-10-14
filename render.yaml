@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: catms-backend
+    runtime: docker
+    plan: free
+    region: singapore
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: POSTGRES_HOST
+        value: ep-old-rain-b3zid4wa-pooler.c-4.ap-southeast-1.aws.neon.tech
+      - key: POSTGRES_PORT
+        value: "5432"
+      - key: POSTGRES_DB
+        value: catms-production-db
+      - key: POSTGRES_USER
+        value: catms-production-db_owner
+      - key: POSTGRES_PASSWORD
+        sync: false
+      - key: POSTGRES_SSL
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CSRF_SECRET
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAME_SITE
+        value: "none"
+      - key: ALLOWED_ORIGINS
+        value: http://localhost:5173
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "60000"
+      - key: RATE_LIMIT_MAX
+        value: "200"
+      - key: LOG_LEVEL
+        value: info
